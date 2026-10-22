@@ -1,0 +1,39 @@
+# dsh-training · DSH Agent 培训班
+
+> 项目代号：**dsh-training** ｜ 风格：年轻时尚 · 极简主义 · 星辰特色（寻梦山海）
+
+本仓库是 DSH Agent 培训班的**底层环境与插件源码目录**，位于
+`C:\Users\29496\.dsh\plugin-sources\dsh-training`（DSH 的本地插件源目录，
+可被 profile 以 `file:` 依赖引用）。
+
+## 目录结构
+
+```
+dsh-training/
+├─ plugins/                 # 全部功能板块（每个板块一个独立插件包）
+│  └─ dsh-training-protocol/   # LV0→LV1 协议授权占位插件（当前唯一板块）
+├─ characters/              # 角色设定（星辰 TxzF / 长征姬）
+├─ assets/
+│  └─ themes/               # 星辰主题 token 与视觉资源
+├─ docs/                    # 文档
+│  └─ DSH 培训班环境部署手册.md
+├─ scripts/                 # 运维/探测脚本
+│  └─ probe-vscode-integration.mjs
+└─ README.md
+```
+
+## 当前状态
+
+| 项 | 状态 |
+|---|---|
+| Node.js v24.21.0 / pnpm 12.9.1 | ✅ 满足 |
+| Git 仓库 | ⛔ **未初始化**（本机未安装 Git，待装后执行 `git init`） |
+| dsh-open-in-vscode 集成 | ⛔ **阻塞**（该 npm 包已于 2026-08-16 下架，且本机未装 VS Code） |
+| dsh-training-protocol 骨架 | ✅ 已生成 |
+
+详见 [docs/DSH 培训班环境部署手册.md](docs/DSH%20培训班环境部署手册.md)。
+
+## 架构原则
+
+一切功能板块化：模块间低耦合、可独立安装/卸载/更新，通过 DSH 插件标准接口通信。
+禁止跨板块直接 import，板块之间只经宿主注入的 `ctx` 交互。

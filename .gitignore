@@ -1,0 +1,29 @@
+# dsh-training · Git 忽略规则
+# 注意：本仓库当前**尚未执行 git init**（本机缺 Git），本文件为装好 Git 后的预备配置。
+
+# 依赖
+node_modules/
+.pnpm-store/
+
+# 构建产物
+dist/
+*.tsbuildinfo
+
+# 日志与临时文件
+*.log
+npm-debug.log*
+pnpm-debug.log*
+.tmp/
+.cache/
+
+# 编辑器 / 系统
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# 本地密钥（严禁入库）
+.env
+.env.*
+**/.credentials.yaml
