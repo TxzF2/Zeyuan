@@ -39,11 +39,28 @@ node scripts/scaffold-boards.mjs
 
 | 阶段 | 产出 | 状态 |
 |---|---|---|
-| 一 | 骨架 + 文档，不出包 | ✅ 当前 |
-| 二 | 便携 zip（内置运行时 + 向导可跑通） | 待做 |
+| 一 | 骨架 + 文档，不出包 | ✅ 已完成 |
+| 二 · 第 1 步 | **运行环境检测接通**（IPC + 状态机 + E-101/E-102 真机复现） | ✅ 已完成 |
+| 二 · 第 2 步 | 安装线：staging 装配 → 校验 → 原子替换 → 回滚（A2 验收） | 待做 |
 | 三 | 安装器 exe + 签名 + 自动更新 + 板块增删 | 待做 |
 
-`build.mjs --stage 2|3` 在阶段一会被**明确拒绝**（退出码 3），防止误产出成品。
+`build.mjs --stage 2|3` 在阶段一/二第 1 步仍会被**明确拒绝**（退出码 3），防止误产出成品。
+
+### 三态自检（阶段二第 1 步的验收动作）
+
+```powershell
+node scripts/test-detect-node.mjs      # OK / E-101 / E-102 三个用例，期望「通过 14 项」
+
+# 真实 Electron 里跑 IPC 并截图（会闪现窗口约 1 秒）
+Remove-Item Env:ELECTRON_RUN_AS_NODE -ErrorAction SilentlyContinue   # 关键：否则 Electron 会当 Node 跑
+$env:DSH_TRAINING_SELFTEST = "1"
+cd installer/shell
+.\node_modules\electron\dist\electron.exe .          # 期望 RESULT=PASS
+# 失败态单独验：
+#   E-102 → $env:DSH_TRAINING_NODE_MIN="99.0.0"; $env:DSH_TRAINING_SELFTEST_EXPECT="E-102"
+#   E-101 → $env:Path="C:\Windows\System32";     $env:DSH_TRAINING_SELFTEST_EXPECT="E-101"
+# 截图落在 artifacts/selftest-wizard-<CODE>.png，报告在 artifacts/selftest-report.json
+```
 
 ## 详细文档
 

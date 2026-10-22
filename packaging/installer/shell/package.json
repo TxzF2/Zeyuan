@@ -10,13 +10,19 @@
     "syntax-check": "node --check main.js && node --check preload.js"
   },
   "devDependencies": {
-    "electron": "TBD-stage2"
+    "electron": "^45.0.0"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "electron"
+    ]
   },
   "dsh": {
     "shell": {
-      "stage": 1,
+      "stage": 2,
+      "step": 1,
       "producesExe": false,
-      "note": "阶段二再接 electron-builder / electron-forge；阶段一禁止产出 exe。"
+      "note": "阶段二第 1 步：detect-node IPC 已接通。出包仍禁止（阶段二第 2 步之后再谈 electron-builder）。"
     }
   }
 }
