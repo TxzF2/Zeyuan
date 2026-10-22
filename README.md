@@ -27,9 +27,11 @@ dsh-training/
 | 项 | 状态 |
 |---|---|
 | Node.js v24.21.0 / pnpm 12.9.1 | ✅ 满足 |
-| Git 仓库 | ⛔ **未初始化**（本机未安装 Git，待装后执行 `git init`） |
-| dsh-open-in-vscode 集成 | ⛔ **阻塞**（该 npm 包已于 2026-08-16 下架，且本机未装 VS Code） |
-| dsh-training-protocol 骨架 | ✅ 已生成 |
+| Git | ✅ 已装（PortableGit 2.55.0.windows.5，经 PATH shim 接入） |
+| Git 仓库 | ✅ 已初始化（分支 `main`，首次提交 `824f879`） |
+| dsh-open-in-vscode 集成 | ⛔ **已关闭**（决策见 `docs/backlog.md` D-001，改用 VS Code 直接打开目录） |
+| dsh-training-protocol 骨架 | ✅ 已生成并构建通过；已进 desktop profile 配置，**真机挂载待重启应用确认** |
+| 适配 agent 列表 | ⬜ 配置位已就绪（`src/agents.config.ts`），**等你补充条目** |
 
 详见 [docs/DSH 培训班环境部署手册.md](docs/DSH%20培训班环境部署手册.md)。
 
