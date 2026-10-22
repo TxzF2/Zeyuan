@@ -50,6 +50,8 @@ node scripts/scaffold-boards.mjs
 
 ```powershell
 node scripts/test-detect-node.mjs      # OK / E-101 / E-102 三个用例，期望「通过 14 项」
+node scripts/test-install-line.mjs     # 安装线故障注入，期望「通过 40 项」
+node ../scripts/smoke-test.mjs         # 全路径冒烟（向导→安装→LV0），期望 PASS
 
 # 真实 Electron 里跑 IPC 并截图（会闪现窗口约 1 秒）
 Remove-Item Env:ELECTRON_RUN_AS_NODE -ErrorAction SilentlyContinue   # 关键：否则 Electron 会当 Node 跑
@@ -66,3 +68,5 @@ cd installer/shell
 
 - 构建/改版本/错误码/验收标准 → [`../docs/安装包构建说明.md`](../docs/安装包构建说明.md)
 - 新手安装流程 → [`../docs/下载者安装手册.md`](../docs/下载者安装手册.md)
+- 验收与回退（A1-A6 / 故障注入 / 人工回退） → [`../docs/验收与回退手册.md`](../docs/验收与回退手册.md)
+- 发版测试报告模板 → [`../docs/发版测试报告模板.md`](../docs/发版测试报告模板.md)

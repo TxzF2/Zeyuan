@@ -1,4 +1,4 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="zh-CN">
   <head>
     <meta charset="utf-8" />
@@ -95,7 +95,7 @@
       <header>
         <h1>DSH Agent 培训班 · 安装向导</h1>
         <p>星辰与你，从这里开始。</p>
-        <span class="tag">阶段二 · 第 1 步：运行环境检测已接通</span>
+        <span class="tag">阶段二 · IPC 完工：检测 / 安装 / 回滚已接通</span>
       </header>
 
       <div class="steps" id="steps">
@@ -208,17 +208,18 @@
       </section>
 
       <!-- ============ 完成 ============ -->
-      <section class="card">
+      <section class="card" id="lv0-section">
         <h2>第 5 步 · 完成 → LV0 协议页</h2>
         <p class="hint">
           首次启动会直达 <b>LV0 协议页</b>：未签署《培训班协议》前停留在 LV0（可浏览课程目录），
           签署并由星辰（TxzF）/ 长征姬 签发后再进入 LV1（解锁实训场与陪练）。
         </p>
+        <p class="meta" id="lv0-state">协议页状态：占位（阶段三实现签署交互）</p>
         <div class="shot">【截图位 5：LV0 协议页】</div>
       </section>
 
       <footer>
-        dsh-training v0.1.0 · 阶段二第 1 步 ｜ detect-node 已接通，install / rollback 待第 2 步
+        dsh-training v0.2.0 · 阶段二 IPC 完工 ｜ detect-node / install / rollback 均已接通
       </footer>
     </div>
 

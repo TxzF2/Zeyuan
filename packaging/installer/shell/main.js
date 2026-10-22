@@ -1,4 +1,4 @@
-﻿/**
+/**
  * dsh-training 安装器外壳 · 主进程（阶段二 · 第 1 步：接通 detect-node）
  * ---------------------------------------------------------------------------
  * 已接：runtime-info（只读）、detect-node（只读检测）、open-external（白名单外链）
@@ -19,6 +19,8 @@ const { runInstall, runRollback, runUninstall, getStatus, defaultTargetDir } = r
 
 /** QA 钩子：DSH_TRAINING_SELFTEST=1 时走自检（跑通 IPC → 截图 → 写报告 → 退出） */
 const SELFTEST = process.env.DSH_TRAINING_SELFTEST === '1'
+/** QA 钩子：DSH_TRAINING_SMOKE=1 时走冒烟测试（真实点击 UI：向导 → 安装 → LV0 协议页） */
+const SMOKE = process.env.DSH_TRAINING_SMOKE === '1'
 /** QA 钩子：把安装目标改到临时目录，避免自检污染真实安装 */
 const TARGET_DIR = process.env.DSH_TRAINING_TARGET_DIR || defaultTargetDir()
 /**
@@ -98,6 +100,129 @@ function createWindow() {
   })
 
   if (SELFTEST) win.webContents.once('did-finish-load', () => runSelfTest())
+  if (SMOKE) win.webContents.once('did-finish-load', () => runSmokeTest())
+}
+
+/** 轮询直到条件成立（渲染层异步渲染用） */
+async function pollUntil(check, { timeoutMs = 25000, intervalMs = 250 } = {}) {
+  const deadline = Date.now() + timeoutMs
+  let last
+  while (Date.now() < deadline) {
+    last = await check()
+    if (last?.ok) return last
+    await new Promise((r) => setTimeout(r, intervalMs))
+  }
+  return { ok: false, timeout: true, last }
+}
+
+/**
+ * 冒烟测试：模拟「新用户从启动向导到 LV0 协议页」的全路径，**走真实 UI 点击**。
+ * 判定结果写入 artifacts/qa/smoke-report.json，退出码 0=PASS / 1=FAIL。
+ * 由 scripts/smoke-test.mjs 调用，也可手动带环境变量启动 electron。
+ */
+async function runSmokeTest() {
+  const report = { mode: 'smoke', startedAt: new Date().toISOString(), steps: [], result: 'FAIL', targetDir: TARGET_DIR }
+  const step = (name, data, ok) => {
+    report.steps.push({ name, data, ok: ok ?? true })
+    console.log(`[smoke] ${ok === false ? '✖' : '✔'} ${name}`, JSON.stringify(data))
+  }
+  const js = (expr) => win.webContents.executeJavaScript(expr)
+
+  try {
+    // 1. 向导首屏
+    const shellInfo = await js(`({
+      steps: document.querySelectorAll('.step').length,
+      hasInstallBtn: !!document.getElementById('btn-install'),
+      title: document.querySelector('header h1')?.textContent ?? '',
+    })`)
+    step('向导首屏渲染', shellInfo, shellInfo.steps === 5 && shellInfo.hasInstallBtn)
+
+    // 2. 环境检测（页面加载即自动执行）
+    const env = await pollUntil(() =>
+      js(`(() => {
+        const c = document.getElementById('env-card')
+        if (!c || c.dataset.state === 'idle' || c.dataset.state === 'checking') return { ok: false }
+        return { ok: true, state: c.dataset.state,
+                 code: document.getElementById('env-code')?.textContent,
+                 pill: document.getElementById('env-pill')?.textContent }
+      })()`),
+    )
+    step('运行环境自动检测', env, env.ok === true && env.state === 'ok' && env.code === 'OK')
+
+    // 3. 板块默认勾选（新用户开箱默认）
+    const boards = await js(`(() => {
+      const boxes = [...document.querySelectorAll('label.board input[type="checkbox"]')]
+      return { total: boxes.length, checked: boxes.filter((b) => b.checked).length,
+               coreDisabled: !!boxes.find((b) => b.dataset.board === 'core')?.disabled }
+    })()`)
+    step('板块默认勾选', boards, boards.total === 5 && boards.coreDisabled === true && boards.checked === 4)
+
+    // 4. 新用户点「开始安装」
+    await js(`document.getElementById('btn-install').click(); true`)
+    const installed = await pollUntil(() =>
+      js(`(() => {
+        const meta = document.getElementById('install-meta')
+        const hint = document.getElementById('install-hint')
+        const text = meta?.hidden ? '' : (meta?.textContent ?? '')
+        if (!text.includes('已安装')) return { ok: false, hint: hint?.textContent }
+        return { ok: true, meta: text, hint: hint?.textContent }
+      })()`),
+    )
+    step('点击安装并完成', installed, installed.ok === true)
+
+    // 5. 落盘核验（主进程直接读文件系统，不信任 UI 自述）
+    const { pathsFor } = require('./lib/installer')
+    const P = pathsFor(TARGET_DIR)
+    const manifestPath = path.join(P.app, 'install-manifest.json')
+    const manifest = fs.existsSync(manifestPath) ? JSON.parse(fs.readFileSync(manifestPath, 'utf8')) : null
+    const version = readVersion()
+    const disk = {
+      appExists: fs.existsSync(P.app),
+      manifestVersion: manifest?.version ?? null,
+      expectedVersion: version,
+      fileCount: manifest?.files?.length ?? 0,
+      boards: manifest?.boards ?? [],
+    }
+    step(
+      '安装落盘核验',
+      disk,
+      disk.appExists && disk.manifestVersion === version && disk.fileCount >= 3 && disk.boards.includes('core'),
+    )
+
+    // 6. LV0 协议页入口（当前为占位，但入口与文案必须在）
+    const lv0 = await js(`(() => {
+      const s = document.getElementById('lv0-section')
+      const t = s?.textContent ?? ''
+      return { exists: !!s, hasLv0: t.includes('LV0'), hasLv1: t.includes('LV1'),
+               state: document.getElementById('lv0-state')?.textContent ?? '' }
+    })()`)
+    step('LV0 协议页入口', lv0, lv0.exists === true && lv0.hasLv0 === true && lv0.hasLv1 === true)
+
+    // 7. 截图留证
+    if (!fs.existsSync(ARTIFACTS_DIR)) fs.mkdirSync(ARTIFACTS_DIR, { recursive: true })
+    const image = await win.webContents.capturePage()
+    fs.writeFileSync(path.join(ARTIFACTS_DIR, 'smoke-wizard.png'), image.toPNG())
+    step('截图', 'artifacts/qa/smoke-wizard.png', true)
+
+    // 8. 测试后清理（避免占用真实安装位）
+    const un = await js(`window.dshTraining.uninstall()`)
+    step('测试后清理', { removed: un?.removedFiles, leftovers: un?.leftovers?.length ?? -1 }, un?.ok === true && (un?.leftovers?.length ?? 1) === 0)
+
+    report.result = report.steps.every((s) => s.ok) ? 'PASS' : 'FAIL'
+  } catch (err) {
+    step('异常', { message: err?.message ?? String(err) }, false)
+    report.result = 'FAIL'
+  } finally {
+    report.finishedAt = new Date().toISOString()
+    try {
+      if (!fs.existsSync(ARTIFACTS_DIR)) fs.mkdirSync(ARTIFACTS_DIR, { recursive: true })
+      fs.writeFileSync(path.join(ARTIFACTS_DIR, 'smoke-report.json'), JSON.stringify(report, null, 2) + '\n', 'utf8')
+    } catch (e) {
+      console.error('[smoke] 写报告失败', e.message)
+    }
+    console.log(`[smoke] RESULT=${report.result}`)
+    app.exit(report.result === 'PASS' ? 0 : 1)
+  }
 }
 
 /**

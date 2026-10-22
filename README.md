@@ -1,4 +1,4 @@
-# dsh-training · DSH Agent 培训班
+﻿# dsh-training · DSH Agent 培训班
 
 > 项目代号：**dsh-training** ｜ 风格：年轻时尚 · 极简主义 · 星辰特色（寻梦山海）
 
@@ -12,7 +12,7 @@
 dsh-training/
 ├─ plugins/                 # 全部功能板块（每个板块一个独立插件包）
 │  └─ dsh-training-protocol/   # LV0→LV1 协议授权占位插件（当前唯一板块）
-├─ packaging/               # 安装包工程（阶段一：骨架，不产出 exe/zip）
+├─ packaging/               # 安装包工程（阶段二 IPC 完工；仍不产出 exe/zip）
 │  ├─ distribution.json     # 版本唯一来源
 │  ├─ boards.json           # 板块唯一事实源（必装/可选/占位）
 │  ├─ boards/               # 9 个板块骨架（core + 3 角色 + 5 功能预览）
@@ -26,6 +26,8 @@ dsh-training/
 │  ├─ DSH 培训班环境部署手册.md
 │  ├─ 安装包构建说明.md      # 维护者用
 │  ├─ 下载者安装手册.md      # 学员用（零命令行）
+│  ├─ 验收与回退手册.md      # A1-A6 验收 + 故障注入 + 回退操作
+│  ├─ 发版测试报告模板.md    # 发版前逐项填写
 │  └─ backlog.md
 ├─ scripts/                 # 运维/验证脚本
 └─ README.md

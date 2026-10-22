@@ -360,6 +360,26 @@ Copy-Item "$env:USERPROFILE\.dsh\profiles\desktop\package.json.bak-before-dsh-tr
 | **A5** 板块可选装 | ⏳ 部分 | 向导已能勾选并写入清单 `boards`；写进 profile `bundles` 属于阶段三 |
 | **A6** 首次启动直达 LV0 | ⏳ 待阶段三 | 协议页文案与截图位已就绪 |
 
+#### 4.5.5 第 3 步 · 全路径冒烟测试（v0.2.0）
+
+命令：`node scripts/smoke-test.mjs`（拉起真实 Electron，走**真实 UI 点击**，非 mock）
+
+| 步骤 | 断言 | 实测 |
+|---|---|---|
+| 1 向导首屏渲染 | 5 个步骤 + 安装按钮存在 | ✅ `{"steps":5,"hasInstallBtn":true}` |
+| 2 运行环境自动检测 | 状态 ok、码 OK | ✅ `{"state":"ok","code":"OK"}` |
+| 3 板块默认勾选 | 5 项、默认勾 4、core 锁定 | ✅ `{"total":5,"checked":4,"coreDisabled":true}` |
+| 4 点击安装并完成 | 清单显示「已安装 v…」 | ✅ `已安装 v0.2.0 · 3 个文件` |
+| 5 安装落盘核验 | 主进程直读磁盘：版本/文件数/板块 | ✅ `manifestVersion=0.2.0, fileCount=3, boards=core+3` |
+| 6 LV0 协议页入口 | 区块存在且含 LV0/LV1 文案 | ✅ 存在（状态：占位） |
+| 7 截图留证 | `artifacts/qa/smoke-wizard.png` | ✅ |
+| 8 测试后清理 | 卸载后残留 0 | ✅ `removed=4, leftovers=0` |
+
+**结果：PASS（8/8），退出码 0。**
+
+> 注：4.5.2 里的 selftest 记录产生于产品 v0.1.0；升级到 v0.2.0 后复跑冒烟与自检均为 PASS。
+> 验收结论与回退步骤见《验收与回退手册》，发版前用《发版测试报告模板》填写。
+
 ---
 
 ## 五、Git 仓库
