@@ -1,4 +1,4 @@
-/**
+﻿/**
  * dsh-training 安装器外壳 · 主进程（阶段二 · 第 1 步：接通 detect-node）
  * ---------------------------------------------------------------------------
  * 已接：runtime-info（只读）、detect-node（只读检测）、open-external（白名单外链）
@@ -15,10 +15,51 @@ const { app, BrowserWindow, ipcMain, shell } = require('electron')
 const path = require('node:path')
 const fs = require('node:fs')
 const { detectRuntime } = require('./lib/detect-runtime')
+const { runInstall, runRollback, runUninstall, getStatus, defaultTargetDir } = require('./lib/installer')
 
 /** QA 钩子：DSH_TRAINING_SELFTEST=1 时走自检（跑通 IPC → 截图 → 写报告 → 退出） */
 const SELFTEST = process.env.DSH_TRAINING_SELFTEST === '1'
-const ARTIFACTS_DIR = path.join(__dirname, '..', '..', 'artifacts')
+/** QA 钩子：把安装目标改到临时目录，避免自检污染真实安装 */
+const TARGET_DIR = process.env.DSH_TRAINING_TARGET_DIR || defaultTargetDir()
+/**
+ * 自检产物目录。
+ * 注意：**必须与发布产物分开**——artifacts/ 根目录是 verify.mjs 扫描发布包的地方，
+ * 把 QA 截图丢进去会被判定为「文件名不合规的产物」（这个坑已踩过一次）。
+ */
+const ARTIFACTS_DIR = path.join(__dirname, '..', '..', 'artifacts', 'qa')
+/** shell 在 packaging/installer/shell，上两级才是 packaging/ */
+const PACKAGING_ROOT = path.join(__dirname, '..', '..')
+
+/**
+ * 阶段二第 2 步的安装载荷。
+ * 说明：**暂不装真实 DSH 运行时**（那是阶段三便携版的事）。当前装的是板块清单
+ * 与一个占位说明，目的是把「装配 → 校验 → 原子替换 → 回滚」这条链路跑通并留证。
+ * 阶段三只需把 buildPayload 换成真实运行时文件清单，流程无需改动。
+ */
+function buildPayload() {
+  const files = []
+  const add = (absPath, relPath) => {
+    if (fs.existsSync(absPath)) files.push({ path: relPath, sourcePath: absPath })
+  }
+  add(path.join(PACKAGING_ROOT, 'boards.json'), 'boards.json')
+  add(path.join(PACKAGING_ROOT, 'distribution.json'), 'distribution.json')
+  files.push({
+    path: 'STAGE2-PAYLOAD.md',
+    content:
+      '# 阶段二第 2 步 安装载荷（占位）\n\n' +
+      '本目录是「装配 → 校验 → 原子替换 → 回滚」链路的验证产物，**尚未包含真实 DSH 运行时**。\n' +
+      '阶段三把 buildPayload() 换成真实运行时文件清单即可，安装流程不变。\n',
+  })
+  return files
+}
+
+function readVersion() {
+  try {
+    return JSON.parse(fs.readFileSync(path.join(PACKAGING_ROOT, 'distribution.json'), 'utf8')).version
+  } catch {
+    return '0.0.0'
+  }
+}
 
 /** 允许从向导页打开的外链（加域名要在这里加，别在渲染层判断） */
 const ALLOWED_EXTERNAL = [/^https:\/\/nodejs\.org(\/|$)/i, /^https:\/\/npmmirror\.com(\/|$)/i]
@@ -61,7 +102,7 @@ function createWindow() {
 
 /**
  * 自检：在真实 Electron 里跑一遍「渲染进程 → preload → 主进程 IPC」链路，
- * 把结果写成 artifacts/selftest-report.json，并截一张真实渲染图。
+ * 把结果写成 artifacts/qa/selftest-report.json，并截一张真实渲染图。
  * 仅 QA 用（DSH_TRAINING_SELFTEST=1），不影响正常启动。
  */
 async function runSelfTest() {
@@ -88,6 +129,25 @@ async function runSelfTest() {
     const caps = await win.webContents.executeJavaScript('window.dshTraining.capabilities')
     step('capabilities', caps)
 
+    // 阶段二第 2 步：安装线 IPC 自检（需 DSH_TRAINING_SELFTEST_INSTALL=1，且目标目录指向临时目录）
+    let installOk = true
+    if (process.env.DSH_TRAINING_SELFTEST_INSTALL === '1') {
+      const install1 = await win.webContents.executeJavaScript('window.dshTraining.install({ boards: ["core"] })')
+      step('install#1（首次，无备份）', install1)
+      const install2 = await win.webContents.executeJavaScript(
+        'window.dshTraining.install({ boards: ["core","character-txzf"] })',
+      )
+      step('install#2（升级，产生备份）', install2)
+      const st1 = await win.webContents.executeJavaScript('window.dshTraining.status()')
+      step('status（升级后）', { installed: st1.installed, version: st1.manifest?.version, canRollback: st1.canRollback })
+      const rb = await win.webContents.executeJavaScript('window.dshTraining.rollback()')
+      step('rollback', rb)
+      const st2 = await win.webContents.executeJavaScript('window.dshTraining.status()')
+      step('status（回滚后）', { installed: st2.installed, version: st2.manifest?.version })
+      installOk = install1?.ok === true && install2?.ok === true && st1?.canRollback === true && rb?.ok === true && st2?.installed === true
+      report.installOk = installOk
+    }
+
     // UI 状态核对：卡片是否进入 ok 状态、安装按钮是否仍锁着（install 未接）
     const uiState = await win.webContents.executeJavaScript(`(() => {
       const card = document.getElementById('env-card')
@@ -111,10 +171,11 @@ async function runSelfTest() {
     const EXPECT = process.env.DSH_TRAINING_SELFTEST_EXPECT || 'OK'
     report.expect = EXPECT
 
-    // UI 断言：成功态要求「按钮仍锁着、下载页隐藏」；失败态要求「状态、下载页可见、按钮锁着」
+    // UI 断言：成功态要求「检测显示通过、安装按钮可点、下载页隐藏」；
+    // 失败态要求「状态等于错误码、下载页可见、安装按钮锁着」
     const uiOk =
       EXPECT === 'OK'
-        ? uiState?.state === 'ok' && uiState?.installDisabled === true && uiState?.downloadHidden === true
+        ? uiState?.state === 'ok' && uiState?.installDisabled === false && uiState?.downloadHidden === true
         : uiState?.state === EXPECT && uiState?.installDisabled === true && uiState?.downloadHidden === false
 
     const pass =
@@ -122,8 +183,9 @@ async function runSelfTest() {
       typeof info?.electron === 'string' &&
       denied?.ok === false &&
       caps?.detectNode === true &&
-      caps?.install === false &&
-      uiOk
+      caps?.install === true &&
+      uiOk &&
+      installOk
     report.result = pass ? 'PASS' : 'FAIL'
   } catch (err) {
     step('exception', { message: err?.message ?? String(err) })
@@ -174,8 +236,49 @@ ipcMain.handle('dsh-training:open-external', (_event, url) => {
   return { ok: true }
 })
 
-// TODO(阶段二第 2 步): 'dsh-training:install' 与 'dsh-training:rollback'
-//   staging 装配 → 校验 → 原子替换；失败自动回滚。rollback 作为 install 的子流程，不单独立项。
+// --- IPC：安装 / 回滚 / 状态（阶段二第 2 步）-------------------------------
+
+ipcMain.handle('dsh-training:status', () => getStatus({ targetDir: TARGET_DIR }))
+
+ipcMain.handle('dsh-training:install', async (event, opts = {}) => {
+  const boards = Array.isArray(opts.boards) ? opts.boards : []
+  try {
+    const result = await runInstall({
+      targetDir: TARGET_DIR,
+      payload: buildPayload(),
+      version: readVersion(),
+      boards,
+      onProgress: (p) => {
+        // 进度事件走独立通道，渲染层订阅即可
+        if (!event.sender.isDestroyed()) event.sender.send('dsh-training:install-progress', p)
+      },
+    })
+    return { ok: true, version: result.version, fileCount: result.fileCount, backupDir: result.backupDir, targetDir: TARGET_DIR }
+  } catch (err) {
+    console.error(`[install] 失败 code=${err.code} ${err.message}`)
+    return { ok: false, code: err.code ?? 'E-207', message: err.message }
+  }
+})
+
+ipcMain.handle('dsh-training:rollback', async () => {
+  try {
+    const result = await runRollback({ targetDir: TARGET_DIR })
+    return { ok: true, restoredFrom: result.restoredFrom }
+  } catch (err) {
+    console.error(`[rollback] 失败 code=${err.code} ${err.message}`)
+    return { ok: false, code: err.code ?? 'E-401', message: err.message }
+  }
+})
+
+ipcMain.handle('dsh-training:uninstall', async () => {
+  try {
+    return { ok: true, ...(await runUninstall({ targetDir: TARGET_DIR })) }
+  } catch (err) {
+    return { ok: false, code: err.code ?? 'E-303', message: err.message }
+  }
+})
+
+// TODO(阶段三): 代码签名、自动更新、控制面板板块增删
 
 app.whenReady().then(() => {
   createWindow()

@@ -1,4 +1,4 @@
-# packaging/ · dsh-training 安装包工程
+﻿# packaging/ · dsh-training 安装包工程
 
 > 给**维护者**看的入口。学员请看 [`../docs/下载者安装手册.md`](../docs/下载者安装手册.md)。
 
@@ -41,10 +41,10 @@ node scripts/scaffold-boards.mjs
 |---|---|---|
 | 一 | 骨架 + 文档，不出包 | ✅ 已完成 |
 | 二 · 第 1 步 | **运行环境检测接通**（IPC + 状态机 + E-101/E-102 真机复现） | ✅ 已完成 |
-| 二 · 第 2 步 | 安装线：staging 装配 → 校验 → 原子替换 → 回滚（A2 验收） | 待做 |
+| 二 · 第 2 步 | **安装线**：staging → 校验 → 原子替换 → 回滚（A2 验收） | ✅ 已完成 |
 | 三 | 安装器 exe + 签名 + 自动更新 + 板块增删 | 待做 |
 
-`build.mjs --stage 2|3` 在阶段一/二第 1 步仍会被**明确拒绝**（退出码 3），防止误产出成品。
+`build.mjs --stage 2|3` 仍会被**明确拒绝**（退出码 3）：安装线跑通了，但**出包还没做**，别把"能装"误解成"能发"。
 
 ### 三态自检（阶段二第 1 步的验收动作）
 
@@ -59,7 +59,7 @@ cd installer/shell
 # 失败态单独验：
 #   E-102 → $env:DSH_TRAINING_NODE_MIN="99.0.0"; $env:DSH_TRAINING_SELFTEST_EXPECT="E-102"
 #   E-101 → $env:Path="C:\Windows\System32";     $env:DSH_TRAINING_SELFTEST_EXPECT="E-101"
-# 截图落在 artifacts/selftest-wizard-<CODE>.png，报告在 artifacts/selftest-report.json
+# 截图落在 artifacts/qa/selftest-wizard-<CODE>.png，报告在 artifacts/qa/selftest-report.json
 ```
 
 ## 详细文档

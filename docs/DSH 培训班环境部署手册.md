@@ -1,4 +1,4 @@
-# 《DSH 培训班环境部署手册》
+﻿# 《DSH 培训班环境部署手册》
 
 | 项 | 内容 |
 |---|---|
@@ -282,6 +282,83 @@ Copy-Item "$env:USERPROFILE\.dsh\profiles\desktop\package.json.bak-before-dsh-tr
 `dsh plugin add` 期间 profile 内 pnpm（v11.7.0）输出 `Packages: +2 -33`，即**移除了 33 个包**。
 已抽查关键包仍在（`dshmarket`、`dsh-context`、`dsh-better-sidebar`、`@xmanrui/dsh-im`、`dsh-orb` 均存在）。
 若重启后出现插件缺失类报错，用 `dsh plugin --profile desktop install` 重新补齐，或还原上面的备份。
+
+### 4.5 阶段二测试记录（安装包工程）
+
+> 记录时间：2026-10-22 ｜ 环境：Windows x64 / Node 24.21.0 / pnpm 12.9.1 / Electron 45.0.0
+> 被测对象：`packaging/installer/shell`（Electron 壳 + 向导页 + 安装线）
+
+#### 4.5.1 第 1 步 · 运行环境检测（detect-node）
+
+| 用例 | 复现手法 | 期望 | 实测 |
+|---|---|---|---|
+| OK | 正常 PATH | `code=OK`，显示实际版本 | ✅ `OK / 24.21.0` |
+| E-101 缺 Node | `PATH` 只剩 `C:\Windows\System32`（node 真的不存在） | `E-101` + 中文提示 + 下载页按钮 | ✅ 文案「未检测到 Node 运行时…不会自动安装系统级组件」 |
+| E-102 版本过低 | `DSH_TRAINING_NODE_MIN=99.0.0` 抬高门槛 | `E-102` + 带真实版本号 | ✅「检测到 Node 24.21.0，低于最低要求 99.0.0」 |
+
+- 独立单测：`node packaging/scripts/test-detect-node.mjs` → **通过 14 项，失败 0**
+- Electron 真机自检：三态 **RESULT=PASS ×3**，实拍图 `packaging/artifacts/qa/selftest-wizard-{OK,E-101,E-102}.png`
+
+#### 4.5.2 第 2 步 · 安装线（staging → 校验 → 原子替换 → 回滚）
+
+**故障注入测试**：`node packaging/scripts/test-install-line.mjs` → **通过 40 项，失败 0**
+
+| # | 场景 | 关注点 | 结果 |
+|---|---|---|---|
+| 1 | 全新安装 | 文件数 / 清单 sha256 / 进度阶段 | ✅ 3 文件，清单含逐文件哈希 |
+| 2 | 升级安装 | 旧版进 `.backup`、staging 清空 | ✅ 备份 1 个，staging 0 |
+| 3 | 写盘失败注入 | `E-201` + 不留半成品 | ✅ `app` 不存在，staging 已清 |
+| 4 | 哈希不符注入 | `E-205` + **旧版本无损** | ✅ 内容与清单均未被污染 |
+| 5 | 装配后取消 | `E-206` + 清理 | ✅ 无残留 |
+| 6 | 备份后取消 | `E-206` + **旧版恢复** | ✅ 内容回到旧版，备份已移回 |
+| 7 | 回滚（A2 核心） | 内容回到上一版 | ✅ 0.2.0 → 0.1.0 |
+| 8 | 卸载 | 只删清单内文件 | ✅ 删 4 个（3 载荷 + 清单本身），残留 0 |
+| 9 | 无备份回滚 | `E-209` 可读中文 | ✅「没有可回滚的备份（这是第一次安装）」 |
+| 10 | 状态查询 | installed / version / canRollback | ✅ 三项均正确 |
+
+**Electron 真机自检（安装线 IPC）**：
+
+```
+[selftest] install#1（首次，无备份） {"ok":true,"version":"0.1.0","fileCount":3,"backupDir":null}
+[selftest] install#2（升级，产生备份） {"ok":true,"backupDir":"...\\.backup\\2026-10-22T13-08-15-380Z"}
+[selftest] status（升级后） {"installed":true,"version":"0.1.0","canRollback":true}
+[selftest] rollback {"ok":true,"restoredFrom":"2026-10-22T13-08-15-380Z"}
+[selftest] status（回滚后） {"installed":true,"version":"0.1.0"}
+[selftest] UI 状态 {"state":"ok","installDisabled":false,"downloadHidden":true}
+[selftest] RESULT=PASS
+```
+
+**安装后目录实测**：
+
+```
+<target>/
+├─ app/                      boards.json · distribution.json · STAGE2-PAYLOAD.md · install-manifest.json
+├─ .backup/<ts>/             （回滚后已移回，故为空）
+├─ .failed/<ts>/             回滚时踢出的坏版本（留证）
+├─ .staging/                 空
+└─ last-install.json         最近操作记录（install/rollback + 结果码）
+```
+
+#### 4.5.3 测试中发现并修掉的缺陷
+
+| # | 缺陷 | 表现 | 处置 |
+|---|---|---|---|
+| 1 | 卸载残留 | 卸载后 `install-manifest.json` 留下（清单只列被装文件，不含自己） | 卸载流程单独删清单 + 自底向上剪空目录 → 残留 0 |
+| 2 | 文案硬编码 | 底部提示固定 `22.19.0`，与抬门槛的检测结果矛盾 | 改为跟随 `result.minimum` |
+| 3 | `ELECTRON_RUN_AS_NODE=1` 污染 | DSH 环境带该变量，直接跑 electron 会当 Node 执行 → `ipcMain` undefined | 启动前清除该变量，已写入 README/构建说明 |
+| 4 | 自检断言过期 | 安装能力打开后「安装按钮应可点」，旧断言仍要求禁用 | 断言按能力表分支 |
+| 5 | 路径上溯错误 | `PACKAGING_ROOT` 多上溯一层 → 载荷只剩 1 个文件、版本读到 `0.0.0` | 修正为 `packaging/`，载荷恢复 3 文件、版本 0.1.0 |
+
+#### 4.5.4 验收对照
+
+| 验收项 | 状态 | 依据 |
+|---|---|---|
+| **A2** 任何一步失败可回滚 | ✅ 阶段二第 2 步达成 | 场景 3/4/5/6/7 全部验证；旧版本可启动（内容与清单未被污染） |
+| **A4** Node 缺失只提示不安装 | ✅ 阶段二第 1 步达成 | E-101 走真实 `ENOENT`；向导只给下载页与重试入口 |
+| **A1** 中文报错 + 重试入口 | ✅ 部分达成 | 错误码与文案齐备；「重试」按钮可用，「查看日志」留待阶段三 |
+| **A3** 零命令行 | ⏳ 待成品包 | 向导已全程 GUI，尚无成品可盲操验证 |
+| **A5** 板块可选装 | ⏳ 部分 | 向导已能勾选并写入清单 `boards`；写进 profile `bundles` 属于阶段三 |
+| **A6** 首次启动直达 LV0 | ⏳ 待阶段三 | 协议页文案与截图位已就绪 |
 
 ---
 

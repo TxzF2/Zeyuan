@@ -84,6 +84,9 @@
       #env-card[data-state="E-102"] .code-badge { color: var(--warn); }
       #env-card[data-state="ok"] .code-badge { color: var(--ok); }
       .meta { margin-top: 8px; font-size: 12px; color: var(--ink-dim); font-family: ui-monospace, Consolas, monospace; }
+      .progress { height: 8px; border-radius: 999px; background: #0d1424; border: 1px solid var(--line); overflow: hidden; margin-top: 12px; }
+      .progress > i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, var(--accent), var(--accent-2)); transition: width .25s ease; }
+      .ok-text { color: var(--ok); }
     </style>
   </head>
   <body>
@@ -134,35 +137,35 @@
       <section class="card">
         <h2>第 3 步 · 板块选择（可选装）</h2>
         <label class="board">
-          <input type="checkbox" checked disabled />
+          <input type="checkbox" checked disabled data-board="core" />
           <span>
             <span class="name">核心板块 · DSH 运行时 + 协议插件</span><span class="badge req">必装</span>
             <span class="desc">DSH 运行时 + dsh-training-protocol（LV0→LV1 协议授权），不可取消。</span>
           </span>
         </label>
         <label class="board">
-          <input type="checkbox" checked />
+          <input type="checkbox" checked data-board="character-txzf" />
           <span>
             <span class="name">角色板块 · 星辰（TxzF）</span><span class="badge">可选</span>
             <span class="desc">男性引导角色：开场引导、关卡提示、通关点评（资源占位待填）。</span>
           </span>
         </label>
         <label class="board">
-          <input type="checkbox" checked />
+          <input type="checkbox" checked data-board="character-changzhengji" />
           <span>
             <span class="name">角色板块 · 长征姬</span><span class="badge">可选</span>
             <span class="desc">长征主题高冷御姐：纪律考核、进度催办、错题复盘（资源占位待填）。</span>
           </span>
         </label>
         <label class="board">
-          <input type="checkbox" checked />
+          <input type="checkbox" checked data-board="theme-xingchen" />
           <span>
             <span class="name">角色板块 · 星辰主题色板</span><span class="badge">可选</span>
             <span class="desc">寻梦山海视觉 token：色彩/字体/间距/星屑动效（占位清单）。</span>
           </span>
         </label>
         <label class="board">
-          <input type="checkbox" />
+          <input type="checkbox" data-board="feature-taskboard,feature-workbench,feature-community,feature-console,feature-collab" />
           <span>
             <span class="name">功能预览 · 任务接发 / 工作台 / 社区 / 控制面板 / 协作分组</span><span class="badge pre">占位</span>
             <span class="desc">阶段三填充；控制面板将负责装后的板块增删。</span>
@@ -175,8 +178,14 @@
         <h2>第 4 步 · 安装</h2>
         <div class="row">
           <button id="btn-install" class="primary" disabled>开始安装</button>
-          <span class="hint" id="install-hint">安装线在阶段二第 2 步接入；环境检测通过后才可点。</span>
+          <button id="btn-cancel" hidden>取消安装</button>
+          <button id="btn-rollback" disabled title="没有可回滚的备份">回滚到上一版本</button>
+          <span class="hint" id="install-hint">环境检测通过后可安装。</span>
         </div>
+
+        <div class="progress" id="progress" hidden><i id="progress-bar"></i></div>
+        <div class="meta" id="install-meta" hidden></div>
+
         <p class="hint" style="margin-top: 10px">
           装配顺序：staging 装配 → 校验 → 原子替换；中途失败自动回滚，不影响已装版本。
         </p>
@@ -192,7 +201,7 @@
             <button id="btn-retry">重试</button>
             <button id="btn-err-download">打开 Node 下载页</button>
             <button disabled title="阶段三开放">查看日志</button>
-            <button disabled title="阶段二第 2 步接入">回滚到上一版本</button>
+            <button id="btn-rollback-err" disabled title="没有可回滚的备份">回滚到上一版本</button>
           </div>
         </div>
         <p class="hint" id="no-err-tip">当前没有错误。错误码表见《安装包构建说明.md》第 6 节。</p>
@@ -369,6 +378,133 @@
       if (api) runDetect();
       else if (mockName) runDetect();
       else render('idle');
+    </script>
+
+    <script>
+      // =====================================================================
+      // 安装 / 回滚流程（阶段二第 2 步）
+      //   install：staging → 校验 → 原子替换；失败自动回滚（核心逻辑在主进程）
+      //   回滚：恢复上一版本；没有备份时按钮禁用（不假装能点）
+      // =====================================================================
+      (function () {
+        const api = window.dshTraining;
+        const $ = (id) => document.getElementById(id);
+        const btnInstall = $('btn-install');
+        const btnCancel = $('btn-cancel');
+        const btnRollback = $('btn-rollback');
+        const btnRollbackErr = $('btn-rollback-err');
+        const progress = $('progress');
+        const bar = $('progress-bar');
+        const meta = $('install-meta');
+        const hint = $('install-hint');
+
+        let busy = false;
+
+        function showError(title, detail) {
+          $('live-err').hidden = false;
+          $('no-err-tip').hidden = true;
+          $('live-err-title').textContent = title;
+          $('live-err-detail').textContent = detail;
+        }
+
+        function selectedBoards() {
+          const boxes = document.querySelectorAll('label.board input[type="checkbox"]');
+          const ids = [];
+          for (const b of boxes) {
+            if (!b.checked) continue;
+            for (const id of (b.dataset.board || '').split(',')) if (id) ids.push(id);
+          }
+          return ids;
+        }
+
+        async function refreshStatus() {
+          if (!api) return null;
+          try {
+            const s = await api.status();
+            const can = !!s.canRollback && !busy;
+            btnRollback.disabled = !can;
+            btnRollbackErr.disabled = !can;
+            btnRollback.title = s.canRollback ? '恢复到上一版本' : '没有可回滚的备份';
+            if (s.installed && s.manifest) {
+              meta.hidden = false;
+              meta.textContent = `已安装 v${s.manifest.version} · ${s.manifest.files.length} 个文件 · ${s.manifest.installedAt}`;
+            } else {
+              meta.hidden = true;
+            }
+            return s;
+          } catch {
+            return null;
+          }
+        }
+
+        async function doInstall() {
+          if (!api || busy) return;
+          busy = true;
+          btnInstall.disabled = true;
+          btnCancel.hidden = false;
+          progress.hidden = false;
+          bar.style.width = '0%';
+          hint.textContent = '开始安装…';
+          showError(false);
+
+          const off = api.onInstallProgress((p) => {
+            bar.style.width = `${p.percent}%`;
+            hint.textContent = `${p.percent}% · ${p.message}`;
+          });
+
+          try {
+            const res = await api.install({ boards: selectedBoards() });
+            if (res.ok) {
+              bar.style.width = '100%';
+              hint.textContent = `安装完成：v${res.version}，${res.fileCount} 个文件 → ${res.targetDir}`;
+              $('step-env').classList.add('done');
+              setTimeout(() => refreshStatus(), 100);
+            } else {
+              hint.textContent = `安装失败：${res.code}`;
+              showError('安装未完成', `错误码 ${res.code} ｜ ${res.message}`);
+            }
+          } catch (err) {
+            hint.textContent = '安装异常';
+            showError('安装未完成', `E-207 ｜ ${err?.message ?? err}`);
+          } finally {
+            off();
+            busy = false;
+            btnCancel.hidden = true;
+            btnInstall.disabled = false;
+            refreshStatus();
+          }
+        }
+
+        async function doRollback() {
+          if (!api || busy) return;
+          busy = true;
+          btnRollback.disabled = true;
+          hint.textContent = '正在回滚…';
+          try {
+            const res = await api.rollback();
+            if (res.ok) {
+              hint.textContent = `已回滚到 ${res.restoredFrom} 之前的版本`;
+              showError(false);
+            } else {
+              showError('回滚未完成', `错误码 ${res.code} ｜ ${res.message}`);
+            }
+          } finally {
+            busy = false;
+            refreshStatus();
+          }
+        }
+
+        if (api) {
+          btnInstall.addEventListener('click', doInstall);
+          btnRollback.addEventListener('click', doRollback);
+          btnRollbackErr.addEventListener('click', doRollback);
+          btnCancel.addEventListener('click', () => {
+            // 阶段三接 AbortSignal 真取消；当前只提示
+            hint.textContent = '当前版本的取消为「装配结束后放弃」，请稍候。';
+          });
+          refreshStatus();
+        }
+      })();
     </script>
   </body>
 </html>
