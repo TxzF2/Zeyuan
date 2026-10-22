@@ -71,7 +71,7 @@ export function apply(ctx: Context) {
       (AGENTS_CONFIG.length === 0 ? '（列表暂缺，待 src/agents.config.ts 补充）' : ''),
   )
   for (const issue of issues) {
-    console.warn(`[dsh-training-protocol] agents config issue @ ${issue.path}: ${issue.message}`)
+    console.warn(`[dsh-training-protocol] agents config issue @ agents[${issue.index}].${issue.field}: ${issue.message}`)
   }
 
   // ③ 等级闸门占位：将来订阅协议签发模块的授权事件。

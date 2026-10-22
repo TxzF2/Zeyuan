@@ -3,8 +3,8 @@
 | 项 | 内容 |
 |---|---|
 | 项目代号 | dsh-training（DSH Agent 培训班） |
-| 文档版本 | **v1.1** |
-| 生成时间 | 2026-10-22 20:05（本机部署会话） |
+| 文档版本 | **v1.1（rev.2）** |
+| 生成时间 | 2026-10-22 20:20（本机部署会话） |
 | 执行身份 | DSH 环境配置代理 |
 | 部署根目录 | `C:\Users\29496\.dsh\plugin-sources\dsh-training` |
 | DSH_HOME | `C:\Users\29496\.dsh` |
@@ -21,6 +21,9 @@
 | 装载验证口径修正 | desktop profile **CLI 无法 boot/dump**（官方明确拒绝），改以 cordis loader 级 + 模块级双验证留证 |
 | 新增 agent 配置位 | `src/agents.config.ts`（列表暂缺，配置驱动） |
 | dsh-open-in-vscode | 按决策**关闭**，记录移至 `docs/backlog.md`（D-001） |
+| 项目 Git 定稿（rev.2） | 你手装的 **Git 2.56.0.windows.2 @ `D:\Git`** 生效；代理的 PortableGit shim 已删除 |
+| agent 字段口径（rev.2） | 按指令改为 **`name` / `source` / `role`**，并新增自测脚本 `scripts/check-agents-config.mjs` |
+| 重名策略修正（rev.2） | 自测发现「重名只拦后一条」缺陷 → 改为**同名整组剔除** |
 
 ---
 
@@ -47,7 +50,7 @@
 |---|---|---|---|
 | Node.js | ≥ 22.19.0 | **v24.21.0**（`D:\node.exe`） | ✅ |
 | pnpm | 可用 | **12.9.1** | ✅ |
-| Git | 可用 | **2.55.0.windows.5**（PortableGit，`where git` → `...\Roaming\npm\git.cmd`） | ✅ |
+| Git | 可用 | **2.56.0.windows.2**（`D:\Git\cmd\git.exe`，你手装；winget 记录 `Git.Git 2.56.0.2`） | ✅ |
 | VS Code | — | 未安装（用户侧另行处理） | 不阻塞 |
 | winget | — | 1.29.380 可执行，但**安装器下载功能故障**（见 2.2） | ⚠️ |
 | 管理员权限 | 装 Program Files 需要 | **无**（当前会话非管理员） | 限制条件 |
@@ -77,8 +80,13 @@ https://registry.npmmirror.com/-/binary/git-for-windows/v2.55.0.windows.5/Portab
 PortableGit-2.55.0.5-64-bit.7z.exe -o"C:\Users\29496\AppData\Local\Programs\PortableGit" -y
 ```
 
-**PATH 接入**：写入 shim `C:\Users\29496\AppData\Roaming\npm\git.cmd`（该目录已在 PATH 上，
-`where git` 输出即此文件）。不修改系统/用户 PATH 注册表，回滚只需删 shim 与目录。
+**PATH 接入（临时方案，已被 rev.2 取代）**：当时写入 shim
+`C:\Users\29496\AppData\Roaming\npm\git.cmd` 指向 PortableGit，未改注册表 PATH。
+
+> **rev.2 更新 · Git 定稿**：你已手动安装 Git 到 **`D:\Git`**（winget 记录 `Git.Git 2.56.0.2`），
+> 实测 `git version 2.56.0.windows.2`。代理已**删除自己的 shim**（备份 `git.cmd.bak-portablegit`），
+> 当前 `where git` → `D:\Git\cmd\git.exe`。PortableGit 目录 `%LOCALAPPDATA%\Programs\PortableGit`
+> 可随时删除（约 59 MB），不影响仓库。
 
 > ⚠️ 副作用披露：为排查 winget 故障，写入过
 > `%LOCALAPPDATA%\Packages\Microsoft.DesktopAppInstaller_8wekyb3d8bbwe\LocalState\settings.json`
@@ -117,7 +125,8 @@ dsh-training/
 ├─ scripts/
 │  ├─ probe-vscode-integration.mjs  # 【已关闭】历史证据，不再执行
 │  ├─ smoke-mount.mjs               # 【新增】模块级挂载 + 卸载验证
-│  └─ verify-cordis-mount.mjs       # 【新增】cordis loader 级挂载验证
+│  ├─ verify-cordis-mount.mjs       # 【新增】cordis loader 级挂载验证
+│  └─ check-agents-config.mjs       # 【rev.2】agents 配置结构双向自测（8 项断言）
 ├─ README.md
 └─ .gitignore
 ```
@@ -139,10 +148,27 @@ dsh-training/
 文件：`plugins/dsh-training-protocol/src/agents.config.ts`
 
 - `AGENTS_CONFIG: readonly AgentAdapterConfig[] = []` —— **当前为空，等你补充**；
-- 结构字段：`id / displayName / kind('llm'|'mcp'|'plugin'|'custom') / enabled / endpoint? / model? / roles? / capabilities? / notes?`；
-- 附带纯函数 `validateAgents()`（id 格式、重复、kind 枚举、llm 必须有 model 或 endpoint、
-  未知 role/capability、**notes 中疑似密钥拦截**）与 `loadEnabledAgents()`（非法条目剔除而非抛异常）；
+- 结构字段（按 1.1 指令口径）：
+  | 字段 | 必填 | 说明 |
+  |---|---|---|
+  | `name` | ✅ | 展示名，同时是唯一标识（非空、不重复） |
+  | `source` | ✅ | 来源，三种形态：npm 包名 / `mcp:<server>` / `https://…` |
+  | `role` | ✅ | `guide`（引导）/ `trainer`（陪练）/ `reviewer`（复盘）/ `evaluator`（评分） |
+  | `enabled` | ➖ | 默认 true；未确认可用的 agent 请显式写 `false` |
+  | `note` | ➖ | 备注；**疑似密钥内容会被校验拦截** |
+- 配套纯函数：`validateAgents()`（name 空/重复、source 形态、role 枚举、enabled 类型、
+  note 疑似密钥）与 `loadEnabledAgents()`（非法条目剔除而非抛异常）；
+- **重名策略**：`name` 重复视为配置歧义，**同名条目整组剔除**（不静默保留第一条）；
 - 空数组是合法状态：挂载日志打印 `agents: enabled=0/0（列表暂缺…）`，不报错。
+
+**结构自测**（已实跑，8 项断言全过）：
+
+```powershell
+node scripts\check-agents-config.mjs     # 退出码 0
+```
+
+覆盖：空配置零报错 → 三种 source 形态合法通过 → `enabled:false` 被过滤 →
+name 空/重名/source 非法/role 非法/note 带密钥 五类非法样例全部拦住。
 
 **补充步骤**：只改数组 → `pnpm build` → 重启 DSH 生效。不需要动任何分支逻辑。
 
@@ -170,6 +196,23 @@ dsh plugin --profile desktop add ./dsh-training-protocol
 
 > **关键坑**：`dsh plugin add` 只写 `dependencies`，**不写 `dsh.profile.bundles`**。
 > 不写 bundles，cordis 组合树里就没有这一层，插件永远不会被加载。
+
+#### 无中断验证 · 依赖清单实查（rev.2，桌面端运行中）
+
+按你的要求，桌面端在运行时**不重启、不中断**，直接查 profile 依赖清单确认真实状态：
+
+| 检查点 | 命令/位置 | 实测结果 |
+|---|---|---|
+| 依赖声明 | `profiles/desktop/package.json` 第 16 行 | ✅ `"dsh-training-protocol": "link:C:/Users/29496/.dsh/plugin-sources/dsh-training/plugins/dsh-training-protocol"` |
+| bundle 注册 | 同文件第 40 行（`dsh.profile.bundles`） | ✅ 列表末项为 `"dsh-training-protocol"` |
+| 安装链接有效性 | `profiles/desktop/node_modules/dsh-training-protocol/dist/index.js` | ✅ 存在（`True`），`link:` 已指向构建产物 |
+| 应用侧是否已重写配置 | 复查 package.json 后 | ✅ 两条记录仍在（未被应用回滚） |
+
+即：**插件已在 desktop profile 的依赖清单与组合层中注册完毕**，
+`link:` 目标可解析到最新构建产物（`dist/agents.config.js` 4152 B / `index.js` 3086 B / `protocol-level.js` 2379 B）。
+
+> 注：DSH 桌面端在运行时不会重新执行已加载的 bundle 列表，因此「进程内挂载日志」
+> 仍需一次应用重启才会打印（见下节）。依赖清单级验证已按你的要求完成。
 
 #### ⚠️ 无法按原计划「`dsh --profile desktop` 启动观察日志」
 
@@ -299,6 +342,8 @@ Remove-Item "$env:APPDATA\npm\git.cmd"
 | P2 | `characters/`、`assets/themes/` 落内容 | 星辰 TxzF / 长征姬设定卡；寻梦山海主题 token |
 | P2 | 根级 pnpm workspace | 板块变多后统一安装与构建 |
 | P3 | 工作台内嵌编辑器 | 见 backlog D-001 的立项条件 |
+| P3 | 清理 PortableGit 残留（≈59 MB） | 已无用：删 `%LOCALAPPDATA%\Programs\PortableGit` 与 `%APPDATA%\npm\git.cmd.bak-portablegit` |
+| P3 | 把仓库提交身份改成本人 | 当前是 `dsh-training-agent <dsh-training@localhost>`（仓库级，非全局） |
 
 ---
 
