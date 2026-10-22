@@ -19,7 +19,7 @@
  */
 
 import { spawn } from "node:child_process";
-import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -71,7 +71,14 @@ try {
 }
 
 const targetDir = mkdtempSync(join(tmpdir(), "dsh-training-smoke-"));
-const env = { ...process.env, DSH_TRAINING_SMOKE: "1", DSH_TRAINING_TARGET_DIR: targetDir };
+// 临时 profile：冒烟会触发 profile 接入，绝不能落到真实 desktop profile 上
+const profileDir = mkdtempSync(join(tmpdir(), "dsh-training-smoke-profile-"));
+writeFileSync(
+  join(profileDir, "package.json"),
+  JSON.stringify({ name: "dsh-profile-smoke", private: true, dependencies: {}, dsh: { profile: { bundles: ["@deepseek-ai/dsh-base"] } } }, null, 2) + "\n",
+  "utf8",
+);
+const env = { ...process.env, DSH_TRAINING_SMOKE: "1", DSH_TRAINING_TARGET_DIR: targetDir, DSH_TRAINING_PROFILE_DIR: profileDir };
 // 关键：DSH 环境默认带这个变量，会让 electron.exe 当 Node 跑（ipcMain undefined）
 delete env.ELECTRON_RUN_AS_NODE;
 delete env.DSH_TRAINING_SELFTEST;
@@ -114,7 +121,7 @@ child.on("exit", (code) => {
     }
   }
 
-  if (!keep) rmSync(targetDir, { recursive: true, force: true });
+  if (!keep) { rmSync(targetDir, { recursive: true, force: true }); rmSync(profileDir, { recursive: true, force: true }); }
 
   if (timedOut) {
     console.error(`\n❌ 冒烟超时（${timeoutMs} ms），已终止 Electron`);

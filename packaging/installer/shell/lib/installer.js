@@ -29,6 +29,7 @@ const fsp = require('node:fs/promises')
 const os = require('node:os')
 const path = require('node:path')
 const crypto = require('node:crypto')
+const profileWire = require('./profile-wire')
 
 const LAYOUT = {
   app: 'app',
@@ -164,6 +165,8 @@ async function runInstall(opts) {
     onProgress = () => {},
     faults = {},
     signal,
+    /** { profileDir, packageName, linkPath } —— 把核心板块接进 DSH profile（外部副作用，随安装事务一起回滚） */
+    profileWire: wireOpt = null,
   } = opts
 
   const P = pathsFor(targetDir)
@@ -172,6 +175,7 @@ async function runInstall(opts) {
   let backupDir = null
   let movedAppToBackup = false
   let committed = false
+  let wiredOk = false
 
   const emit = (phase, percent, message) => {
     try {
@@ -259,6 +263,15 @@ async function runInstall(opts) {
     await fsp.rename(stagingDir, P.app)
     committed = true
 
+    // ---- 5.5 把核心板块接进 DSH profile（外部副作用）----
+    let wireResult = null
+    if (wireOpt) {
+      emit('wire', 92, '把核心板块接入 DSH profile')
+      wireResult = profileWire.wire(wireOpt)
+      wiredOk = true
+      emit('wire', 96, wireResult.changed ? 'profile 已更新（依赖 + bundles）' : 'profile 已是目标状态（幂等跳过）')
+    }
+
     // ---- 6. manifest（写在 app 内，跟随版本一起回滚）----
     const manifest = {
       product: 'dsh-training',
@@ -268,6 +281,18 @@ async function runInstall(opts) {
       stagingId: ts,
       backupDir: backupDir ? path.relative(P.root, backupDir) : null,
       files,
+      externalWrites: wireResult
+        ? [
+            {
+              type: 'profile-wire',
+              profileDir: wireOpt.profileDir,
+              packageName: wireOpt.packageName,
+              depSpec: wireResult.depSpec,
+              backup: wireResult.backup,
+              changed: wireResult.changed,
+            },
+          ]
+        : [],
     }
     await fsp.writeFile(path.join(P.app, LAYOUT.manifest), JSON.stringify(manifest, null, 2) + '\n', 'utf8')
     emit('finish', 100, `安装完成：v${version}`)
@@ -297,13 +322,22 @@ async function runInstall(opts) {
       }
     }
     if (committed) {
-      // 已经替换成功但写清单失败：把坏版本踢到 .failed，恢复备份
+      // 已经替换成功但后续步骤失败：把坏版本踢到 .failed，恢复备份
       try {
         const bad = path.join(P.failedRoot, ts)
         await fsp.rename(P.app, bad)
         if (backupDir && (await exists(backupDir))) await fsp.rename(backupDir, P.app)
       } catch {
         /* 同上 */
+      }
+    }
+    // 外部副作用也要撤回，否则会留下「装了又回滚、profile 里还有条目」的脏状态
+    if (wiredOk && wireOpt) {
+      try {
+        profileWire.unwire(wireOpt)
+        emit('rollback', 50, 'profile 写入已撤回')
+      } catch (unwireErr) {
+        console.error('[install] 回滚时撤回 profile 失败：', unwireErr.message)
       }
     }
     await fsp
@@ -315,6 +349,10 @@ async function runInstall(opts) {
       .catch(() => {})
 
     if (err instanceof InstallError) throw err
+    // profile 写入类错误要原样透出（E-50x），不能被兜底成 E-207
+    if (err && err.name === "ProfileWireError") {
+      throw new InstallError(err.code, err.message, err.detail ?? null)
+    }
     throw new InstallError(mapFsError(err), `安装失败：${describeFsError(err)}`, { raw: err?.message })
   }
 }
@@ -392,7 +430,20 @@ async function runUninstall({ targetDir = defaultTargetDir() } = {}) {
 
   await pruneEmptyDirs(P.app)
   const leftovers = await listFiles(P.app).catch(() => [])
-  return { ok: true, removedFiles: removed, leftovers }
+
+  // 撤回装机清单里记录的外部副作用（profile 写入）
+  const unwired = []
+  for (const w of manifest.externalWrites ?? []) {
+    if (w.type !== "profile-wire") continue
+    try {
+      const r = profileWire.unwire({ profileDir: w.profileDir, packageName: w.packageName })
+      unwired.push({ profileDir: w.profileDir, packageName: w.packageName, changed: r.changed })
+    } catch (err) {
+      unwired.push({ profileDir: w.profileDir, packageName: w.packageName, error: err.message, code: err.code ?? null })
+    }
+  }
+
+  return { ok: true, removedFiles: removed, leftovers, unwired }
 }
 
 /** 查询当前安装状态（向导首屏用） */

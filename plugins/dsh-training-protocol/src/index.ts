@@ -5,6 +5,9 @@
 // 等协议签发模块（后续独立板块）落地后再接线。故意不假装已经能授权。
 //
 import type { Context } from '@deepseek-ai/cordis'
+import { mkdirSync, writeFileSync } from 'node:fs'
+import { dirname, join } from 'node:path'
+import { tmpdir } from 'node:os'
 import { AGENTS_CONFIG, loadEnabledAgents } from './agents.config.js'
 import {
   LEVEL_GATE,
@@ -17,6 +20,45 @@ import {
 
 // 插件显示名（loader 诊断里看到的那个）
 export const name = 'dsh-training-protocol'
+
+/** 版本号（改写放行判定或动作时同步更新，便于 mount-state 对照） */
+export const VERSION = '0.2.0'
+
+/**
+ * 挂载标记：桌面端 profile 由 Electron 独占，CLI 无法 boot/dump，
+ * 控制台日志也拿不到。所以在 apply() 时落一个文件，
+ * 供「重启后离线核验插件是否真的被加载」——验收项 A5 的进程级证据。
+ *
+ * 目录优先级：DSH_TRAINING_STATE_DIR > %LOCALAPPDATA%\dsh-training > 临时目录
+ */
+export function mountStatePath(): string {
+  const explicit = process.env.DSH_TRAINING_STATE_DIR
+  const base = explicit
+    ? explicit
+    : process.env.LOCALAPPDATA
+      ? join(process.env.LOCALAPPDATA, 'dsh-training')
+      : join(tmpdir(), 'dsh-training')
+  return join(base, 'mount-state.json')
+}
+
+function writeMountState(payload: Record<string, unknown>): void {
+  try {
+    const p = mountStatePath()
+    mkdirSync(dirname(p), { recursive: true })
+    writeFileSync(
+      p,
+      JSON.stringify(
+        { plugin: name, version: VERSION, at: new Date().toISOString(), pid: process.pid, ...payload },
+        null,
+        2,
+      ) + '\n',
+      'utf8',
+    )
+  } catch (err) {
+    // 写标记失败绝不影响插件本身
+    console.warn(`[dsh-training-protocol] 写挂载标记失败（不影响运行）：${(err as Error).message}`)
+  }
+}
 
 /** 运行时状态（占位：仅进程内存，不落盘、不参与持久化） */
 export interface ProtocolState {
@@ -74,6 +116,9 @@ export function apply(ctx: Context) {
     console.warn(`[dsh-training-protocol] agents config issue @ agents[${issue.index}].${issue.field}: ${issue.message}`)
   }
 
+  // ②b 落挂载标记（A5 进程级证据：重启后读这个文件即可判定"真的被加载了"）
+  writeMountState({ event: 'mounted', level: state.level, agentsEnabled: agents.length, host: process.versions.electron ? 'electron' : 'node' })
+
   // ③ 等级闸门占位：将来订阅协议签发模块的授权事件。
   //    现在只登记一个空 effect，证明「可挂载 / 可卸载」闭环成立。
   ctx.effect(() => {
@@ -88,7 +133,10 @@ export function apply(ctx: Context) {
 
   // ④ 可逆清理证明：卸载插件时应看到这一行。
   ctx.effect(
-    () => () => console.log('[dsh-training-protocol] DISPOSED — listeners removed, nothing left behind'),
+    () => () => {
+      writeMountState({ event: 'unmounted', level: state.level })
+      console.log('[dsh-training-protocol] DISPOSED — listeners removed, nothing left behind')
+    },
   )
 
   console.log(

@@ -184,6 +184,55 @@ try {
   await runInstall({ targetDir: t10, payload: payloadV("0.2.0"), version: "0.2.0" });
   const s2 = await getStatus({ targetDir: t10 });
   check("升级后 canRollback", s2.canRollback, true);
+  // ---------------- 11. profile 接入（A5 的安装器侧）----------------
+  console.log("\n=== 11 · profile 接入与撤回 ===");
+  const t11 = freshRoot("profile-wire");
+  const prof11 = join(t11, "fake-profile");
+  const fsMod = await import("node:fs");
+  fsMod.mkdirSync(prof11, { recursive: true });
+  fsMod.writeFileSync(join(prof11, "package.json"), JSON.stringify({ name: "p", dependencies: {}, dsh: { profile: { bundles: ["@deepseek-ai/dsh-base"] } } }, null, 2) + "\n");
+
+  const r11 = await runInstall({
+    targetDir: join(t11, "target"),
+    payload: payloadV("0.1.0"),
+    version: "0.1.0",
+    boards: ["core"],
+    profileWire: { profileDir: prof11, packageName: "dsh-training-protocol", linkPath: "C:/x/plugins/dsh-training-protocol" },
+  });
+  check("安装 ok（含 wire）", r11.ok, true);
+  check("清单记录外部写入", r11.manifest.externalWrites.length, 1);
+  const pj11 = JSON.parse(readFileSync(join(prof11, "package.json"), "utf8"));
+  check("profile dependencies 已写", typeof pj11.dependencies["dsh-training-protocol"], "string");
+  check("profile bundles 已写", pj11.dsh.profile.bundles.includes("dsh-training-protocol"), true);
+  check("原有 bundle 保留", pj11.dsh.profile.bundles.includes("@deepseek-ai/dsh-base"), true);
+
+  const un11 = await runUninstall({ targetDir: join(t11, "target") });
+  check("卸载撤回 profile（1 条）", un11.unwired.length, 1);
+  const pj11b = JSON.parse(readFileSync(join(prof11, "package.json"), "utf8"));
+  check("卸载后 dependencies 已清", Object.prototype.hasOwnProperty.call(pj11b.dependencies, "dsh-training-protocol"), false);
+  check("卸载后 bundles 已清", pj11b.dsh.profile.bundles.includes("dsh-training-protocol"), false);
+
+  // 11b：profile JSON 损坏时安装必须整体失败且目标回滚
+  console.log("\n=== 11b · profile 损坏 → 安装整体回滚 ===");
+  const t11b = freshRoot("profile-broken");
+  const prof11b = join(t11b, "fake-profile");
+  fsMod.mkdirSync(prof11b, { recursive: true });
+  const brokenRaw = '{"name":"p", "dependencies":{ ,}}';
+  fsMod.writeFileSync(join(prof11b, "package.json"), brokenRaw);
+  await expectError(
+    "profile 损坏",
+    () =>
+      runInstall({
+        targetDir: join(t11b, "target"),
+        payload: payloadV("0.1.0"),
+        version: "0.1.0",
+        profileWire: { profileDir: prof11b, packageName: "dsh-training-protocol", linkPath: "C:/x" },
+      }),
+    "E-502",
+  );
+  check("失败后 app 未留下（整体回滚）", existsSync(pathsFor(join(t11b, "target")).app), false);
+  check("profile 原文未被改坏", readFileSync(join(prof11b, "package.json"), "utf8"), brokenRaw);
+
 } finally {
   for (const r of roots) rmSync(r, { recursive: true, force: true });
 }

@@ -15,6 +15,7 @@ const { app, BrowserWindow, ipcMain, shell } = require('electron')
 const path = require('node:path')
 const fs = require('node:fs')
 const { detectRuntime } = require('./lib/detect-runtime')
+const os = require('node:os')
 const { runInstall, runRollback, runUninstall, getStatus, defaultTargetDir } = require('./lib/installer')
 
 /** QA 钩子：DSH_TRAINING_SELFTEST=1 时走自检（跑通 IPC → 截图 → 写报告 → 退出） */
@@ -31,6 +32,14 @@ const TARGET_DIR = process.env.DSH_TRAINING_TARGET_DIR || defaultTargetDir()
 const ARTIFACTS_DIR = path.join(__dirname, '..', '..', 'artifacts', 'qa')
 /** shell 在 packaging/installer/shell，上两级才是 packaging/ */
 const PACKAGING_ROOT = path.join(__dirname, '..', '..')
+/** 要接入的 DSH profile（默认 desktop；自检用 env 指到临时目录，避免污染真实配置） */
+const PROFILE_DIR =
+  process.env.DSH_TRAINING_PROFILE_DIR ||
+  path.join(process.env.DSH_HOME || path.join(os.homedir(), '.dsh'), 'profiles', 'desktop')
+/** 核心板块对应的插件目录（link: 的目标） */
+const PLUGIN_DIR = path.join(PACKAGING_ROOT, '..', 'plugins', 'dsh-training-protocol')
+/** 插件包名（写进 dependencies 与 dsh.profile.bundles 的那个 key） */
+const CORE_PLUGIN_NAME = 'dsh-training-protocol'
 
 /**
  * 阶段二第 2 步的安装载荷。
@@ -373,12 +382,13 @@ ipcMain.handle('dsh-training:install', async (event, opts = {}) => {
       payload: buildPayload(),
       version: readVersion(),
       boards,
+      profileWire: { profileDir: PROFILE_DIR, packageName: CORE_PLUGIN_NAME, linkPath: PLUGIN_DIR },
       onProgress: (p) => {
         // 进度事件走独立通道，渲染层订阅即可
         if (!event.sender.isDestroyed()) event.sender.send('dsh-training:install-progress', p)
       },
     })
-    return { ok: true, version: result.version, fileCount: result.fileCount, backupDir: result.backupDir, targetDir: TARGET_DIR }
+    return { ok: true, version: result.version, fileCount: result.fileCount, backupDir: result.backupDir, targetDir: TARGET_DIR, externalWrites: result.manifest?.externalWrites ?? [] }
   } catch (err) {
     console.error(`[install] 失败 code=${err.code} ${err.message}`)
     return { ok: false, code: err.code ?? 'E-207', message: err.message }

@@ -16,12 +16,18 @@
  */
 
 import { pathToFileURL } from "node:url";
-import { dirname, resolve } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { tmpdir } from "node:os";
 import { existsSync } from "node:fs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const PLUGIN_DIR = resolve(HERE, "..", "plugins", "dsh-training-protocol");
+
+// 关键：本测试也在 Node 里挂载插件，会把 mount-state.json 写出来。
+// 若写进生产目录，就会污染 verify-a5 的 L3 证据（把 Node 侧挂载误当成应用内挂载）。
+// 因此强制写到临时目录，并以 host='node' 标记区分。
+process.env.DSH_TRAINING_STATE_DIR = join(tmpdir(), `dsh-cordis-mount-${process.pid}`);
 const ENTRY = resolve(PLUGIN_DIR, "dist", "index.js");
 
 // cordis 装在插件自己的 node_modules 里（本脚本在项目根，根目录没有依赖），
