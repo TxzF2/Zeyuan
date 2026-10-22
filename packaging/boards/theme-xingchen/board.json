@@ -1,0 +1,19 @@
+{
+  "id": "theme-xingchen",
+  "displayName": "角色板块 · 星辰主题色板",
+  "kind": "optional",
+  "status": "placeholder",
+  "dependsOn": [
+    "core"
+  ],
+  "defaultSelected": true,
+  "install": {
+    "target": "assets/themes/xingchen",
+    "mode": "copy"
+  },
+  "contents": [
+    "（占位）待阶段三填充实际产物"
+  ],
+  "placeholderNote": "阶段一仅骨架：本板块不产真实文件，勾选与否都不影响核心功能。",
+  "assetManifest": "asset-manifest.json"
+}

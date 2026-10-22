@@ -9,6 +9,10 @@ node_modules/
 dist/
 *.tsbuildinfo
 
+# 安装包产物（构建输出与哈希清单不入库）
+packaging/artifacts/*
+!packaging/artifacts/.gitkeep
+
 # 日志与临时文件
 *.log
 npm-debug.log*

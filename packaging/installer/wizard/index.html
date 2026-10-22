@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>DSH Agent 培训班 · 安装向导（阶段一骨架）</title>
+    <style>
+      /* 阶段一：仅骨架样式。寻梦山海 · 星辰底 + 极简排版。 */
+      :root {
+        --bg: #0a0e1a;
+        --bg-soft: #121829;
+        --line: #23304d;
+        --ink: #e8ecf8;
+        --ink-dim: #8b97b5;
+        --accent: #7b8cff;
+        --accent-2: #b98cff;
+        --ok: #4ade80;
+        --warn: #fbbf24;
+        --err: #f87171;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: radial-gradient(circle at 20% -10%, #1b2547 0%, var(--bg) 55%), var(--bg);
+        color: var(--ink);
+        font: 14px/1.7 "Microsoft YaHei", "PingFang SC", system-ui, sans-serif;
+      }
+      .stars {
+        position: fixed; inset: 0; pointer-events: none; opacity: 0.55;
+        background-image:
+          radial-gradient(1px 1px at 15% 25%, #fff, transparent),
+          radial-gradient(1px 1px at 62% 12%, #cfe0ff, transparent),
+          radial-gradient(1.5px 1.5px at 78% 42%, #fff, transparent),
+          radial-gradient(1px 1px at 38% 78%, #b9c8ff, transparent),
+          radial-gradient(1px 1px at 88% 72%, #fff, transparent);
+      }
+      .wrap { position: relative; max-width: 880px; margin: 0 auto; padding: 40px 28px 64px; }
+      header h1 { font-size: 22px; font-weight: 600; letter-spacing: 0.5px; margin: 0 0 6px; }
+      header p { margin: 0; color: var(--ink-dim); }
+      .tag {
+        display: inline-block; margin-top: 12px; padding: 2px 10px; border: 1px solid var(--line);
+        border-radius: 999px; color: var(--ink-dim); font-size: 12px;
+      }
+      .steps { display: flex; gap: 8px; margin: 28px 0 20px; flex-wrap: wrap; }
+      .step {
+        flex: 1 1 120px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px;
+        background: var(--bg-soft); color: var(--ink-dim); font-size: 12px;
+      }
+      .step.active { border-color: var(--accent); color: var(--ink); box-shadow: 0 0 0 1px var(--accent) inset; }
+      .step b { display: block; font-size: 13px; color: var(--ink); margin-bottom: 2px; }
+      section.card {
+        background: rgba(18, 24, 41, 0.72); border: 1px solid var(--line);
+        border-radius: 14px; padding: 20px 22px; margin-bottom: 16px;
+      }
+      section.card h2 { font-size: 15px; margin: 0 0 12px; font-weight: 600; }
+      .board {
+        display: flex; align-items: flex-start; gap: 10px; padding: 10px 0;
+        border-bottom: 1px dashed rgba(35, 48, 77, 0.9);
+      }
+      .board:last-child { border-bottom: none; }
+      .board input { margin-top: 5px; }
+      .board .name { font-weight: 600; }
+      .board .desc { color: var(--ink-dim); font-size: 12.5px; }
+      .badge { font-size: 11px; padding: 1px 7px; border-radius: 999px; border: 1px solid var(--line); color: var(--ink-dim); margin-left: 6px; }
+      .badge.req { border-color: var(--accent); color: var(--accent); }
+      .badge.pre { border-color: var(--warn); color: var(--warn); }
+      .row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+      button {
+        font: inherit; padding: 9px 18px; border-radius: 9px; cursor: pointer;
+        border: 1px solid var(--line); background: var(--bg-soft); color: var(--ink);
+      }
+      button.primary { border-color: transparent; background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: #0a0e1a; font-weight: 600; }
+      button:disabled { opacity: 0.45; cursor: not-allowed; }
+      .hint { color: var(--ink-dim); font-size: 12.5px; }
+      .notice { border-left: 3px solid var(--warn); padding-left: 12px; color: var(--ink-dim); font-size: 12.5px; }
+      .err-box { border: 1px solid var(--err); border-radius: 10px; padding: 12px 14px; color: #ffd7d7; background: rgba(248, 113, 113, 0.08); }
+      .err-box code { color: var(--ink); }
+      .shot { border: 1px dashed var(--line); border-radius: 10px; padding: 18px; text-align: center; color: var(--ink-dim); font-size: 12.5px; }
+      footer { color: var(--ink-dim); font-size: 12px; margin-top: 20px; }
+    </style>
+  </head>
+  <body>
+    <div class="stars"></div>
+    <div class="wrap">
+      <header>
+        <h1>DSH Agent 培训班 · 安装向导</h1>
+        <p>星辰与你，从这里开始。</p>
+        <span class="tag">阶段一骨架 · 不产出成品安装包</span>
+      </header>
+
+      <!-- 向导步骤：欢迎 → 运行环境 → 板块选择 → 安装 → 完成/LV0 协议 -->
+      <div class="steps" id="steps">
+        <div class="step active"><b>1 欢迎</b>确认安装位置</div>
+        <div class="step"><b>2 运行环境</b>检测 Node</div>
+        <div class="step"><b>3 板块选择</b>可选装</div>
+        <div class="step"><b>4 安装</b>进度与重试</div>
+        <div class="step"><b>5 完成</b>进入协议页</div>
+      </div>
+
+      <section class="card">
+        <h2>环境检测结果</h2>
+        <div class="row">
+          <span id="env-status" class="hint">尚未检测</span>
+          <button id="btn-detect" disabled title="阶段一未接 IPC">重新检测（阶段二解锁）</button>
+        </div>
+        <p class="notice">
+          Node 最低要求 <b>22.19.0</b>。若系统缺少运行时，向导<b>只提示并提供官方下载页</b>，
+          绝不静默安装系统级组件；便携版内置运行时则无需系统 Node。
+        </p>
+      </section>
+
+      <section class="card">
+        <h2>板块选择（可选装）</h2>
+        <!-- 与 packaging/boards.json 保持一致；阶段二由主进程读取 boards.json 动态渲染 -->
+        <label class="board">
+          <input type="checkbox" checked disabled />
+          <span>
+            <span class="name">核心板块 · DSH 运行时 + 协议插件</span><span class="badge req">必装</span>
+            <span class="desc">DSH 运行时 + dsh-training-protocol（LV0→LV1 协议授权），不可取消。</span>
+          </span>
+        </label>
+        <label class="board">
+          <input type="checkbox" checked />
+          <span>
+            <span class="name">角色板块 · 星辰（TxzF）</span><span class="badge">可选</span>
+            <span class="desc">男性引导角色：开场引导、关卡提示、通关点评（资源占位待填）。</span>
+          </span>
+        </label>
+        <label class="board">
+          <input type="checkbox" checked />
+          <span>
+            <span class="name">角色板块 · 长征姬</span><span class="badge">可选</span>
+            <span class="desc">长征主题高冷御姐：纪律考核、进度催办、错题复盘（资源占位待填）。</span>
+          </span>
+        </label>
+        <label class="board">
+          <input type="checkbox" checked />
+          <span>
+            <span class="name">角色板块 · 星辰主题色板</span><span class="badge">可选</span>
+            <span class="desc">寻梦山海视觉 token：色彩/字体/间距/星屑动效（占位清单）。</span>
+          </span>
+        </label>
+        <label class="board">
+          <input type="checkbox" />
+          <span>
+            <span class="name">功能预览 · 任务接发</span><span class="badge pre">占位</span>
+            <span class="desc">阶段三填充，现阶段装上只有空占位页。</span>
+          </span>
+        </label>
+        <label class="board">
+          <input type="checkbox" />
+          <span>
+            <span class="name">功能预览 · 工作台 / 社区 / 控制面板 / 协作分组</span><span class="badge pre">占位</span>
+            <span class="desc">阶段三填充；控制面板将负责装后的板块增删。</span>
+          </span>
+        </label>
+      </section>
+
+      <section class="card">
+        <h2>安装进度</h2>
+        <div class="row">
+          <button id="btn-install" class="primary" disabled title="阶段一未接装配逻辑">开始安装（阶段二解锁）</button>
+          <span class="hint">staging 装配 → 校验 → 原子替换；中途失败自动回滚，不影响已装版本。</span>
+        </div>
+        <div class="shot" style="margin-top: 12px">【截图位 3：安装进度条】</div>
+      </section>
+
+      <section class="card">
+        <h2>出错了怎么办（错误码示例）</h2>
+        <div class="err-box">
+          <p style="margin: 0 0 6px"><b>安装未完成</b>：检测到 Node 运行时版本过低（当前 20.11.1，要求 ≥ 22.19.0）。</p>
+          <p style="margin: 0 0 10px" class="hint">错误码 <code>E-102</code> ｜ 建议：升级 Node 后点「重试」，或改用内置运行时的便携版。</p>
+          <div class="row">
+            <button>重试</button>
+            <button>打开 Node 下载页</button>
+            <button>查看日志</button>
+            <button>回滚到上一版本</button>
+          </div>
+        </div>
+        <p class="hint" style="margin-top: 12px">
+          阶段一仅展示文案与布局；错误码表见《安装包构建说明.md》第 6 节。
+        </p>
+      </section>
+
+      <section class="card">
+        <h2>完成 · 进入 LV0 协议页</h2>
+        <p class="hint">
+          首次启动会直达 <b>LV0 协议页</b>：未签署《培训班协议》前停留在 LV0（可浏览课程目录），
+          签署并由星辰（TxzF）/ 长征姬 签发后再进入 LV1（解锁实训场与陪练）。
+        </p>
+        <div class="shot">【截图位 5：LV0 协议页】</div>
+      </section>
+
+      <footer>
+        dsh-training v0.1.0 · 阶段一骨架 ｜ 本页面为占位 UI，按钮交互在阶段二接入 IPC。
+      </footer>
+    </div>
+
+    <script>
+      // 阶段一：只读展示；不发起任何安装动作。
+      (async () => {
+        const el = document.getElementById('env-status');
+        const api = window.dshTraining;
+        if (!api) {
+          el.textContent = '未注入 preload（直接以文件方式打开时正常）';
+          return;
+        }
+        const info = await api.runtimeInfo();
+        el.innerHTML =
+          `Electron ${info.electron} · Chrome ${info.chrome} · 内置 Node ${info.node} · ${info.platform}-${info.arch}` +
+          ` ｜ 可执行能力：检测 Node ${api.capabilities.detectNode ? '✅' : '⏳阶段二'}，` +
+          `安装 ${api.capabilities.install ? '✅' : '⏳阶段二'}，回滚 ${api.capabilities.rollback ? '✅' : '⏳阶段二'}`;
+      })();
+    </script>
+  </body>
+</html>

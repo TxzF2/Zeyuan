@@ -1,0 +1,18 @@
+{
+  "id": "feature-workbench",
+  "displayName": "功能预览 · 工作台",
+  "kind": "preview",
+  "status": "placeholder",
+  "dependsOn": [
+    "core"
+  ],
+  "defaultSelected": false,
+  "install": {
+    "target": "features/workbench",
+    "mode": "copy"
+  },
+  "contents": [
+    "（占位）待阶段三填充实际产物"
+  ],
+  "placeholderNote": "阶段一仅骨架：本板块不产真实文件，勾选与否都不影响核心功能。"
+}

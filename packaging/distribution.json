@@ -1,0 +1,38 @@
+{
+  "product": "dsh-training",
+  "displayName": "DSH Agent 培训班",
+  "version": "0.1.0",
+  "stage": 1,
+  "channel": "dev",
+  "buildDate": "20261022",
+  "os": "win32",
+  "arch": "x64",
+  "runtime": {
+    "node": ">=22.19.0",
+    "electron": null
+  },
+  "filePattern": "dsh-training-{form}-v{version}-{date}-{arch}.{ext}",
+  "forms": {
+    "portable": {
+      "ext": "zip",
+      "stage": 2,
+      "description": "便携版：解压即用，内置运行时，不需要管理员权限"
+    },
+    "setup": {
+      "ext": "exe",
+      "stage": 3,
+      "description": "安装器：向导式安装，含开始菜单项与卸载入口"
+    },
+    "board": {
+      "ext": "zip",
+      "stage": 2,
+      "description": "单板块增量包：安装后可单独增装某个板块"
+    }
+  },
+  "notes": [
+    "版本号唯一来源是本文件；禁止手改产物文件名，一律走 scripts/version.mjs。",
+    "buildDate 由构建脚本按 YYYYMMDD 覆写，不手工维护。",
+    "语义化版本：0.1.0 起；预发布用 -alpha.N / -beta.N / -rc.N。",
+    "阶段一（当前）只产出骨架与文档，不产出任何 exe/zip 成品。"
+  ]
+}

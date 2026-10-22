@@ -1,0 +1,16 @@
+{
+  "id": "core",
+  "displayName": "核心板块 · DSH 运行时 + 协议插件",
+  "kind": "required",
+  "status": "skeleton",
+  "dependsOn": [],
+  "defaultSelected": true,
+  "install": {
+    "target": "profiles/desktop",
+    "mode": "plugin-link"
+  },
+  "contents": [
+    "（占位）待阶段三填充实际产物"
+  ],
+  "placeholderNote": "阶段一仅骨架：本板块不产真实文件，勾选与否都不影响核心功能。"
+}

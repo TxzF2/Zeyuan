@@ -25,10 +25,11 @@ export interface AgentAdapterConfig {
   /** 展示名，也是唯一标识（要求非空且不重复） */
   name: string
   /**
-   * 来源。三种合法形态：
+   * 来源。四种合法形态：
    *   npm 包名      → 'dsh-plugin-xxx' / '@scope/dsh-xxx'
    *   MCP server    → 'mcp:<server-name>'
    *   HTTP 端点     → 'https://…'
+   *   占位（待定）  → 'todo:<name>'（显式标记「来源未定」，不会被当成真来源加载）
    */
   source: string
   /** 职责 */
@@ -53,7 +54,22 @@ export interface AgentAdapterConfig {
  *   2. 严禁在本文件写 API Key —— 密钥走 DSH 凭据体系；
  *   3. 改完本文件需 `pnpm build`，随后重启 DSH 生效。
  */
-export const AGENTS_CONFIG: readonly AgentAdapterConfig[] = [] as const
+export const AGENTS_CONFIG: readonly AgentAdapterConfig[] = [
+  {
+    name: '星辰（TxzF）',
+    source: 'todo:txzf',
+    role: 'guide',
+    enabled: false,
+    note: '占位：男性引导角色（星辰/路鸣泽风格），承担开场引导与关卡提示。真实 source 待定，enabled:false 不加载。',
+  },
+  {
+    name: '长征姬',
+    source: 'todo:changzhengji',
+    role: 'reviewer',
+    enabled: false,
+    note: '占位：长征主题高冷御姐，承担纪律考核与错题复盘。真实 source 待定，enabled:false 不加载。',
+  },
+] as const
 
 /** 配置校验问题 */
 export interface ConfigIssue {
@@ -66,9 +82,11 @@ export interface ConfigIssue {
 
 const ROLES: readonly AgentRole[] = ['guide', 'trainer', 'reviewer', 'evaluator']
 
-/** source 合法性：npm 包名 / mcp:server / https 端点 */
+/** source 合法性：npm 包名 / mcp:server / https 端点 / todo: 占位 */
 function isValidSource(source: string): boolean {
   if (!source) return false
+  // 占位形态：显式声明「来源未定」。配 enabled:false 使用，不会被加载。
+  if (source.startsWith('todo:')) return source.length > 5
   if (source.startsWith('mcp:')) return source.length > 4
   if (/^https?:\/\//i.test(source)) {
     try {
@@ -106,7 +124,7 @@ export function validateAgents(list: readonly AgentAdapterConfig[] = AGENTS_CONF
       issues.push({
         index,
         field: 'source',
-        message: `source 非法：${String(a.source)}（允许 npm 包名 / mcp:<server> / https://…）`,
+        message: `source 非法：${String(a.source)}（允许 npm 包名 / mcp:<server> / https://… / todo:<name>）`,
       })
     }
     if (!ROLES.includes(a.role)) {

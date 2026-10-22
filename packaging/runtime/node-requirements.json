@@ -1,0 +1,23 @@
+{
+  "minimum": "22.19.0",
+  "recommended": "24.x",
+  "rationale": "dsh-training 与 DSH 运行时均要求 Node >= 22.19.0；低于此版本在启动即失败，故必须在安装前拦截。",
+  "detect": {
+    "command": "node -v",
+    "parsePattern": "^v?(\\d+)\\.(\\d+)\\.(\\d+)$"
+  },
+  "onMissing": {
+    "policy": "prompt-only",
+    "neverInstallSystemWide": true,
+    "actions": [
+      "在向导页显示中文提示，说明缺少 Node 运行时及最低版本要求",
+      "提供官方下载页按钮（https://nodejs.org/zh-cn/download）",
+      "提供「我已安装，重新检测」按钮，重跑检测",
+      "允许用户选择使用安装包内置运行时（便携版已内置，则无需系统 Node）"
+    ]
+  },
+  "onTooOld": {
+    "policy": "prompt-only",
+    "hint": "检测到 Node {actual}，低于最低要求 {minimum}。请升级后重试，或改用内置运行时的便携版。"
+  }
+}

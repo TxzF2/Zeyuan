@@ -1,0 +1,18 @@
+{
+  "id": "feature-community",
+  "displayName": "功能预览 · 社区",
+  "kind": "preview",
+  "status": "placeholder",
+  "dependsOn": [
+    "core"
+  ],
+  "defaultSelected": false,
+  "install": {
+    "target": "features/community",
+    "mode": "copy"
+  },
+  "contents": [
+    "（占位）待阶段三填充实际产物"
+  ],
+  "placeholderNote": "阶段一仅骨架：本板块不产真实文件，勾选与否都不影响核心功能。"
+}
