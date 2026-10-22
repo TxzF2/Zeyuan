@@ -1,4 +1,4 @@
-# dsh-training · Git 忽略规则
+﻿# dsh-training · Git 忽略规则
 # 注意：本仓库当前**尚未执行 git init**（本机缺 Git），本文件为装好 Git 后的预备配置。
 
 # 依赖
@@ -31,3 +31,10 @@ desktop.ini
 .env
 .env.*
 **/.credentials.yaml
+
+# Blender 自动备份
+*.blend1
+
+# Python 缓存
+__pycache__/
+*.pyc
