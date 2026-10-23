@@ -83,12 +83,45 @@ export const state: ProtocolState = {
   lastCheck: null,
 }
 
+/**
+ * 状态快照：把「等级 + 六项校验 + 凭据摘要」落到 protocol-state.json。
+ * 目的：验收时可以在**不看 UI**的情况下核对「签署后是否 LV1」「HMAC 是否通过」。
+ */
+export function writeStateSnapshot(check: LicenseCheck): void {
+  try {
+    const p = join(stateDir(), 'protocol-state.json')
+    mkdirSync(dirname(p), { recursive: true })
+    writeFileSync(
+      p,
+      JSON.stringify(
+        {
+          at: new Date().toISOString(),
+          plugin: name,
+          version: VERSION,
+          level: state.level,
+          levelLabel: LEVEL_GATE[state.level]?.label,
+          code: check.code,
+          ok: check.ok,
+          checks: check.checks,
+          license: licenseSummary(check.license),
+        },
+        null,
+        2,
+      ) + '\n',
+      'utf8',
+    )
+  } catch (err) {
+    console.warn(`[dsh-training-protocol] 写状态快照失败（不影响运行）：${(err as Error).message}`)
+  }
+}
+
 /** 重新判定并把结果写进 state */
 export function refresh(now: Date = new Date()): LicenseCheck {
   const check = checkOnDisk(now)
   state.lastCheck = check
   state.license = check.license
   state.level = levelFor(check)
+  writeStateSnapshot(check)
   return check
 }
 
@@ -101,6 +134,7 @@ export function tryGrant(license: LicenseFile | null): boolean {
   state.lastCheck = check
   state.license = check.license
   state.level = levelFor(check)
+  writeStateSnapshot(check)
   console.log(`[dsh-training-protocol] tryGrant ok=${check.ok} code=${check.code} level=${state.level}`)
   return check.ok
 }
@@ -111,7 +145,8 @@ export function revoke(): void {
   state.license = null
   state.level = 'LV0'
   state.lastCheck = null
-  console.log('[dsh-training-protocol] revoked → LV0（license.json 已删除）')
+  const after = refresh()
+  console.log(`[dsh-training-protocol] revoked → LV0（license.json 已删除，code=${after.code}）`)
 }
 
 // ---------------------------------------------------------------------------
