@@ -6,8 +6,8 @@
 | 定位 | 女性形象，长征主题，高冷御姐，银发及腰，冷峻克制 |
 | 身高 / 头身比 | 1.75 m / 8 头身 |
 | 面数 | 基础网格 **8,360 tris**；细分/实体化后 **18,392 tris** |
-| 当前里程碑 | M1 白模 ✅ · M2 材质 ✅ · 徽章 ✅ ｜ 骨骼/5 组动作/过场动画 **⏳ 待做** |
-| 交付 | `out/changzhengji.blend` + `out/renders/cz_{front,side,back,emblem,head}.png` |
+| 当前里程碑 | M1 白模 ✅ · M2 材质 ✅ · 徽章 ✅ · **M3 骨骼（27 根）✅ · M4 五组动作 ✅ · M5 FBX 导出 ✅** · 过场**占位渲染** ✅（成片待资源） |
+| 交付 | `out/changzhengji.blend` + `out/changzhengji_rigged.blend` + `out/changzhengji.fbx`(2.67 MB) + 20 张渲染（三视图/姿态/5 动作/4 张过场占位） |
 
 ## 一、四色与星辰语言
 

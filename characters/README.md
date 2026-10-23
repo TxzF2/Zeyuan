@@ -8,7 +8,7 @@
 | 角色 | ID | 状态 | 产物 | 文档 |
 |---|---|---|---|---|
 | 星辰（TxzF） | `txzf` | M1 白模 ✅ M2 材质 ✅ M3 骨骼 ✅ M4 六动作 ✅ M5 导出 ✅ | `txzf.blend`、`txzf_rigged.blend`、`txzf.fbx`（2.8 MB）、21 张渲染 | [spec.md](txzf/docs/spec.md) |
-| 长征姬 | `changzhengji` | M1 白模 ✅ M2 材质 ✅ 徽章 ✅ ｜ 骨骼/5 动作/过场 ⏳ | `changzhengji.blend`、5 张渲染 | [storyboard.md](changzhengji/docs/storyboard.md) |
+| 长征姬 | `changzhengji` | M1 白模 ✅ M2 材质 ✅ 徽章 ✅ **M3 骨骼 ✅ M4 五动作 ✅ M5 导出 ✅** 过场占位渲染 ✅ | `changzhengji.blend`、`changzhengji_rigged.blend`、`changzhengji.fbx`(2.67 MB)、20 张渲染 | [storyboard.md](changzhengji/docs/storyboard.md) |
 
 ## 2. 重新加载 / 重建（没有面板，用这两条命令）
 
