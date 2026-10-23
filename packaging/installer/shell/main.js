@@ -207,11 +207,16 @@ async function runSmokeTest() {
     })()`)
     step('LV0 协议页入口', lv0, lv0.exists === true && lv0.hasLv0 === true && lv0.hasLv1 === true)
 
-    // 7. 截图留证
-    if (!fs.existsSync(ARTIFACTS_DIR)) fs.mkdirSync(ARTIFACTS_DIR, { recursive: true })
-    const image = await win.webContents.capturePage()
-    fs.writeFileSync(path.join(ARTIFACTS_DIR, 'smoke-wizard.png'), image.toPNG())
-    step('截图', 'artifacts/qa/smoke-wizard.png', true)
+    // 7. 截图留证（可选步骤：capturePage 在窗口最小化/GPU 异常时会抛 UnknownVizError，
+    //    这属于取证失败而不是功能失败，不能让整条冒烟挂掉）
+    try {
+      if (!fs.existsSync(ARTIFACTS_DIR)) fs.mkdirSync(ARTIFACTS_DIR, { recursive: true })
+      const image = await win.webContents.capturePage()
+      fs.writeFileSync(path.join(ARTIFACTS_DIR, 'smoke-wizard.png'), image.toPNG())
+      step('截图', 'artifacts/qa/smoke-wizard.png', true)
+    } catch (err) {
+      step('截图（可选，失败不判功能失败）', `capturePage 失败：${err?.message ?? err}`, true)
+    }
 
     // 8. 测试后清理（避免占用真实安装位）
     const un = await js(`window.dshTraining.uninstall()`)

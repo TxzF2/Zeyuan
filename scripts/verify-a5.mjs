@@ -43,6 +43,7 @@ const STATE_DIR =
   process.env.DSH_TRAINING_STATE_DIR ||
   (process.env.LOCALAPPDATA ? join(process.env.LOCALAPPDATA, "dsh-training") : join(homedir(), ".dsh-training"));
 const MOUNT_STATE = join(STATE_DIR, "mount-state.json");
+const MOUNT_EVENTS = join(STATE_DIR, "mount-events.jsonl");
 
 const result = {
   profileDir: PROFILE_DIR,
@@ -87,8 +88,34 @@ try {
   result.L2.detail = `执行失败：${err.message?.split("\n")[0] ?? err}`;
 }
 
-// ---------------- L3 进程层（挂载标记） ----------------
-if (existsSync(MOUNT_STATE)) {
+// ---------------- L3 进程层（优先读事件历史，单文件只留最后一次） ----------------
+let lastEvent = null;
+if (existsSync(MOUNT_EVENTS)) {
+  try {
+    const lines = readFileSync(MOUNT_EVENTS, "utf8").split(/\r?\n/).filter(Boolean);
+    for (const line of lines) {
+      try {
+        const ev = JSON.parse(line);
+        if (ev.plugin === PKG) lastEvent = ev;
+      } catch {
+        /* 跳过坏行 */
+      }
+    }
+    if (lastEvent) result.L3.detail = `事件日志共 ${lines.length} 行，最后一条：${lastEvent.event} @ ${lastEvent.at}`;
+  } catch (err) {
+    result.L3.detail = `事件日志解析失败：${err.message}`;
+  }
+}
+
+if (lastEvent) {
+  if (lastEvent.event === "mounted" && lastEvent.host === "electron") {
+    result.L3.state = "PASS_PROD";
+    result.L3.detail = `mounted @ ${lastEvent.at}（host electron, pid ${lastEvent.pid}, level ${lastEvent.level}, version ${lastEvent.version}）`;
+  } else {
+    result.L3.state = "PENDING_RESTART";
+    result.L3.detail = `最后事件为 ${lastEvent.event}（host ${lastEvent.host ?? "?"}, version ${lastEvent.version ?? "?"}, ${lastEvent.at}）——插件当前未挂载，需重启 DSH`;
+  }
+} else if (existsSync(MOUNT_STATE)) {
   try {
     const state = JSON.parse(readFileSync(MOUNT_STATE, "utf8"));
     // 只认 electron 宿主写出的标记：Node 侧的 cordis 测试也会写标记（host='node'），
@@ -109,7 +136,7 @@ if (existsSync(MOUNT_STATE)) {
     result.L3.detail = `标记文件解析失败：${err.message}`;
   }
 } else {
-  result.L3.detail = "尚无 mount-state.json —— 需要重启 DSH Desktop 才会写入";
+  result.L3.detail = "尚无 mount-state.json / mount-events.jsonl —— 需要重启 DSH Desktop 才会写入";
 }
 
 const verdict =

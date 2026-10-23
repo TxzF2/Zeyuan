@@ -10,7 +10,7 @@
 // 改为「有 webServer 就注册路由，没有就跳过」，插件本体永远可挂载。
 //
 import type { Context } from '@deepseek-ai/cordis'
-import { mkdirSync, writeFileSync } from 'node:fs'
+import { appendFileSync, mkdirSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { AGENTS_CONFIG, loadEnabledAgents } from './agents.config.js'
 import {
@@ -62,6 +62,9 @@ function writeMountState(payload: Record<string, unknown>): void {
       ) + '\n',
       'utf8',
     )
+    // append-only 事件日志：单文件只保留"最后一次"，热重载/失败排查需要历史
+    const line = JSON.stringify({ plugin: name, version: VERSION, at: new Date().toISOString(), pid: process.pid, ...payload }) + '\n'
+    appendFileSync(join(stateDir(), 'mount-events.jsonl'), line, 'utf8')
   } catch (err) {
     console.warn(`[dsh-training-protocol] 写挂载标记失败（不影响运行）：${(err as Error).message}`)
   }
