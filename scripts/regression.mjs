@@ -153,6 +153,24 @@ const SUITES = [
     cwd: REPO,
   },
   {
+    name: '协作·分组模型',
+    cmd: process.execPath,
+    args: [join(REPO, 'packaging/scripts/test-collab-model.mjs')],
+    cwd: REPO,
+  },
+  {
+    name: '协作·路由与金币审批',
+    cmd: process.execPath,
+    args: [join(REPO, 'packaging/scripts/test-collab-routes.mjs')],
+    cwd: REPO,
+  },
+  {
+    name: '任务·组内可见与改派',
+    cmd: process.execPath,
+    args: [join(REPO, 'packaging/scripts/test-tasks-groups.mjs')],
+    cwd: REPO,
+  },
+  {
     name: '插件·agents 配置',
     cmd: process.execPath,
     args: [join(REPO, 'scripts/check-agents-config.mjs')],

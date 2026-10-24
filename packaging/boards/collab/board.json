@@ -1,0 +1,39 @@
+{
+  "id": "collab",
+  "displayName": "协作分组",
+  "kind": "preview",
+  "status": "ready",
+  "dependsOn": [
+    "core"
+  ],
+  "defaultSelected": false,
+  "install": {
+    "target": "features/collab",
+    "mode": "copy"
+  },
+  "contents": [
+    "HOST 半：固定编制 1 组长 + 3 组员；满编且分工齐才可激活；组长可改分工/移除/转让/发任务/改派",
+    "HOST 半：组任务仅组内可见（tasks 侧按 groups.json 过滤）；评审批次；金币申请单据（不直接动钱包）",
+    "BROWSER 半：设置面板「培训班 · 协作分组」——组卡/编制进度/分工/激活/组内任务/评审/金币申请"
+  ],
+  "placeholderNote": "阶段一仅骨架：本板块不产真实文件，勾选与否都不影响核心功能。",
+  "schemaVersion": 2,
+  "boardApi": 1,
+  "version": "0.1.0",
+  "smoke": "test-collab.mjs",
+  "events": {
+    "emits": [
+      "group-formed",
+      "member-joined",
+      "member-left",
+      "duty-changed",
+      "group-activated",
+      "task-assigned",
+      "task-reassigned",
+      "review-requested",
+      "review-done",
+      "coins-requested"
+    ],
+    "consumes": []
+  }
+}

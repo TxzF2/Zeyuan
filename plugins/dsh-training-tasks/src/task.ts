@@ -35,6 +35,8 @@ export interface Task {
   deadline: string | null
   creator: string
   assignee: string | null
+  /** 组内任务：仅本组成员可见（null=公开任务） */
+  groupId: string | null
   status: TaskStatus
   createdAt: string
   updatedAt: string
@@ -205,6 +207,7 @@ export function createTask(
     deadline: value.deadline,
     creator,
     assignee: null,
+    groupId: null,
     status: 'open',
     createdAt: at,
     updatedAt: at,

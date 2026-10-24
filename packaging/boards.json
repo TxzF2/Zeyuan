@@ -104,16 +104,16 @@
       "summary": "控制台：用户目录与 P6-P8 管理档位、scope 下发、最小钱包、板块真启停（写 profile）、仪表盘与审计。"
     },
     {
-      "id": "feature-collab",
-      "displayName": "功能预览 · 协作分组",
+      "id": "collab",
+      "displayName": "协作分组",
       "kind": "preview",
-      "status": "placeholder",
-      "boardDir": "boards/feature-collab",
+      "status": "ready",
+      "boardDir": "boards/collab",
       "dependsOn": [
         "core"
       ],
       "defaultSelected": false,
-      "summary": "分组协作与互评。阶段三填充。"
+      "summary": "固定编制（1 组长 + 3 组员）的协作小组：满编激活后可发布组内任务、改派、组内评审、申请金币（审批在控制台）。"
     }
   ],
   "contractVersion": 1

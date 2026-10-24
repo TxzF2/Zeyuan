@@ -104,7 +104,7 @@ const events = () =>
 try {
   console.log('=== 1 · 注册与身份 ===')
   mod.apply(ctx)
-  check('注册路由数', routes.size, 8)
+  check('注册路由数', routes.size, 10)
   checkTrue('/list 已注册', routes.has('/dsh-training/tasks/list'))
   checkTrue('/accept 已注册', routes.has('/dsh-training/tasks/accept'))
 

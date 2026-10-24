@@ -32,6 +32,7 @@ import {
   type TaskAction,
   type TaskStatus,
 } from './task.js'
+import { canSeeTask, findGroup, isLeader, isMember, tierOf } from './groups-gate.js'
 import { StoreError, readDoc, updateDoc } from './store.js'
 
 export const name = 'dsh-training-tasks'
@@ -45,6 +46,8 @@ export const EMITTED_EVENTS = [
   'dsh-training:tasks:task-accepted',
   'dsh-training:tasks:task-rejected',
   'dsh-training:tasks:reward',
+  'dsh-training:tasks:task-grouped',
+  'dsh-training:tasks:task-reassigned',
 ] as const
 export type EmittedEvent = (typeof EMITTED_EVENTS)[number]
 
@@ -133,6 +136,14 @@ function writeMountEvent(event: 'mounted' | 'unmounted'): void {
 }
 
 // ---------------------------------------------------------------- 工具
+function tierOfSafe(userId: string): number {
+  try {
+    return tierOf(userId)
+  } catch {
+    return 0
+  }
+}
+
 function json(res: ServerResponseLike, status: number, body: unknown): void {
   const text = JSON.stringify(body)
   res.writeHead(status, {
@@ -246,8 +257,9 @@ function registerRoutes(ctx: Context): void {
     const status = (url.searchParams.get('status') ?? 'all') as TaskStatus | 'all'
     const tag = url.searchParams.get('tag') ?? undefined
     const mine = url.searchParams.get('mine') === '1'
-    const tasks = filterTasks(doc.tasks, { status, tag, mine, actor })
-    const tags = [...new Set(doc.tasks.flatMap((t) => t.tags))].sort()
+    const visible = doc.tasks.filter((t) => canSeeTask(t, actor))
+    const tasks = filterTasks(visible, { status, tag, mine, actor })
+    const tags = [...new Set(doc.tasks.filter((t) => canSeeTask(t, actor)).flatMap((t) => t.tags))].sort()
     json(res, 200, { ok: true, data: { tasks, total: tasks.length, tags } })
   })
 
@@ -257,6 +269,7 @@ function registerRoutes(ctx: Context): void {
     const doc = readDoc()
     const task = findTask(doc.tasks, url.searchParams.get('id'))
     if (!task) return json(res, 404, { ok: false, code: 'E-804', message: '任务不存在。' })
+    if (!canSeeTask(task, actorOf(req))) return json(res, 404, { ok: false, code: 'E-804', message: '任务不存在。' })
     json(res, 200, { ok: true, data: task })
   })
 
@@ -295,6 +308,7 @@ function registerRoutes(ctx: Context): void {
       const task = updateDoc((doc) => {
         const current = findTask(doc.tasks, id) as Task | undefined
         if (!current) throw new HttpError(404, 'E-804', '任务不存在。')
+        if (current.groupId && !isMember(current.groupId, actor)) throw new HttpError(403, 'E-806', '这是组内任务，只有本组成员可以操作。')
         const check = checkAction(current, action as TaskAction, actor)
         if (!check.ok) throw new HttpError(STATUS_BY_CODE[check.code] ?? 400, check.code, check.reason)
         const now = new Date()
@@ -351,7 +365,57 @@ function registerRoutes(ctx: Context): void {
     })
   }
 
-  console.log(`[dsh-training-tasks] 已注册 8 条路由（${base}/*）`)
+  // 挂组：任务发起人把任务指派到自己的组（组必须存在）
+  route(`${base}/attach-group`, async (req, res) => {
+    if (req.method !== 'POST') return json(res, 405, { ok: false, code: 'E-805', message: '只接受 POST。' })
+    const access = requireLv1(res)
+    if (!access) return
+    const body = await readBody(req)
+    const actor = actorOf(req)
+    const groupId = typeof body.groupId === 'string' ? body.groupId : null
+    const group = findGroup(groupId)
+    if (!groupId || !group) return json(res, 404, { ok: false, code: 'E-804', message: '分组不存在。' })
+    if (!isLeader(groupId, actor) && tierOfSafe(actor) < 7) {
+      return json(res, 403, { ok: false, code: 'E-802', message: '只有组长或 P7+ 可以把任务挂到组。' })
+    }
+    const task = updateDoc((doc) => {
+      const current = findTask(doc.tasks, body.id)
+      if (!current) throw new HttpError(404, 'E-804', '任务不存在。')
+      if (current.creator !== actor && !isLeader(groupId, actor) && tierOfSafe(actor) < 7) {
+        throw new HttpError(403, 'E-802', '只有任务发起人或组长可以挂组。')
+      }
+      const next: Task = { ...current, groupId, updatedAt: new Date().toISOString() }
+      return { doc: { ...doc, tasks: doc.tasks.map((t) => (t.id === next.id ? next : t)) }, result: next }
+    })
+    emitEvent('dsh-training:tasks:task-grouped', { taskId: task.id, groupId, by: actor }, { taskId: task.id })
+    json(res, 200, { ok: true, data: task })
+  })
+
+  // 改派：组长（或 P7+）把组任务改派给本组成员
+  route(`${base}/reassign`, async (req, res) => {
+    if (req.method !== 'POST') return json(res, 405, { ok: false, code: 'E-805', message: '只接受 POST。' })
+    const access = requireLv1(res)
+    if (!access) return
+    const body = await readBody(req)
+    const actor = actorOf(req)
+    const task = updateDoc((doc) => {
+      const current = findTask(doc.tasks, body.id)
+      if (!current) throw new HttpError(404, 'E-804', '任务不存在。')
+      if (!current.groupId) throw new HttpError(400, 'E-803', '不是组内任务，无法改派。')
+      if (!isLeader(current.groupId, actor) && tierOfSafe(actor) < 7) {
+        throw new HttpError(403, 'E-802', '只有组长或 P7+ 可以改派组内任务。')
+      }
+      const target = typeof body.assignee === 'string' ? body.assignee : ''
+      if (!isMember(current.groupId, target)) throw new HttpError(400, 'E-803', '只能改派给本组成员。')
+      const now = new Date()
+      const next: Task = { ...current, assignee: target, updatedAt: now.toISOString() }
+      return { doc: { ...doc, tasks: doc.tasks.map((t) => (t.id === next.id ? next : t)) }, result: next }
+    })
+    emitEvent('dsh-training:tasks:task-reassigned', { taskId: task.id, assignee: task.assignee, by: actor }, { taskId: task.id })
+    json(res, 200, { ok: true, data: task })
+  })
+
+  console.log(`[dsh-training-tasks] 已注册 10 条路由（${base}/*）`)
 }
 
 // ---------------------------------------------------------------- 插件入口

@@ -93,7 +93,7 @@ const auditRows = () => audit.listAudit(200).rows
 try {
   console.log('=== 1 · 注册 ===')
   mod.apply(ctx)
-  check('路由数 20', routes.size, 20)
+  check('路由数 22', routes.size, 22)
   let r = await call('GET', 'me', undefined, 'alice')
   check('初始 P0', r.body.data.adminTier, 0)
   check('无 license → LV0', r.body.data.businessLevel, 'LV0')

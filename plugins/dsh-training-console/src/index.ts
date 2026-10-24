@@ -23,6 +23,29 @@ import { balanceOf, grantCoins, ingestReward, listLedger } from './wallet.js'
 import { listAudit, requireConfirm, writeAudit } from './audit.js'
 import { PROTECTED_PACKAGES, isPluginEnabled, setPluginEnabled } from './profile-gate.js'
 import { dashboard, health } from './dashboard.js'
+import { readJson, writeJsonAtomic, withLock, fileOf } from './store.js'
+
+interface CoinRequestRow {
+  id: string
+  groupId: string
+  requestedBy: string
+  amount: number
+  reason: string
+  status: 'pending' | 'approved' | 'rejected'
+  createdAt: string
+  reviewedBy: string | null
+  reviewedAt: string | null
+  ledgerId: string | null
+}
+
+const COIN_FILE = 'coin-requests.json'
+function readCoinRequests(): { schemaVersion: number; seq: number; requests: CoinRequestRow[] } {
+  const doc = readJson<{ schemaVersion: number; seq: number; requests: CoinRequestRow[] }>(fileOf(COIN_FILE), { schemaVersion: 1, seq: 0, requests: [] })
+  return { schemaVersion: 1, seq: Number.isInteger(doc.seq) ? doc.seq : 0, requests: Array.isArray(doc.requests) ? doc.requests : [] }
+}
+function writeCoinRequests(doc: { schemaVersion: number; seq: number; requests: CoinRequestRow[] }): void {
+  writeJsonAtomic(fileOf(COIN_FILE), doc)
+}
 
 export const name = 'dsh-training-console'
 export const VERSION = '0.2.0'
@@ -458,6 +481,75 @@ function registerRoutes(ctx: Context): void {
     }
   })
 
+  // 金币申请：列表 + 审批（P7+；审批通过才真正入钱包）
+  route(`${base}/coin-requests`, (req, res) => {
+    requireTier(6, req)
+    json(res, 200, { ok: true, data: readCoinRequests().requests.slice().reverse() })
+  })
+
+  route(`${base}/coin-requests/review`, async (req, res) => {
+    if (req.method !== 'POST') return json(res, 405, { ok: false, code: 'E-1102', message: '只接受 POST。' })
+    const actor = requireTier(7, req)
+    const body = await readBody(req)
+    const id = typeof body.id === 'string' ? body.id : ''
+    const approve = body.approve !== false
+    let reason = ''
+    try {
+      reason = requireConfirm({ confirm: body.confirm, reason: body.reason })
+      const result = withLock('coin-requests', () => {
+        const doc = readCoinRequests()
+        const row = doc.requests.find((r) => r.id === id)
+        if (!row) throw new HttpError(404, 'E-1204', '申请单不存在。')
+        if (row.status !== 'pending') throw new HttpError(409, 'E-1201', `申请单已是 ${row.status}，不能重复审批。`)
+        let ledgerId: string | null = null
+        if (approve) {
+          const g = grantCoins(actor.user.id, actor.tier, row.requestedBy, row.amount, `组经费审批：${reason}`)
+          ledgerId = g.row.id
+        }
+        const next = {
+          ...doc,
+          requests: doc.requests.map((r) =>
+            r.id === id
+              ? { ...r, status: approve ? ('approved' as const) : ('rejected' as const), reviewedBy: actor.user.id, reviewedAt: new Date().toISOString(), ledgerId }
+              : r,
+          ),
+        }
+        writeCoinRequests(next)
+        return { row: next.requests.find((r) => r.id === id) as CoinRequestRow, ledgerId }
+      })
+      writeAudit({
+        actor: actor.user.id,
+        businessLevel: actor.businessLevel,
+        adminTier: actor.tier,
+        action: approve ? 'coin-request-approve' : 'coin-request-reject',
+        target: result.row.requestedBy,
+        before: { status: 'pending', amount: result.row.amount },
+        after: { status: result.row.status, ledgerId: result.ledgerId, groupId: result.row.groupId },
+        reason,
+      })
+      emitEvent('dsh-training:console:coins-granted', {
+        user: result.row.requestedBy,
+        amount: approve ? result.row.amount : 0,
+        via: 'group-request',
+        requestId: result.row.id,
+        by: actor.user.id,
+      })
+      json(res, 200, { ok: true, data: result.row })
+    } catch (err) {
+      writeAudit({
+        actor: actor.user.id,
+        businessLevel: actor.businessLevel,
+        adminTier: actor.tier,
+        action: 'coin-request-review',
+        target: id,
+        result: 'error',
+        reason: reason || null,
+        error: (err as Error).message,
+      })
+      throw err
+    }
+  })
+
   route(`${base}/audit`, (req, res) => {
     requireTier(6, req)
     const url = new URL(req.url ?? '/', 'http://localhost')
@@ -485,7 +577,7 @@ function registerRoutes(ctx: Context): void {
     json(res, 200, { ok: true, data: { users: migrated.migrated, admins } })
   })
 
-  console.log(`[dsh-training-console] 已注册 20 条路由（${base}/*）`)
+  console.log(`[dsh-training-console] 已注册 22 条路由（${base}/*）`)
 }
 
 // ---------------------------------------------------------------- 入口

@@ -55,12 +55,6 @@
       "post-unhidden",
       "post-deleted"
     ],
-    "feature-collab": [
-      "group-formed",
-      "member-joined",
-      "review-requested",
-      "review-done"
-    ],
     "character-txzf": [
       "action-request"
     ],
@@ -76,6 +70,18 @@
       "board-toggled",
       "coins-granted",
       "dashboard-invalidate"
+    ],
+    "collab": [
+      "group-formed",
+      "member-joined",
+      "member-left",
+      "duty-changed",
+      "group-activated",
+      "task-assigned",
+      "task-reassigned",
+      "review-requested",
+      "review-done",
+      "coins-requested"
     ]
   },
   "chains": [
