@@ -31,15 +31,16 @@ console.log(`   条目：${AGENTS_CONFIG.map((a) => `${a.name}[${a.role}/${a.sou
 check("当前配置校验问题数（必须为 0）", validateAgents(AGENTS_CONFIG).length, 0);
 check("当前启用 agent 数（占位均 enabled:false）", loadEnabledAgents(AGENTS_CONFIG).agents.length, 0);
 
-console.log("\n=== 2. 合法样例（四种 source 形态）===");
+console.log("\n=== 2. 合法样例（五种 source 形态）===");
 const good = [
   { name: "引导 Agent", source: "dsh-plugin-guide", role: "guide" },
   { name: "陪练 Agent", source: "mcp:trainer-server", role: "trainer" },
   { name: "复盘 Agent", source: "https://example.com/v1", role: "reviewer", enabled: false },
   { name: "待定 Agent", source: "todo:pending-agent", role: "evaluator" },
+  { name: "板块 Agent", source: "board:character-txzf", role: "trainer" },
 ];
 check("合法样例问题数", validateAgents(good).length, 0);
-check("合法样例启用数（enabled:false 被过滤）", loadEnabledAgents(good).agents.length, 3);
+check("合法样例启用数（enabled:false 被过滤）", loadEnabledAgents(good).agents.length, 4);
 check("按 role 取 guide 命中数", good.filter((a) => a.role === "guide").length, 1);
 
 console.log("\n=== 3. 非法样例（必须逐条拦住）===");

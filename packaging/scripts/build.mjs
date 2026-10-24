@@ -213,10 +213,8 @@ function buildPortable(dist, boards) {
   for (const b of boards) {
     const from = join(PKG_ROOT, b.boardDir)
     const to = join(boardsRoot, b.id)
-    mkdirSync(to, { recursive: true })
-    for (const f of readdirSync(from)) {
-      if (f.endsWith('.json')) cpSync(join(from, f), join(to, f))
-    }
+    // 整目录复制：清单之外还要带上 assets/（角色 FBX、三视图、动作帧）
+    cpSync(from, to, { recursive: true })
   }
 
   const must = [

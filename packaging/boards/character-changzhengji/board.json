@@ -2,7 +2,7 @@
   "id": "character-changzhengji",
   "displayName": "角色板块 · 长征姬",
   "kind": "optional",
-  "status": "placeholder",
+  "status": "ready",
   "dependsOn": [
     "core"
   ],
@@ -12,8 +12,10 @@
     "mode": "copy"
   },
   "contents": [
-    "（占位）待阶段三填充实际产物"
+    "模型：changzhengji.fbx（含骨骼与动作）",
+    "工程：changzhengji_rigged.blend",
+    "三视图 3 张 + 动作帧预览若干（见 asset-manifest.json）"
   ],
-  "placeholderNote": "阶段一仅骨架：本板块不产真实文件，勾选与否都不影响核心功能。",
-  "assetManifest": "asset-manifest.json"
+  "assetManifest": "asset-manifest.json",
+  "installedBytes": 7090645
 }

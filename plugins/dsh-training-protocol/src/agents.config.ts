@@ -29,7 +29,8 @@ export interface AgentAdapterConfig {
    *   npm 包名      → 'dsh-plugin-xxx' / '@scope/dsh-xxx'
    *   MCP server    → 'mcp:<server-name>'
    *   HTTP 端点     → 'https://…'
-   *   占位（待定）  → 'todo:<name>'（显式标记「来源未定」，不会被当成真来源加载）
+   *   板块资源      → 'board:<board-id>'（指向 packaging/boards 下的板块资源）
+ *   占位（待定）  → 'todo:<name>'（显式标记「来源未定」）
    */
   source: string
   /** 职责 */
@@ -57,17 +58,17 @@ export interface AgentAdapterConfig {
 export const AGENTS_CONFIG: readonly AgentAdapterConfig[] = [
   {
     name: '星辰（TxzF）',
-    source: 'todo:txzf',
+    source: 'board:character-txzf',
     role: 'guide',
     enabled: false,
-    note: '占位：男性引导角色（星辰/路鸣泽风格），承担开场引导与关卡提示。真实 source 待定，enabled:false 不加载。',
+    note: '男性引导角色（星辰/路鸣泽风格）：开场引导与关卡提示。资源已挂入板块 character-txzf（FBX + 骨骼 + 6 动作），enabled:false 待接运行时适配器。',
   },
   {
     name: '长征姬',
-    source: 'todo:changzhengji',
+    source: 'board:character-changzhengji',
     role: 'reviewer',
     enabled: false,
-    note: '占位：长征主题高冷御姐，承担纪律考核与错题复盘。真实 source 待定，enabled:false 不加载。',
+    note: '长征主题高冷御姐：纪律考核与错题复盘。资源已挂入板块 character-changzhengji（FBX + 骨架 + 5 动作），enabled:false 待接运行时适配器。',
   },
 ] as const
 
@@ -87,6 +88,8 @@ function isValidSource(source: string): boolean {
   if (!source) return false
   // 占位形态：显式声明「来源未定」。配 enabled:false 使用，不会被加载。
   if (source.startsWith('todo:')) return source.length > 5
+  // 板块资源（角色/主题）：board:<board-id>
+  if (source.startsWith('board:')) return /^[a-z][a-z0-9-]*$/.test(source.slice(6))
   if (source.startsWith('mcp:')) return source.length > 4
   if (/^https?:\/\//i.test(source)) {
     try {
@@ -124,7 +127,7 @@ export function validateAgents(list: readonly AgentAdapterConfig[] = AGENTS_CONF
       issues.push({
         index,
         field: 'source',
-        message: `source 非法：${String(a.source)}（允许 npm 包名 / mcp:<server> / https://… / todo:<name>）`,
+        message: `source 非法：${String(a.source)}（允许 npm 包名 / mcp:<server> / https://… / board:<id> / todo:<name>）`,
       })
     }
     if (!ROLES.includes(a.role)) {

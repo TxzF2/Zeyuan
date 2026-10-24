@@ -20,21 +20,25 @@
       "id": "character-txzf",
       "displayName": "角色板块 · 星辰（TxzF）",
       "kind": "optional",
-      "status": "placeholder",
+      "status": "ready",
       "boardDir": "boards/character-txzf",
-      "dependsOn": ["core"],
+      "dependsOn": [
+        "core"
+      ],
       "defaultSelected": true,
-      "summary": "男性引导角色（星辰/路鸣泽风格）：开场引导、关卡提示、通关点评。资源以占位清单打包。"
+      "summary": "男性引导角色（星辰/路鸣泽风格）：开场引导、关卡提示、通关点评。已含 FBX（骨架+6 动作）、Blender 工程、三视图与动作帧。"
     },
     {
       "id": "character-changzhengji",
       "displayName": "角色板块 · 长征姬",
       "kind": "optional",
-      "status": "placeholder",
+      "status": "ready",
       "boardDir": "boards/character-changzhengji",
-      "dependsOn": ["core"],
+      "dependsOn": [
+        "core"
+      ],
       "defaultSelected": true,
-      "summary": "长征主题高冷御姐：纪律考核、进度催办、错题复盘。资源以占位清单打包。"
+      "summary": "长征主题高冷御姐：纪律考核、进度催办、错题复盘。已含 FBX（骨架+5 动作）、Blender 工程、三视图、动作帧与协议过场占位镜头。"
     },
     {
       "id": "theme-xingchen",
@@ -42,7 +46,9 @@
       "kind": "optional",
       "status": "placeholder",
       "boardDir": "boards/theme-xingchen",
-      "dependsOn": ["core"],
+      "dependsOn": [
+        "core"
+      ],
       "defaultSelected": true,
       "summary": "寻梦山海视觉：色彩/字体/间距/星屑动效 token。资源以占位清单打包。"
     },
@@ -52,7 +58,9 @@
       "kind": "preview",
       "status": "placeholder",
       "boardDir": "boards/feature-taskboard",
-      "dependsOn": ["core"],
+      "dependsOn": [
+        "core"
+      ],
       "defaultSelected": false,
       "summary": "任务接发面板。阶段三填充，现阶段装上也只有一个空占位页。"
     },
@@ -62,7 +70,9 @@
       "kind": "preview",
       "status": "placeholder",
       "boardDir": "boards/feature-workbench",
-      "dependsOn": ["core"],
+      "dependsOn": [
+        "core"
+      ],
       "defaultSelected": false,
       "summary": "学员工作台。阶段三填充。"
     },
@@ -72,7 +82,9 @@
       "kind": "preview",
       "status": "placeholder",
       "boardDir": "boards/feature-community",
-      "dependsOn": ["core"],
+      "dependsOn": [
+        "core"
+      ],
       "defaultSelected": false,
       "summary": "班级社区。阶段三填充。"
     },
@@ -82,7 +94,9 @@
       "kind": "preview",
       "status": "placeholder",
       "boardDir": "boards/feature-console",
-      "dependsOn": ["core"],
+      "dependsOn": [
+        "core"
+      ],
       "defaultSelected": false,
       "summary": "板块增删、更新、诊断入口。阶段三填充（安装后增删板块靠它）。"
     },
@@ -92,7 +106,9 @@
       "kind": "preview",
       "status": "placeholder",
       "boardDir": "boards/feature-collab",
-      "dependsOn": ["core"],
+      "dependsOn": [
+        "core"
+      ],
       "defaultSelected": false,
       "summary": "分组协作与互评。阶段三填充。"
     }

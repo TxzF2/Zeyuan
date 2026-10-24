@@ -94,9 +94,8 @@ function buildPayload() {
     for (const b of boards ?? []) {
       const dir = path.join(PACKAGING_ROOT, 'boards', b.id)
       if (!fs.existsSync(dir)) continue
-      for (const f of fs.readdirSync(dir)) {
-        if (f.endsWith('.json')) add(path.join(dir, f), `boards/${b.id}/${f}`)
-      }
+      // 整目录收集：清单(.json) + 资产(assets/：FBX、三视图、动作帧)
+      files.push(...collectFiles(dir, `boards/${b.id}`))
     }
   } catch (err) {
     console.warn('[payload] 读取 boards.json 失败：', err.message)
