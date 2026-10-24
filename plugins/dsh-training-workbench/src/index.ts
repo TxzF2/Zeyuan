@@ -16,6 +16,7 @@ import { join } from 'node:path'
 import type { Context } from '@deepseek-ai/cordis'
 
 import { checkAccess, stateDir } from './license-gate.js'
+import { isBoardEnabled } from './board-switch.js'
 import {
   applySave,
   canEdit,
@@ -312,6 +313,12 @@ function registerRoutes(ctx: Context): void {
 
 // ---------------------------------------------------------------- 入口
 export function apply(ctx: Context): void {
+  if (!isBoardEnabled('feature-workbench')) {
+    console.log('[dsh-training-workbench] 已在控制面板中停用，跳过路由与事件订阅')
+    writeMountEvent('mounted')
+    ctx.effect(() => () => writeMountEvent('unmounted'), 'dsh-training-workbench: disabled marker')
+    return
+  }
   bus = ctx
   writeMountEvent('mounted')
 

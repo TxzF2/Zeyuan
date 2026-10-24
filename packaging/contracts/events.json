@@ -63,8 +63,11 @@
     ],
     "feature-console": [
       "dashboard-invalidate",
-      "board-installed",
-      "board-removed"
+      "board-toggled",
+      "user-created",
+      "user-role-changed",
+      "user-disabled",
+      "admin-bootstrapped"
     ],
     "character-txzf": [
       "action-request"

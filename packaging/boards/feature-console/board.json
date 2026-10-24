@@ -2,7 +2,7 @@
   "id": "feature-console",
   "displayName": "功能预览 · 控制面板",
   "kind": "preview",
-  "status": "placeholder",
+  "status": "ready",
   "dependsOn": [
     "core"
   ],
@@ -12,7 +12,11 @@
     "mode": "copy"
   },
   "contents": [
-    "（占位）待阶段三填充实际产物"
+    "HOST 半：用户表（config/users.json）+ 角色（admin/trainee）+ bootstrap + 防自锁",
+    "HOST 半：板块启停（config/boards.json，core/protocol 受保护）+ 仪表盘聚合 + 健康检查 + 审计",
+    "HOST 半：11 条路由；权限顺序：身份 → 禁用 → 角色 → LV1 → 业务",
+    "BROWSER 半：设置面板「培训班 · 控制面板」——指标卡/健康/板块开关/用户表/审计（墨绿+星辰）",
+    "收口 D-007：admin 不再看 license scope，改看用户角色"
   ],
   "placeholderNote": "阶段一仅骨架：本板块不产真实文件，勾选与否都不影响核心功能。",
   "schemaVersion": 2,
@@ -22,13 +26,12 @@
   "events": {
     "emits": [
       "dashboard-invalidate",
-      "board-installed",
-      "board-removed"
+      "board-toggled",
+      "user-created",
+      "user-role-changed",
+      "user-disabled",
+      "admin-bootstrapped"
     ],
-    "consumes": [
-      "dsh-training:core:level-up",
-      "dsh-training:core:settlement-done",
-      "dsh-training:tasks:task-accepted"
-    ]
+    "consumes": []
   }
 }

@@ -95,13 +95,13 @@
       "id": "feature-console",
       "displayName": "功能预览 · 控制面板",
       "kind": "preview",
-      "status": "placeholder",
+      "status": "ready",
       "boardDir": "boards/feature-console",
       "dependsOn": [
         "core"
       ],
       "defaultSelected": false,
-      "summary": "板块增删、更新、诊断入口。阶段三填充（安装后增删板块靠它）。"
+      "summary": "控制面板：用户角色与管理员绑定、板块启停、仪表盘与健康检查、管理审计。"
     },
     {
       "id": "feature-collab",

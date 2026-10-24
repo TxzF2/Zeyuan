@@ -20,6 +20,7 @@ import { join } from 'node:path'
 import type { Context } from '@deepseek-ai/cordis'
 
 import { checkAccess, stateDir, type AccessResult } from './license-gate.js'
+import { isBoardEnabled } from './board-switch.js'
 import {
   ACTIONS,
   checkAction,
@@ -355,6 +356,12 @@ function registerRoutes(ctx: Context): void {
 
 // ---------------------------------------------------------------- 插件入口
 export function apply(ctx: Context): void {
+  if (!isBoardEnabled('tasks')) {
+    console.log('[dsh-training-tasks] 已在控制面板中停用，跳过路由与事件订阅')
+    writeMountEvent('mounted')
+    ctx.effect(() => () => writeMountEvent('unmounted'), 'dsh-training-tasks: disabled marker')
+    return
+  }
   bus = ctx
   writeMountEvent('mounted')
 

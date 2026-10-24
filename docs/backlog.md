@@ -124,11 +124,11 @@ tasks / workbench / community 各有一份 `store.ts`（原子写 + 文件锁 + 
 
 ---
 
-### D-007 · 管理员绑定到用户（当前是整机 scope）
+### D-007 · 管理员绑定到用户 ✅ 已完成（3.5）
 
 | 项 | 内容 |
 |---|---|
-| 状态 | 待 3.5 控制面板处理 |
+| 状态 | **已完成**：admin 改由 `config/users.json` 的角色判定，不再看 license scope；支持 bootstrap/授予/撤销/禁用，并有防自锁（E-1107） |
 
 现状：`training:admin` 在整机 license 的 scopes 里，签发后本机**所有身份**都算管理员。
 需要：scope 下发 + 用户绑定（谁持有管理员身份），以及吊销/审计。

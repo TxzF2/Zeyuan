@@ -111,6 +111,30 @@ const SUITES = [
     cwd: REPO,
   },
   {
+    name: '控制面板·用户与角色',
+    cmd: process.execPath,
+    args: [join(REPO, 'packaging/scripts/test-console-users.mjs')],
+    cwd: REPO,
+  },
+  {
+    name: '控制面板·板块开关',
+    cmd: process.execPath,
+    args: [join(REPO, 'packaging/scripts/test-console-boards.mjs')],
+    cwd: REPO,
+  },
+  {
+    name: '控制面板·仪表盘与健康',
+    cmd: process.execPath,
+    args: [join(REPO, 'packaging/scripts/test-console-dashboard.mjs')],
+    cwd: REPO,
+  },
+  {
+    name: '控制面板·路由与权限',
+    cmd: process.execPath,
+    args: [join(REPO, 'packaging/scripts/test-console-routes.mjs')],
+    cwd: REPO,
+  },
+  {
     name: '插件·agents 配置',
     cmd: process.execPath,
     args: [join(REPO, 'scripts/check-agents-config.mjs')],

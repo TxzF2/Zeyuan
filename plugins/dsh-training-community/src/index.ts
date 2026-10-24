@@ -14,7 +14,9 @@ import { appendFileSync, mkdirSync } from 'node:fs'
 import { join } from 'node:path'
 import type { Context } from '@deepseek-ai/cordis'
 
-import { checkAccess, isAdminNow, stateDir } from './license-gate.js'
+import { checkAccess, stateDir } from './license-gate.js'
+import { isAdminByRole } from './users-gate.js'
+import { isBoardEnabled } from './board-switch.js'
 import {
   applySave,
   canDelete,
@@ -223,14 +225,14 @@ function registerRoutes(ctx: Context): void {
     const access = checkAccess()
     json(res, 200, {
       ok: true,
-      data: { user: actorOf(req), level: access.level, code: access.code, isAdmin: isAdminNow() },
+      data: { user: actorOf(req), level: access.level, code: access.code, isAdmin: isAdminByRole(actorOf(req)) },
     })
   })
 
   route(`${base}/list`, (req, res) => {
     const url = new URL(req.url ?? '/', 'http://localhost')
     const actor = actorOf(req)
-    const admin = isAdminNow()
+    const admin = isAdminByRole(actor)
     const status = (url.searchParams.get('status') ?? 'all') as PostStatus | 'all'
     const tag = url.searchParams.get('tag') ?? undefined
     const author = url.searchParams.get('author') ?? undefined
@@ -249,7 +251,7 @@ function registerRoutes(ctx: Context): void {
   route(`${base}/detail`, (req, res) => {
     const url = new URL(req.url ?? '/', 'http://localhost')
     const actor = actorOf(req)
-    const admin = isAdminNow()
+    const admin = isAdminByRole(actor)
     const doc = readDoc()
     const post = visibleOr404(findPost(doc.posts, url.searchParams.get('id')), actor, admin)
     json(res, 200, { ok: true, data: post })
@@ -318,7 +320,7 @@ function registerRoutes(ctx: Context): void {
     if (req.method !== 'POST') return json(res, 405, { ok: false, code: 'E-1006', message: '只接受 POST。' })
     const body = await readBody(req)
     const actor = actorOf(req)
-    const admin = isAdminNow()
+    const admin = isAdminByRole(actor)
     let liked = false
     const post = updateDoc((doc) => {
       const current = findPost(doc.posts, body.id)
@@ -353,7 +355,7 @@ function registerRoutes(ctx: Context): void {
   for (const action of ['hide', 'unhide'] as const) {
     route(`${base}/${action}`, async (req, res) => {
       if (req.method !== 'POST') return json(res, 405, { ok: false, code: 'E-1006', message: '只接受 POST。' })
-      if (!isAdminNow()) return json(res, 403, { ok: false, code: 'E-1005', message: '需要管理员权限（training:admin）。' })
+      if (!isAdminByRole(actorOf(req))) return json(res, 403, { ok: false, code: 'E-1005', message: '需要管理员角色（admin）。' })
       const body = await readBody(req)
       const actor = actorOf(req)
       const post = updateDoc((doc) => {
@@ -390,10 +392,17 @@ function registerRoutes(ctx: Context): void {
 // ---------------------------------------------------------------- 入口
 export function apply(ctx: Context): void {
   bus = ctx
+
+  if (!isBoardEnabled('feature-community')) {
+    console.log('[dsh-training-community] 已在控制面板中停用，跳过路由与事件订阅')
+    writeMountEvent('mounted')
+    ctx.effect(() => () => writeMountEvent('unmounted'), 'dsh-training-community: disabled marker')
+    return
+  }
   writeMountEvent('mounted')
 
   const access = checkAccess()
-  console.log(`[dsh-training-community] mounted — v${VERSION} · ${access.level} · ${access.code} · admin=${isAdminNow()}`)
+  console.log(`[dsh-training-community] mounted — v${VERSION} · ${access.level} · ${access.code} · admin=${isAdminByRole('local-user')}`)
 
   try {
     const anyCtx = ctx as unknown as { on?: (type: string, cb: (env: Envelope) => void) => unknown }

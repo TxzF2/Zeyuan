@@ -10,6 +10,19 @@ const ROOT = resolve(HERE, '..', '..')
 const STATE = mkdtempSync(join(tmpdir(), 'dsh-community-routes-'))
 process.env.DSH_TRAINING_STATE_DIR = STATE
 
+/** 写控制面板用户表（社区 admin 现在按角色判定） */
+function writeUsers(rows) {
+  const dir = join(STATE, 'config')
+  mkdirSync(dir, { recursive: true })
+  writeFileSync(
+    join(dir, 'users.json'),
+    JSON.stringify({ schemaVersion: 1, bootstrapAt: new Date().toISOString(), users: rows }, null, 2),
+    'utf8',
+  )
+}
+const trainee = (id) => ({ id, displayName: id, roles: ['trainee'], disabled: false, createdAt: new Date().toISOString(), lastSeenAt: new Date().toISOString() })
+const adminUser = (id) => ({ ...trainee(id), roles: ['admin'] })
+
 const license = await import(pathToFileURL(resolve(ROOT, 'plugins/dsh-training-protocol/dist/license.js')).href)
 const gate = await import(pathToFileURL(resolve(ROOT, 'plugins/dsh-training-community/dist/license-gate.js')).href)
 const mod = await import(pathToFileURL(resolve(ROOT, 'plugins/dsh-training-community/dist/index.js')).href)
@@ -149,14 +162,14 @@ try {
   check('删除后 404', r.status, 404)
 
   console.log('\n=== 6 · 管理员隐藏（scope 校验）===')
+  writeUsers([trainee('alice'), trainee('bob'), trainee('carol')])
   r = await call('POST', 'hide', { id: p1.id }, 'bob')
-  check('无 admin scope → 403', r.status, 403)
+  check('非 admin 角色 → 403', r.status, 403)
   check('无权限 → E-1005', r.body.code, 'E-1005')
 
-  license.issueLicense({ subject: '管理员', days: 30, scopes: ['training:playground', 'training:admin'] })
-  gate.resetAccessCache()
+  writeUsers([trainee('alice'), trainee('bob'), trainee('carol'), adminUser('root')])
   r = await call('GET', 'me', undefined, 'root')
-  check('admin scope → isAdmin', r.body.data.isAdmin, true)
+  check('admin 角色 → isAdmin', r.body.data.isAdmin, true)
   r = await call('POST', 'hide', { id: p1.id }, 'root')
   check('隐藏成功', r.body.data.status, 'hidden')
   // 注意：admin 判定来自**整机 license** 的 scope，不是按用户（当前单机模型）
