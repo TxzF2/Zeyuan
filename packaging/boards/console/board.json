@@ -1,0 +1,40 @@
+{
+  "id": "console",
+  "displayName": "控制台",
+  "kind": "preview",
+  "status": "ready",
+  "dependsOn": [
+    "core"
+  ],
+  "defaultSelected": false,
+  "install": {
+    "target": "features/console",
+    "mode": "copy"
+  },
+  "contents": [
+    "HOST 半：用户目录 / 管理档位（P6-P8）/ scope 下发 / 最小钱包 / 板块启停（写 profile）/ 审计",
+    "HOST 半：20 条路由；权限 = 业务等级（LV0/LV1）+ 管理档位（P0/P6/P7/P8）",
+    "高危操作二次确认（封禁/调级/scope/发币/板块启停）+ data/audit-log.jsonl",
+    "BROWSER 半：设置面板「培训班 · 控制台」——指标/用户/档位/scope/板块/钱包/审计"
+  ],
+  "placeholderNote": "阶段一仅骨架：本板块不产真实文件，勾选与否都不影响核心功能。",
+  "schemaVersion": 2,
+  "boardApi": 1,
+  "version": "0.2.0",
+  "smoke": "test-console.mjs",
+  "events": {
+    "emits": [
+      "admin-granted",
+      "admin-revoked",
+      "scope-granted",
+      "scope-revoked",
+      "user-disabled",
+      "board-toggled",
+      "coins-granted",
+      "dashboard-invalidate"
+    ],
+    "consumes": [
+      "dsh-training:tasks:reward"
+    ]
+  }
+}

@@ -92,16 +92,16 @@
       "summary": "社区：消费草稿发布事件生成帖子草稿，作者确认后公开；支持浏览/筛选/点赞，评论区后置（3.5 后）。"
     },
     {
-      "id": "feature-console",
-      "displayName": "功能预览 · 控制面板",
+      "id": "console",
+      "displayName": "控制台",
       "kind": "preview",
       "status": "ready",
-      "boardDir": "boards/feature-console",
+      "boardDir": "boards/console",
       "dependsOn": [
         "core"
       ],
       "defaultSelected": false,
-      "summary": "控制面板：用户角色与管理员绑定、板块启停、仪表盘与健康检查、管理审计。"
+      "summary": "控制台：用户目录与 P6-P8 管理档位、scope 下发、最小钱包、板块真启停（写 profile）、仪表盘与审计。"
     },
     {
       "id": "feature-collab",

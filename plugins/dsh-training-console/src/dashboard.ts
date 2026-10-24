@@ -1,19 +1,26 @@
 /**
- * dashboard.ts · 仪表盘与健康检查（纯读聚合，不落新数据）
+ * dashboard.ts · 仪表盘（四指标）+ 健康检查
  * ---------------------------------------------------------------------------
- * 原则：只读各板块的数据文件，失败一律降级为 null，不阻塞面板。
+ * 指标口径：
+ *   在线用户 = users.json 中 lastSeenAt 在 15 分钟窗内且未禁用的人数
+ *   任务吞吐 = 今日发布（tasks.createdAt 今天）+ 今日完成（history 里 accept 今天）
+ *   金币流水 = 钱包今日 delta 合计 / 笔数 / 其中管理员发币
+ *   板块健康 = 五插件最近挂载状态（mount-events）+ 各插件在 profile 里的启停状态
+ * 只读聚合，缺文件降级，不阻塞。
  * ---------------------------------------------------------------------------
  */
 
 import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { checkAccess, licensePath, stateDir } from './license-gate.js'
-import { boardStatus } from './boards.js'
+import { listAdmins } from './admins.js'
 import { listUsers } from './users.js'
+import { reconcile, todayStats } from './wallet.js'
+import { isPluginEnabled, PROTECTED_PACKAGES } from './profile-gate.js'
 
 const dataDir = (): string => join(stateDir(), 'data')
 
-function readJson(file: string): Record<string, unknown> | null {
+function readJsonSafe(file: string): Record<string, unknown> | null {
   try {
     if (!existsSync(file)) return null
     return JSON.parse(readFileSync(file, 'utf8')) as Record<string, unknown>
@@ -22,40 +29,59 @@ function readJson(file: string): Record<string, unknown> | null {
   }
 }
 
-function asArray(v: unknown): Record<string, unknown>[] {
+function asRows(v: unknown): Record<string, unknown>[] {
   return Array.isArray(v) ? (v as Record<string, unknown>[]) : []
 }
 
-export interface Dashboard {
-  tasks: { total: number; byStatus: Record<string, number> }
-  drafts: { total: number; byStatus: Record<string, number> }
-  posts: { total: number; byStatus: Record<string, number>; likes: number }
-  events: { total: number; recent: { at: string; type: string }[] }
-  users: { total: number; admins: number; bootstrapAt: string | null }
-  boards: { id: string; enabled: boolean; protected: boolean }[]
+const isToday = (iso: unknown, now: Date): boolean => {
+  if (typeof iso !== 'string') return false
+  const t = Date.parse(iso)
+  if (Number.isNaN(t)) return false
+  const d = new Date(t)
+  return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth() && d.getDate() === now.getDate()
 }
 
-export function dashboard(now: Date = new Date()): Dashboard {
-  void now
-  const tasks = readJson(join(dataDir(), 'tasks.json'))
-  const drafts = readJson(join(dataDir(), 'drafts.json'))
-  const posts = readJson(join(dataDir(), 'posts.json'))
+export interface DashboardData {
+  online: { current: number; total: number; disabled: number }
+  tasks: { total: number; createdToday: number; acceptedToday: number; byStatus: Record<string, number> }
+  coins: { today: number; count: number; grantedToday: number; reconcileOk: boolean }
+  boards: { pkg: string; enabled: boolean; protected: boolean }[]
+  admins: { p8: number; total: number }
+  events: { total: number; recent: { at: string; type: string }[] }
+}
 
-  const countBy = (rows: Record<string, unknown>[]) => {
-    const out: Record<string, number> = {}
-    for (const r of rows) {
-      const s = typeof r.status === 'string' ? r.status : 'unknown'
-      out[s] = (out[s] ?? 0) + 1
-    }
-    return out
+export const PLUGIN_PACKAGES = [
+  'dsh-training-protocol',
+  'dsh-training-tasks',
+  'dsh-training-workbench',
+  'dsh-training-community',
+  'dsh-training-console',
+] as const
+
+export function dashboard(now: Date = new Date()): DashboardData {
+  const users = listUsers(15 * 60 * 1000, now)
+  const tasksFile = readJsonSafe(join(dataDir(), 'tasks.json'))
+  const taskRows = asRows(tasksFile?.tasks)
+  const createdToday = taskRows.filter((t) => isToday(t.createdAt, now)).length
+  const acceptedToday = taskRows.filter((t) =>
+    asRows(t.history).some((h) => h.action === 'accept' && isToday(h.at, now)),
+  ).length
+  const byStatus: Record<string, number> = {}
+  for (const t of taskRows) {
+    const s = typeof t.status === 'string' ? t.status : 'unknown'
+    byStatus[s] = (byStatus[s] ?? 0) + 1
   }
 
-  const taskRows = asArray(tasks?.tasks)
-  const draftRows = asArray(drafts?.drafts)
-  const postRows = asArray(posts?.posts)
-  const likes = postRows.reduce((sum, p) => sum + (typeof p.likes === 'number' ? p.likes : 0), 0)
+  const coins = todayStats(now)
+  const recon = reconcile()
+  const admins = listAdmins()
 
-  // 事件日志：只取总数与最近 5 条（不整文件解析成对象数组，避免大文件内存抖动）
+  const boards = PLUGIN_PACKAGES.map((pkg) => ({
+    pkg,
+    enabled: isPluginEnabled(pkg),
+    protected: PROTECTED_PACKAGES.includes(pkg as (typeof PROTECTED_PACKAGES)[number]),
+  }))
+
   let eventTotal = 0
   const recent: { at: string; type: string }[] = []
   try {
@@ -76,28 +102,25 @@ export function dashboard(now: Date = new Date()): Dashboard {
     /* ignore */
   }
 
-  const users = listUsers()
-
   return {
-    tasks: { total: taskRows.length, byStatus: countBy(taskRows) },
-    drafts: { total: draftRows.length, byStatus: countBy(draftRows) },
-    posts: { total: postRows.length, byStatus: countBy(postRows), likes },
+    online: { current: users.online, total: users.total, disabled: users.disabled },
+    tasks: { total: taskRows.length, createdToday, acceptedToday, byStatus },
+    coins: { today: coins.coins, count: coins.count, grantedToday: coins.granted, reconcileOk: recon.ok },
+    boards,
+    admins: { p8: admins.p8, total: admins.admins.length },
     events: { total: eventTotal, recent },
-    users: { total: users.users.length, admins: users.adminCount, bootstrapAt: users.bootstrapAt },
-    boards: boardStatus(),
   }
 }
 
-export interface Health {
+export interface HealthData {
   ok: boolean
   plugins: { plugin: string; lastEvent: string; at: string | null; host: string | null }[]
   files: Record<string, boolean>
   license: { level: string; code: string; expiresAt: string | null }
+  reconcile: { ok: boolean; ledgerSum: number; balanceSum: number; mismatches: string[] }
 }
 
-const PLUGINS = ['dsh-training-protocol', 'dsh-training-tasks', 'dsh-training-workbench', 'dsh-training-community', 'dsh-training-console']
-
-export function health(now: Date = new Date()): Health {
+export function health(now: Date = new Date()): HealthData {
   const last = new Map<string, { event: string; at: string | null; host: string | null }>()
   try {
     const file = join(stateDir(), 'mount-events.jsonl')
@@ -105,7 +128,7 @@ export function health(now: Date = new Date()): Health {
       for (const line of readFileSync(file, 'utf8').split(/\r?\n/).filter(Boolean)) {
         try {
           const ev = JSON.parse(line) as { plugin?: string; event?: string; at?: string; host?: string }
-          if (ev.plugin && PLUGINS.includes(ev.plugin)) {
+          if (ev.plugin && (PLUGIN_PACKAGES as readonly string[]).includes(ev.plugin)) {
             last.set(ev.plugin, { event: ev.event ?? '', at: ev.at ?? null, host: ev.host ?? null })
           }
         } catch {
@@ -117,7 +140,7 @@ export function health(now: Date = new Date()): Health {
     /* ignore */
   }
 
-  const plugins = PLUGINS.map((p) => ({
+  const plugins = PLUGIN_PACKAGES.map((p) => ({
     plugin: p,
     lastEvent: last.get(p)?.event ?? 'missing',
     at: last.get(p)?.at ?? null,
@@ -125,25 +148,35 @@ export function health(now: Date = new Date()): Health {
   }))
 
   const files = {
+    users: existsSync(join(dataDir(), 'users.json')),
+    admins: existsSync(join(dataDir(), 'admins.json')),
+    scopes: existsSync(join(dataDir(), 'scopes.json')),
+    wallet: existsSync(join(dataDir(), 'wallet.json')),
+    audit: existsSync(join(dataDir(), 'audit-log.jsonl')),
     tasks: existsSync(join(dataDir(), 'tasks.json')),
-    drafts: existsSync(join(dataDir(), 'drafts.json')),
     posts: existsSync(join(dataDir(), 'posts.json')),
-    users: existsSync(join(stateDir(), 'config', 'users.json')),
-    boards: existsSync(join(stateDir(), 'config', 'boards.json')),
     license: existsSync(licensePath()),
   }
 
   const access = checkAccess(now)
-  const license = (() => {
-    try {
-      if (!existsSync(licensePath())) return { level: access.level, code: access.code, expiresAt: null }
+  let expiresAt: string | null = null
+  try {
+    if (existsSync(licensePath())) {
       const raw = JSON.parse(readFileSync(licensePath(), 'utf8')) as { expiresAt?: string }
-      return { level: access.level, code: access.code, expiresAt: typeof raw.expiresAt === 'string' ? raw.expiresAt : null }
-    } catch {
-      return { level: access.level, code: access.code, expiresAt: null }
+      expiresAt = typeof raw.expiresAt === 'string' ? raw.expiresAt : null
     }
-  })()
+  } catch {
+    /* ignore */
+  }
 
-  const ok = plugins.every((p) => p.lastEvent === 'mounted') && access.ok
-  return { ok, plugins, files, license }
+  const reconcileResult = reconcile()
+  const ok = plugins.every((p) => p.lastEvent === 'mounted') && access.ok && reconcileResult.ok
+
+  return {
+    ok,
+    plugins,
+    files,
+    license: { level: access.level, code: access.code, expiresAt },
+    reconcile: reconcileResult,
+  }
 }

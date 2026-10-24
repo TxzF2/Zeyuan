@@ -61,19 +61,21 @@
       "review-requested",
       "review-done"
     ],
-    "feature-console": [
-      "dashboard-invalidate",
-      "board-toggled",
-      "user-created",
-      "user-role-changed",
-      "user-disabled",
-      "admin-bootstrapped"
-    ],
     "character-txzf": [
       "action-request"
     ],
     "character-changzhengji": [
       "action-request"
+    ],
+    "console": [
+      "admin-granted",
+      "admin-revoked",
+      "scope-granted",
+      "scope-revoked",
+      "user-disabled",
+      "board-toggled",
+      "coins-granted",
+      "dashboard-invalidate"
     ]
   },
   "chains": [
@@ -97,6 +99,13 @@
         "dsh-training:feature-workbench:draft-published",
         "dsh-training:feature-community:post-drafted",
         "dsh-training:feature-community:post-published"
+      ]
+    },
+    {
+      "name": "任务赏金入账 → 钱包流水",
+      "steps": [
+        "dsh-training:tasks:reward",
+        "dsh-training:console:dashboard-invalidate"
       ]
     }
   ]

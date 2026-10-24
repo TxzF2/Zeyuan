@@ -1,13 +1,13 @@
 /**
- * dsh-training-console · HOST 半
+ * dsh-training-console · HOST 半（控制台 v0.2.0）
  * ---------------------------------------------------------------------------
- * 控制面板：身份/角色（收口 D-007）、板块启停、仪表盘、健康检查、审计。
+ * 身份与权限：
+ *   业务等级 LV0/LV1 ← license（training:playground）
+ *   管理档位 P0/P6/P7/P8 ← data/admins.json
+ *   判定顺序：身份（自动登记）→ 禁用? 拒 → 档位 → LV1 门禁 → 业务
  *
- * 权限判定顺序（固定）：
- *   身份合法（自动登记）→ disabled? 拒 → 角色（admin）→ LV1 门禁（license scope）→ 业务规则
- *
- * 路由 11 条：me / bootstrap / dashboard / health / users / users/create / users/role
- *             / users/disable / boards / boards/toggle / audit
+ * 路由 20 条（见 registerRoutes），高危操作需 confirm + reason，成败都写审计。
+ * 钱包：消费 tasks:reward 入账（幂等），P8 可发币；/health 做账目对账。
  * ---------------------------------------------------------------------------
  */
 
@@ -16,32 +16,38 @@ import { join } from 'node:path'
 import type { Context } from '@deepseek-ai/cordis'
 
 import { checkAccess, stateDir } from './license-gate.js'
-import {
-  UsersError,
-  bootstrapAdmin,
-  isAdmin,
-  listUsers,
-  resolveUser,
-  setDisabled,
-  setRole,
-  type Role,
-  type User,
-} from './users.js'
-import { BoardsError, boardStatus, toggleBoard } from './boards.js'
+import { listUsers, migrateLegacyUsers, createUser, resolveUser, setUserDisabled, type UserRow } from './users.js'
+import { grantTier, listAdmins, migrateLegacyAdmins, revokeTier, tierOf, type AdminTier } from './admins.js'
+import { grantScope, listScopes, revokeScope } from './scopes.js'
+import { balanceOf, grantCoins, ingestReward, listLedger } from './wallet.js'
+import { listAudit, requireConfirm, writeAudit } from './audit.js'
+import { PROTECTED_PACKAGES, isPluginEnabled, setPluginEnabled } from './profile-gate.js'
 import { dashboard, health } from './dashboard.js'
 
 export const name = 'dsh-training-console'
-export const VERSION = '0.1.0'
+export const VERSION = '0.2.0'
 
 export const EMITTED_EVENTS = [
-  'dsh-training:feature-console:dashboard-invalidate',
-  'dsh-training:feature-console:board-toggled',
-  'dsh-training:feature-console:user-created',
-  'dsh-training:feature-console:user-role-changed',
-  'dsh-training:feature-console:user-disabled',
-  'dsh-training:feature-console:admin-bootstrapped',
+  'dsh-training:console:admin-granted',
+  'dsh-training:console:admin-revoked',
+  'dsh-training:console:scope-granted',
+  'dsh-training:console:scope-revoked',
+  'dsh-training:console:user-disabled',
+  'dsh-training:console:board-toggled',
+  'dsh-training:console:coins-granted',
+  'dsh-training:console:dashboard-invalidate',
 ] as const
 export type EmittedEvent = (typeof EMITTED_EVENTS)[number]
+
+/** 板块 id → 插件包名（控制台开关用） */
+export const BOARD_TO_PACKAGE: Record<string, string | null> = {
+  core: null, // 受保护，无独立插件
+  tasks: 'dsh-training-tasks',
+  'feature-workbench': 'dsh-training-workbench',
+  'feature-community': 'dsh-training-community',
+  'feature-collab': 'dsh-training-collab',
+  console: 'dsh-training-console',
+}
 
 const ACTOR_HEADER = 'x-dsh-user'
 const DEFAULT_ACTOR = 'local-user'
@@ -59,7 +65,7 @@ export function emitEvent(type: EmittedEvent, payload: Record<string, unknown>, 
     v: 1,
     id: `ev-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
     at: new Date().toISOString(),
-    source: 'feature-console',
+    source: 'console',
     type,
     subject,
     payload,
@@ -104,17 +110,22 @@ class HttpError extends Error {
 }
 
 const STATUS_BY_CODE: Record<string, number> = {
-  'E-1101': 409,
   'E-1102': 403,
-  'E-1103': 400,
-  'E-1104': 404,
   'E-1105': 403,
   'E-1106': 409,
-  'E-1107': 409,
   'E-1108': 403,
-  'E-1110': 500,
-  'E-1111': 503,
-  'E-1112': 500,
+  'E-1201': 409,
+  'E-1202': 403,
+  'E-1203': 400,
+  'E-1204': 404,
+  'E-1210': 500,
+  'E-1211': 503,
+  'E-1212': 500,
+  'E-1215': 409,
+  'E-1220': 500,
+  'E-1221': 500,
+  'E-1222': 500,
+  'E-1223': 500,
 }
 
 interface ServerResponseLike {
@@ -165,20 +176,24 @@ function readBody(req: ServerRequestLike): Promise<Record<string, unknown>> {
   })
 }
 
-/** 解析身份（未知自动登记） */
-function resolveOrThrow(req: ServerRequestLike): User {
-  try {
-    return resolveUser(actorOf(req)).user
-  } catch (err) {
-    if (err instanceof UsersError) throw new HttpError(STATUS_BY_CODE[err.code] ?? 400, err.code, err.message)
-    throw err
-  }
+interface Actor {
+  user: UserRow
+  tier: 0 | AdminTier
+  businessLevel: string
 }
 
-function requireAdmin(req: ServerRequestLike): User {
-  const user = resolveOrThrow(req)
-  if (!user.roles.includes('admin')) throw new HttpError(403, 'E-1105', '需要管理员权限（角色 admin）。')
-  return user
+function whoIs(req: ServerRequestLike): Actor {
+  const { user } = resolveUser(actorOf(req))
+  const access = checkAccess()
+  return { user, tier: tierOf(user.id), businessLevel: access.level }
+}
+
+function requireTier(min: 6 | 7 | 8, req: ServerRequestLike): Actor {
+  const actor = whoIs(req)
+  if (actor.tier < min) {
+    throw new HttpError(403, 'E-1105', `需要 P${min} 及以上管理档位（当前 P${actor.tier || 0}）。`)
+  }
+  return actor
 }
 
 // ---------------------------------------------------------------- 路由
@@ -193,10 +208,9 @@ function registerRoutes(ctx: Context): void {
       handler: (req: ServerRequestLike, res: ServerResponseLike) => {
         const fail = (err: unknown) => {
           if (err instanceof HttpError) return json(res, err.status, { ok: false, code: err.code, message: err.message })
-          if (err instanceof UsersError || err instanceof BoardsError) {
-            return json(res, STATUS_BY_CODE[err.code] ?? 400, { ok: false, code: err.code, message: err.message })
-          }
-          json(res, 500, { ok: false, code: 'E-1109', message: (err as Error).message })
+          const code = (err as { code?: string }).code
+          if (code && STATUS_BY_CODE[code]) return json(res, STATUS_BY_CODE[code], { ok: false, code, message: (err as Error).message })
+          json(res, 500, { ok: false, code: 'E-1209', message: (err as Error).message })
         }
         try {
           Promise.resolve(handler(req, res)).catch(fail)
@@ -210,127 +224,312 @@ function registerRoutes(ctx: Context): void {
   const base = '/dsh-training/console'
 
   route(`${base}/me`, (req, res) => {
-    const user = resolveOrThrow(req)
+    const actor = whoIs(req)
     const access = checkAccess()
     json(res, 200, {
       ok: true,
-      data: { user: user.id, roles: user.roles, isAdmin: user.roles.includes('admin'), level: access.level, code: access.code },
+      data: {
+        user: actor.user.id,
+        displayName: actor.user.displayName,
+        businessLevel: access.level,
+        adminTier: actor.tier,
+        capabilities: {
+          dashboard: actor.tier >= 6,
+          audit: actor.tier >= 6,
+          boardToggle: actor.tier >= 6,
+          userManage: actor.tier >= 7,
+          scopeReview: actor.tier >= 7,
+          scopeAdmin: actor.tier === 8,
+          grantCoins: actor.tier === 8,
+        },
+      },
     })
   })
 
   route(`${base}/bootstrap`, async (req, res) => {
     if (req.method !== 'POST') return json(res, 405, { ok: false, code: 'E-1102', message: '只接受 POST。' })
     const body = await readBody(req)
-    const user = bootstrapAdmin(actorOf(req), body.confirm)
-    emitEvent('dsh-training:feature-console:admin-bootstrapped', { user: user.id }, { userId: user.id })
-    json(res, 200, { ok: true, data: user })
+    const actor = whoIs(req)
+    const reason = requireConfirm({ confirm: body.confirm, reason: body.reason })
+    if (listAdmins().admins.length > 0) throw new HttpError(409, 'E-1201', '已存在管理档位，bootstrap 仅用于首次初始化。')
+    const row = grantTier(actor.user.id, 8, actor.user.id, 8, reason)
+    writeAudit({ actor: actor.user.id, businessLevel: actor.businessLevel, adminTier: 8, action: 'bootstrap', target: actor.user.id, after: row, reason })
+    emitEvent('dsh-training:console:admin-granted', { user: actor.user.id, tier: 8, by: actor.user.id })
+    json(res, 200, { ok: true, data: row })
   })
 
   route(`${base}/dashboard`, (req, res) => {
-    resolveOrThrow(req)
+    requireTier(6, req)
     json(res, 200, { ok: true, data: dashboard() })
   })
 
   route(`${base}/health`, (req, res) => {
-    resolveOrThrow(req)
+    whoIs(req)
     json(res, 200, { ok: true, data: health() })
   })
 
   route(`${base}/users`, (req, res) => {
-    requireAdmin(req)
+    requireTier(6, req)
     json(res, 200, { ok: true, data: listUsers() })
   })
 
   route(`${base}/users/create`, async (req, res) => {
     if (req.method !== 'POST') return json(res, 405, { ok: false, code: 'E-1102', message: '只接受 POST。' })
-    requireAdmin(req)
+    const actor = requireTier(7, req)
     const body = await readBody(req)
     const id = typeof body.id === 'string' ? body.id.trim() : ''
-    const displayName = typeof body.displayName === 'string' && body.displayName.trim() ? body.displayName.trim() : id
-    // 复用 resolveUser 的校验与自动登记，再补 displayName
-    const created = resolveUser(id)
-    const user: User = { ...created.user, displayName }
-    if (!created.created) throw new HttpError(409, 'E-1101', `用户已存在：${id}`)
-    setRole(id, 'trainee', true)
-    emitEvent('dsh-training:feature-console:user-created', { user: id, by: actorOf(req) }, { userId: id })
-    void user
-    json(res, 200, { ok: true, data: { id, displayName } })
-  })
-
-  route(`${base}/users/role`, async (req, res) => {
-    if (req.method !== 'POST') return json(res, 405, { ok: false, code: 'E-1102', message: '只接受 POST。' })
-    requireAdmin(req)
-    const body = await readBody(req)
-    const id = typeof body.id === 'string' ? body.id : ''
-    const role = (typeof body.role === 'string' ? body.role : 'admin') as Role
-    const grant = body.grant !== false
-    const user = setRole(id, role, grant)
-    emitEvent('dsh-training:feature-console:user-role-changed', { user: user.id, role, grant, by: actorOf(req) }, { userId: user.id })
-    emitEvent('dsh-training:feature-console:dashboard-invalidate', { reason: 'role-changed' })
-    json(res, 200, { ok: true, data: user })
+    const displayName = typeof body.displayName === 'string' ? body.displayName : id
+    try {
+      const user = createUser(id, displayName)
+      writeAudit({ actor: actor.user.id, businessLevel: actor.businessLevel, adminTier: actor.tier, action: 'user-create', target: id, after: { id, displayName }, reason: null })
+      json(res, 200, { ok: true, data: user })
+    } catch (err) {
+      writeAudit({ actor: actor.user.id, businessLevel: actor.businessLevel, adminTier: actor.tier, action: 'user-create', target: id, result: 'error', error: (err as Error).message })
+      throw err
+    }
   })
 
   route(`${base}/users/disable`, async (req, res) => {
     if (req.method !== 'POST') return json(res, 405, { ok: false, code: 'E-1102', message: '只接受 POST。' })
-    requireAdmin(req)
+    const actor = requireTier(7, req)
     const body = await readBody(req)
     const id = typeof body.id === 'string' ? body.id : ''
     const disabled = body.disabled !== false
-    const user = setDisabled(id, disabled)
-    emitEvent('dsh-training:feature-console:user-disabled', { user: user.id, disabled, by: actorOf(req) }, { userId: user.id })
-    emitEvent('dsh-training:feature-console:dashboard-invalidate', { reason: 'user-disabled' })
-    json(res, 200, { ok: true, data: user })
+    let reason = ''
+    try {
+      reason = requireConfirm({ confirm: body.confirm, reason: body.reason })
+      if (id === actor.user.id && disabled) throw new HttpError(400, 'E-1203', '不能禁用自己。')
+      const user = setUserDisabled(id, disabled)
+      writeAudit({ actor: actor.user.id, businessLevel: actor.businessLevel, adminTier: actor.tier, action: disabled ? 'user-disable' : 'user-enable', target: id, after: user, reason })
+      emitEvent('dsh-training:console:user-disabled', { user: id, disabled, by: actor.user.id })
+      json(res, 200, { ok: true, data: user })
+    } catch (err) {
+      writeAudit({ actor: actor.user.id, businessLevel: actor.businessLevel, adminTier: actor.tier, action: 'user-disable', target: id, result: 'error', reason: reason || null, error: (err as Error).message })
+      throw err
+    }
   })
 
-  route(`${base}/boards`, (req, res) => {
-    resolveOrThrow(req)
-    json(res, 200, {
-      ok: true,
-      data: boardStatus(),
+  route(`${base}/admins`, (req, res) => {
+    requireTier(6, req)
+    json(res, 200, { ok: true, data: listAdmins() })
+  })
+
+  route(`${base}/admins/grant`, async (req, res) => {
+    if (req.method !== 'POST') return json(res, 405, { ok: false, code: 'E-1102', message: '只接受 POST。' })
+    const actor = requireTier(7, req)
+    const body = await readBody(req)
+    const id = typeof body.id === 'string' ? body.id : ''
+    const tier = Number(body.tier) as AdminTier
+    let reason = ''
+    try {
+      reason = requireConfirm({ confirm: body.confirm, reason: body.reason })
+      const row = grantTier(actor.user.id, actor.tier, id, tier, reason)
+      writeAudit({ actor: actor.user.id, businessLevel: actor.businessLevel, adminTier: actor.tier, action: 'admin-grant', target: id, after: row, reason })
+      emitEvent('dsh-training:console:admin-granted', { user: id, tier, by: actor.user.id })
+      json(res, 200, { ok: true, data: row })
+    } catch (err) {
+      writeAudit({ actor: actor.user.id, businessLevel: actor.businessLevel, adminTier: actor.tier, action: 'admin-grant', target: id, result: 'error', reason: reason || null, error: (err as Error).message })
+      throw err
+    }
+  })
+
+  route(`${base}/admins/revoke`, async (req, res) => {
+    if (req.method !== 'POST') return json(res, 405, { ok: false, code: 'E-1102', message: '只接受 POST。' })
+    const actor = requireTier(7, req)
+    const body = await readBody(req)
+    const id = typeof body.id === 'string' ? body.id : ''
+    let reason = ''
+    try {
+      reason = requireConfirm({ confirm: body.confirm, reason: body.reason })
+      const row = revokeTier(actor.user.id, actor.tier, id)
+      writeAudit({ actor: actor.user.id, businessLevel: actor.businessLevel, adminTier: actor.tier, action: 'admin-revoke', target: id, before: row, reason })
+      emitEvent('dsh-training:console:admin-revoked', { user: id, by: actor.user.id })
+      json(res, 200, { ok: true, data: { revoked: Boolean(row) } })
+    } catch (err) {
+      writeAudit({ actor: actor.user.id, businessLevel: actor.businessLevel, adminTier: actor.tier, action: 'admin-revoke', target: id, result: 'error', reason: reason || null, error: (err as Error).message })
+      throw err
+    }
+  })
+
+  route(`${base}/scopes`, (req, res) => {
+    requireTier(6, req)
+    json(res, 200, { ok: true, data: listScopes() })
+  })
+
+  for (const action of ['grant', 'revoke'] as const) {
+    route(`${base}/scopes/${action}`, async (req, res) => {
+      if (req.method !== 'POST') return json(res, 405, { ok: false, code: 'E-1102', message: '只接受 POST。' })
+      const actor = requireTier(7, req)
+      const body = await readBody(req)
+      const id = typeof body.id === 'string' ? body.id : ''
+      const scope = typeof body.scope === 'string' ? body.scope : ''
+      let reason = ''
+      try {
+        reason = requireConfirm({ confirm: body.confirm, reason: body.reason })
+        const row = action === 'grant' ? grantScope(actor.user.id, actor.tier, id, scope) : revokeScope(actor.user.id, actor.tier, id, scope)
+        writeAudit({ actor: actor.user.id, businessLevel: actor.businessLevel, adminTier: actor.tier, action: `scope-${action}`, target: id, after: { scope, row }, reason })
+        emitEvent(
+          action === 'grant' ? 'dsh-training:console:scope-granted' : 'dsh-training:console:scope-revoked',
+          { user: id, scope, by: actor.user.id },
+        )
+        json(res, 200, { ok: true, data: row })
+      } catch (err) {
+        writeAudit({ actor: actor.user.id, businessLevel: actor.businessLevel, adminTier: actor.tier, action: `scope-${action}`, target: id, result: 'error', reason: reason || null, error: (err as Error).message })
+        throw err
+      }
     })
+  }
+
+  route(`${base}/boards`, (req, res) => {
+    requireTier(6, req)
+    const rows = Object.entries(BOARD_TO_PACKAGE).map(([boardId, pkg]) => ({
+      board: boardId,
+      pkg,
+      enabled: pkg ? isPluginEnabled(pkg) : true,
+      protected: pkg ? PROTECTED_PACKAGES.includes(pkg as (typeof PROTECTED_PACKAGES)[number]) : true,
+    }))
+    json(res, 200, { ok: true, data: rows })
   })
 
   route(`${base}/boards/toggle`, async (req, res) => {
     if (req.method !== 'POST') return json(res, 405, { ok: false, code: 'E-1102', message: '只接受 POST。' })
-    requireAdmin(req)
+    const actor = requireTier(6, req)
+    const body = await readBody(req)
+    const boardId = typeof body.board === 'string' ? body.board : typeof body.id === 'string' ? body.id : ''
+    const enabled = body.enabled !== false
+    let reason = ''
+    try {
+      reason = requireConfirm({ confirm: body.confirm, reason: body.reason })
+      const pkg = BOARD_TO_PACKAGE[boardId]
+      if (pkg === null || pkg === undefined) {
+        throw new HttpError(409, 'E-1106', `板块 ${boardId} 受保护，不能停用（核心板块无独立插件，停用会导致系统不可用）。`)
+      }
+      const result = setPluginEnabled(pkg, enabled)
+      writeAudit({
+        actor: actor.user.id,
+        businessLevel: actor.businessLevel,
+        adminTier: actor.tier,
+        action: 'board-toggle',
+        target: boardId,
+        before: { enabled: !enabled },
+        after: { enabled, pkg, restartRequired: result.restartRequired, bundles: result.bundles },
+        reason,
+      })
+      emitEvent('dsh-training:console:board-toggled', { board: boardId, pkg, enabled, by: actor.user.id })
+      emitEvent('dsh-training:console:dashboard-invalidate', { reason: 'board-toggled' })
+      json(res, 200, { ok: true, data: result })
+    } catch (err) {
+      writeAudit({ actor: actor.user.id, businessLevel: actor.businessLevel, adminTier: actor.tier, action: 'board-toggle', target: boardId, result: 'error', reason: reason || null, error: (err as Error).message })
+      throw err
+    }
+  })
+
+  route(`${base}/wallet/balance`, (req, res) => {
+    const actor = requireTier(6, req)
+    const url = new URL(req.url ?? '/', 'http://localhost')
+    const userId = url.searchParams.get('user') ?? actor.user.id
+    json(res, 200, { ok: true, data: { user: userId, balance: balanceOf(userId) } })
+  })
+
+  route(`${base}/wallet/ledger`, (req, res) => {
+    requireTier(6, req)
+    const url = new URL(req.url ?? '/', 'http://localhost')
+    const userId = url.searchParams.get('user') ?? undefined
+    const limit = Number(url.searchParams.get('limit') ?? 50)
+    json(res, 200, { ok: true, data: listLedger(Number.isFinite(limit) ? limit : 50, userId) })
+  })
+
+  route(`${base}/wallet/grant`, async (req, res) => {
+    if (req.method !== 'POST') return json(res, 405, { ok: false, code: 'E-1102', message: '只接受 POST。' })
+    const actor = requireTier(8, req)
     const body = await readBody(req)
     const id = typeof body.id === 'string' ? body.id : ''
-    const enabled = body.enabled !== false
-    const doc = toggleBoard(id, enabled)
-    emitEvent('dsh-training:feature-console:board-toggled', { board: id, enabled, by: actorOf(req) })
-    emitEvent('dsh-training:feature-console:dashboard-invalidate', { reason: 'board-toggled' })
-    json(res, 200, { ok: true, data: { enabled: doc.enabled } })
+    const amount = Number(body.amount)
+    let reason = ''
+    try {
+      reason = requireConfirm({ confirm: body.confirm, reason: body.reason })
+      const r = grantCoins(actor.user.id, actor.tier, id, amount, reason)
+      writeAudit({ actor: actor.user.id, businessLevel: actor.businessLevel, adminTier: actor.tier, action: 'coins-grant', target: id, after: { amount, balance: r.balance }, reason })
+      emitEvent('dsh-training:console:coins-granted', { user: id, amount, by: actor.user.id, balance: r.balance })
+      json(res, 200, { ok: true, data: r })
+    } catch (err) {
+      writeAudit({ actor: actor.user.id, businessLevel: actor.businessLevel, adminTier: actor.tier, action: 'coins-grant', target: id, result: 'error', reason: reason || null, error: (err as Error).message })
+      throw err
+    }
   })
 
   route(`${base}/audit`, (req, res) => {
-    requireAdmin(req)
-    const file = join(stateDir(), 'event-log.jsonl')
-    const rows: { at: string; type: string; payload: unknown }[] = []
-    if (existsSync(file)) {
-      const lines = readFileSync(file, 'utf8').split(/\r?\n/).filter(Boolean)
-      for (const line of lines.slice(-200)) {
-        try {
-          const ev = JSON.parse(line) as { at?: string; type?: string; payload?: unknown }
-          if (typeof ev.type === 'string' && ev.type.startsWith('dsh-training:feature-console:')) {
-            rows.push({ at: ev.at ?? '', type: ev.type, payload: ev.payload ?? null })
-          }
-        } catch {
-          /* skip */
-        }
-      }
-    }
-    json(res, 200, { ok: true, data: { total: rows.length, rows: rows.slice(-50).reverse() } })
+    requireTier(6, req)
+    const url = new URL(req.url ?? '/', 'http://localhost')
+    const limit = Number(url.searchParams.get('limit') ?? 50)
+    const action = url.searchParams.get('action') ?? undefined
+    json(res, 200, { ok: true, data: listAudit(Number.isFinite(limit) ? limit : 50, action) })
   })
 
-  console.log(`[dsh-training-console] 已注册 11 条路由（${base}/*）`)
+  route(`${base}/migrate`, async (req, res) => {
+    if (req.method !== 'POST') return json(res, 405, { ok: false, code: 'E-1102', message: '只接受 POST。' })
+    const actor = whoIs(req)
+    const migrated = migrateLegacyUsers()
+    const admins = migrateLegacyAdmins(migrated.admins)
+    if (migrated.migrated || admins) {
+      writeAudit({
+        actor: actor.user.id,
+        businessLevel: actor.businessLevel,
+        adminTier: actor.tier,
+        action: 'migrate-legacy',
+        target: null,
+        after: { users: migrated.migrated, admins },
+        reason: 'legacy roles migration',
+      })
+    }
+    json(res, 200, { ok: true, data: { users: migrated.migrated, admins } })
+  })
+
+  console.log(`[dsh-training-console] 已注册 20 条路由（${base}/*）`)
 }
 
 // ---------------------------------------------------------------- 入口
 export function apply(ctx: Context): void {
   bus = ctx
   writeMountEvent('mounted')
+
+  // 启动时静默迁移旧数据（roles → 档位）
+  try {
+    const migrated = migrateLegacyUsers()
+    const admins = migrateLegacyAdmins(migrated.admins)
+    if (migrated.migrated || admins) {
+      console.log(`[dsh-training-console] 迁移旧数据：用户 ${migrated.migrated}，管理员 ${admins}`)
+    }
+  } catch (err) {
+    console.warn(`[dsh-training-console] 迁移失败：${(err as Error).message}`)
+  }
+
+  // 订阅任务赏金 → 钱包入账
+  try {
+    const anyCtx = ctx as unknown as { on?: (type: string, cb: (env: unknown) => void) => unknown }
+    if (typeof anyCtx.on === 'function') {
+      anyCtx.on('dsh-training:tasks:reward', (env: unknown) => {
+        try {
+          const e = env as { id?: string; payload?: Record<string, unknown> }
+          const to = typeof e.payload?.to === 'string' ? e.payload.to : ''
+          const coins = Number(e.payload?.coins ?? 0)
+          const r = ingestReward(String(e.id ?? ''), to, coins)
+          if (r.credited) {
+            console.log(`[dsh-training-console] 赏金入账：${to} +${coins}（余额 ${r.balance}）`)
+            emitEvent('dsh-training:console:dashboard-invalidate', { reason: 'reward-credited', user: to })
+          }
+        } catch (err) {
+          console.warn(`[dsh-training-console] 赏金入账失败：${(err as Error).message}`)
+        }
+      })
+      console.log('[dsh-training-console] 已订阅 tasks:reward → 钱包入账')
+    }
+  } catch (err) {
+    console.warn(`[dsh-training-console] 订阅失败：${(err as Error).message}`)
+  }
+
   const access = checkAccess()
-  console.log(`[dsh-training-console] mounted — v${VERSION} · ${access.level} · admins=${listUsers().adminCount}`)
+  console.log(`[dsh-training-console] mounted — v${VERSION} · ${access.level} · P8=${listAdmins().p8}`)
 
   ctx.effect(() => {
     console.log('[dsh-training-console] ready')
@@ -358,4 +557,4 @@ export function apply(ctx: Context): void {
   }
 }
 
-export const __internals = { actorOf, readBody, isAdmin, stateDir, emitEvent, EMITTED_EVENTS }
+export const __internals = { actorOf, readBody, stateDir, emitEvent, EMITTED_EVENTS, existsSync, readFileSync }
