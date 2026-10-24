@@ -121,6 +121,29 @@ try {
   const r6b = unwire({ profileDir: p6, packageName: PKG });
   check("再次撤回幂等", r6b.changed, false);
 
+  // 6.5 node_modules 链接（DSH 实际从这里解析插件）
+  console.log("\n=== 6.5 · node_modules 链接维护 ===");
+  const { ensureNodeModulesLink } = require(LIB);
+  const t65 = makeProfile("nmlink");
+  const realPlugin = mkdtempSync(join(tmpdir(), "dsh-real-plugin-"));
+  roots.push(realPlugin);
+  writeFileSync(join(realPlugin, "package.json"), '{"name":"dsh-training-protocol","version":"0.3.0"}');
+  const l1 = ensureNodeModulesLink(t65, PKG, realPlugin);
+  check("首次创建链接", l1.changed, true);
+  const { realpathSync, lstatSync } = await import("node:fs");
+  check("realpath 指向真实插件目录", realpathSync(join(t65, "node_modules", PKG)).toLowerCase(), realpathSync(realPlugin).toLowerCase());
+  const l2 = ensureNodeModulesLink(t65, PKG, realPlugin);
+  check("再次调用幂等", l2.changed, false);
+  const otherPlugin = mkdtempSync(join(tmpdir(), "dsh-other-plugin-"));
+  roots.push(otherPlugin);
+  writeFileSync(join(otherPlugin, "package.json"), '{"name":"x"}');
+  const l3 = ensureNodeModulesLink(t65, PKG, otherPlugin);
+  check("换目标时重建链接", l3.changed, true);
+  check("链接已指向新目标", realpathSync(join(t65, "node_modules", PKG)).toLowerCase(), realpathSync(otherPlugin).toLowerCase());
+  const un6 = unwire({ profileDir: t65, packageName: PKG });
+  check("撤回时移除链接", un6.nodeModulesLink.removed, true);
+  check("链接确实已不存在", (() => { try { lstatSync(join(t65, "node_modules", PKG)); return false } catch { return true } })(), true);
+
   // 附加：备份最多保留 3 份
   console.log("\n=== 附加 · 备份清理策略 ===");
   for (let i = 0; i < 5; i++) {

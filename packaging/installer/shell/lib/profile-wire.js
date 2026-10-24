@@ -106,6 +106,67 @@ function ensureShape(json) {
   return json
 }
 
+/**
+ * 维护 profile/node_modules/<pkg> 的链接（Windows 用 junction，免管理员）。
+ * 必须做：DSH 按 node_modules 里的包解析插件，而不是读 package.json 的 link:；
+ * 只改 package.json 会出现「清单指向安装目录、实际仍加载仓库」的分裂（2026-10-24 踩到）。
+ */
+function ensureNodeModulesLink(profileDir, packageName, linkPath) {
+  const nm = path.join(path.resolve(profileDir), 'node_modules')
+  const target = path.join(nm, packageName)
+  const desired = path.resolve(linkPath)
+
+  // lstat 能识别"悬空 junction"（目标已不存在），realpath 不能
+  let linkExists = false
+  try {
+    fs.lstatSync(target)
+    linkExists = true
+  } catch {
+    linkExists = false
+  }
+  let currentReal = null
+  try {
+    currentReal = fs.realpathSync(target)
+  } catch {
+    currentReal = null
+  }
+  let desiredReal
+  try {
+    desiredReal = fs.realpathSync(desired)
+  } catch {
+    desiredReal = desired
+  }
+  if (currentReal && currentReal.toLowerCase() === desiredReal.toLowerCase()) {
+    return { changed: false, target, real: currentReal }
+  }
+
+  fs.mkdirSync(nm, { recursive: true })
+  if (linkExists) fs.rmSync(target, { recursive: true, force: true })
+  try {
+    fs.symlinkSync(desired, target, 'junction')
+  } catch (err) {
+    throw new ProfileWireError('E-503', `创建 node_modules 链接失败（${err.code ?? '未知'}）：${err.message}`, { target, desired })
+  }
+  // 目标目录可能尚不存在（安装前的预接线 / 单测），realpath 失败不算错
+  let real = null
+  try {
+    real = fs.realpathSync(target)
+  } catch {
+    real = null
+  }
+  return { changed: true, target, real }
+}
+
+/** 移除 node_modules 链接 */
+function removeNodeModulesLink(profileDir, packageName) {
+  const target = path.join(path.resolve(profileDir), 'node_modules', packageName)
+  try {
+    fs.rmSync(target, { recursive: true, force: true })
+    return { removed: true, target }
+  } catch {
+    return { removed: false, target }
+  }
+}
 /** 只读检查 */
 function inspect({ profileDir, packageName }) {
   const { dir, file } = pathsFor(profileDir)
@@ -141,10 +202,12 @@ function wire({ profileDir, packageName, linkPath, dryRun = false }) {
   const after = JSON.stringify(json)
 
   if (before === after) {
-    return { changed: false, backup: null, depSpec, bundleAdded: false, file }
+    // 清单没变，但 junction 可能仍指向旧路径（如仓库）——这里也必须纠正
+    const linkNoop = ensureNodeModulesLink(profileDir, packageName, linkPath)
+    return { changed: false, backup: null, depSpec, bundleAdded: false, file, nodeModulesLink: linkNoop }
   }
   if (dryRun) {
-    return { changed: true, backup: null, depSpec, bundleAdded, file, dryRun: true }
+    return { changed: true, backup: null, depSpec, bundleAdded, file, dryRun: true, nodeModulesLink: { changed: false, target: null } }
   }
 
   const preRaw = fs.readFileSync(file, 'utf8')
@@ -167,7 +230,9 @@ function wire({ profileDir, packageName, linkPath, dryRun = false }) {
     }
     throw err
   }
-  return { changed: true, backup: backupPath, depSpec, bundleAdded, file }
+  // 同步 node_modules 链接：否则 DSH 仍从旧路径（如仓库）解析插件
+  const link = ensureNodeModulesLink(profileDir, packageName, linkPath)
+  return { changed: true, backup: backupPath, depSpec, bundleAdded, file, nodeModulesLink: link }
 }
 
 /**
@@ -184,13 +249,14 @@ function unwire({ profileDir, packageName, dryRun = false }) {
   const hadBundle = bundleIdx >= 0
 
   if (!hadDep && !hadBundle) {
-    return { changed: false, backup: null, removedDep: false, removedBundle: false, file }
+    const linkNoop = removeNodeModulesLink(profileDir, packageName)
+    return { changed: false, backup: null, removedDep: false, removedBundle: false, file, nodeModulesLink: linkNoop }
   }
   if (hadDep) delete json.dependencies[packageName]
   if (hadBundle) json.dsh.profile[BUNDLES_KEY].splice(bundleIdx, 1)
 
   if (dryRun) {
-    return { changed: true, backup: null, removedDep: hadDep, removedBundle: hadBundle, file, dryRun: true }
+    return { changed: true, backup: null, removedDep: hadDep, removedBundle: hadBundle, file, dryRun: true, nodeModulesLink: { removed: false, target: null } }
   }
 
   const preRaw = fs.readFileSync(file, 'utf8')
@@ -211,7 +277,8 @@ function unwire({ profileDir, packageName, dryRun = false }) {
     }
     throw err
   }
-  return { changed: true, backup: backupPath, removedDep: hadDep, removedBundle: hadBundle, file }
+  const link = removeNodeModulesLink(profileDir, packageName)
+  return { changed: true, backup: backupPath, removedDep: hadDep, removedBundle: hadBundle, file, nodeModulesLink: link }
 }
 
-module.exports = { ProfileWireError, inspect, wire, unwire, pathsFor }
+module.exports = { ProfileWireError, inspect, wire, unwire, pathsFor, ensureNodeModulesLink, removeNodeModulesLink }
