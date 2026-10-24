@@ -1,16 +1,33 @@
 {
-  "id": "core",
-  "displayName": "核心板块 · DSH 运行时 + 协议插件",
-  "kind": "required",
-  "status": "skeleton",
-  "dependsOn": [],
-  "defaultSelected": true,
-  "install": {
-    "target": "profiles/desktop",
-    "mode": "plugin-link"
-  },
-  "contents": [
-    "（占位）待阶段三填充实际产物"
-  ],
-  "placeholderNote": "阶段一仅骨架：本板块不产真实文件，勾选与否都不影响核心功能。"
+    "id":  "core",
+    "displayName":  "核心板块 · DSH 运行时 + 协议插件",
+    "kind":  "required",
+    "status":  "skeleton",
+    "dependsOn":  [
+
+                  ],
+    "defaultSelected":  true,
+    "install":  {
+                    "target":  "profiles/desktop",
+                    "mode":  "plugin-link"
+                },
+    "contents":  [
+                     "（占位）待阶段三填充实际产物"
+                 ],
+    "placeholderNote":  "阶段一仅骨架：本板块不产真实文件，勾选与否都不影响核心功能。",
+    "schemaVersion":  2,
+    "boardApi":  1,
+    "version":  "0.1.0",
+    "smoke":  "test-core.mjs",
+    "events":  {
+                   "emits":  [
+                                 "settlement-requested",
+                                 "settlement-done",
+                                 "level-up",
+                                 "coins-changed"
+                             ],
+                   "consumes":  [
+                                    "dsh-training:feature-taskboard:task-completed"
+                                ]
+               }
 }

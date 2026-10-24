@@ -1,18 +1,35 @@
 {
-  "id": "feature-taskboard",
-  "displayName": "功能预览 · 任务接发",
-  "kind": "preview",
-  "status": "placeholder",
-  "dependsOn": [
-    "core"
-  ],
-  "defaultSelected": false,
-  "install": {
-    "target": "features/taskboard",
-    "mode": "copy"
-  },
-  "contents": [
-    "（占位）待阶段三填充实际产物"
-  ],
-  "placeholderNote": "阶段一仅骨架：本板块不产真实文件，勾选与否都不影响核心功能。"
+    "id":  "feature-taskboard",
+    "displayName":  "功能预览 · 任务接发",
+    "kind":  "preview",
+    "status":  "placeholder",
+    "dependsOn":  [
+                      "core"
+                  ],
+    "defaultSelected":  false,
+    "install":  {
+                    "target":  "features/taskboard",
+                    "mode":  "copy"
+                },
+    "contents":  [
+                     "（占位）待阶段三填充实际产物"
+                 ],
+    "placeholderNote":  "阶段一仅骨架：本板块不产真实文件，勾选与否都不影响核心功能。",
+    "schemaVersion":  2,
+    "boardApi":  1,
+    "version":  "0.1.0",
+    "smoke":  "test-feature-taskboard.mjs",
+    "events":  {
+                   "emits":  [
+                                 "task-created",
+                                 "task-claimed",
+                                 "task-submitted",
+                                 "task-accepted",
+                                 "task-rejected",
+                                 "task-completed"
+                             ],
+                   "consumes":  [
+                                    "dsh-training:core:level-up"
+                                ]
+               }
 }

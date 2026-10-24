@@ -1,74 +1,74 @@
 {
-  "board": "character-txzf",
-  "displayName": "星辰（TxzF）",
-  "version": "0.3.0",
-  "status": "done",
-  "updatedAt": "2026-10-24T12:14:27.605Z",
-  "totalFiles": 11,
-  "totalBytes": 7840198,
-  "note": "资源已就位：基础网格 10,572 tris / 细分后 20,480 tris；动作已随 FBX 导出，引擎侧可直接播放。",
-  "assets": [
-    {
-      "name": "全身模型（FBX）",
-      "path": "character-txzf/assets/model/txzf.fbx",
-      "spec": "骨架 26 根骨骼（含大衣下摆三向摆骨、后发）；6 组（idle/explain/authorize/warn/guide/settle），30fps，已随 FBX 导出",
-      "count": 1,
-      "bytes": 2936316,
-      "source": "Blender 5.2.2 LTS 程序化生成（scripts/build_rig_anim*.py）",
-      "status": "DONE"
-    },
-    {
-      "name": "Blender 工程（含骨骼与材质节点）",
-      "path": "character-txzf/assets/model/txzf_rigged.blend",
-      "spec": "可直接打开编辑；材质为节点材质",
-      "count": 1,
-      "bytes": 317594,
-      "source": "同上",
-      "status": "DONE"
-    },
-    {
-      "name": "全身三视图（正交）",
-      "path": "assets/views",
-      "spec": "正/侧/背，PNG 700×1400",
-      "count": 3,
-      "bytes": 1850122,
-      "source": "Cycles CPU 渲染",
-      "status": "DONE"
-    },
-    {
-      "name": "动作帧预览",
-      "path": "assets/actions",
-      "spec": "6 组（idle/explain/authorize/warn/guide/settle），30fps，已随 FBX 导出",
-      "count": 6,
-      "bytes": 2736166,
-      "source": "Cycles CPU 渲染（每组 1 帧）",
-      "status": "DONE",
-      "items": [
-        {
-          "clip": "idle",
-          "path": "character-txzf/assets/actions/idle.png"
-        },
-        {
-          "clip": "explain",
-          "path": "character-txzf/assets/actions/explain.png"
-        },
-        {
-          "clip": "authorize",
-          "path": "character-txzf/assets/actions/authorize.png"
-        },
-        {
-          "clip": "warn",
-          "path": "character-txzf/assets/actions/warn.png"
-        },
-        {
-          "clip": "guide",
-          "path": "character-txzf/assets/actions/guide.png"
-        },
-        {
-          "clip": "settle",
-          "path": "character-txzf/assets/actions/settle.png"
-        }
-      ]
-    }
-  ]
+    "board":  "character-txzf",
+    "displayName":  "星辰（TxzF）",
+    "version":  "0.3.0",
+    "status":  "done",
+    "updatedAt":  "2026-10-24T12:14:27.605Z",
+    "totalFiles":  11,
+    "totalBytes":  7840198,
+    "note":  "资源已就位：基础网格 10,572 tris / 细分后 20,480 tris；动作已随 FBX 导出，引擎侧可直接播放。",
+    "assets":  [
+                   {
+                       "name":  "全身模型（FBX）",
+                       "path":  "assets/model/txzf.fbx",
+                       "spec":  "骨架 26 根骨骼（含大衣下摆三向摆骨、后发）；6 组（idle/explain/authorize/warn/guide/settle），30fps，已随 FBX 导出",
+                       "count":  1,
+                       "bytes":  2936316,
+                       "source":  "Blender 5.2.2 LTS 程序化生成（scripts/build_rig_anim*.py）",
+                       "status":  "DONE"
+                   },
+                   {
+                       "name":  "Blender 工程（含骨骼与材质节点）",
+                       "path":  "assets/model/txzf_rigged.blend",
+                       "spec":  "可直接打开编辑；材质为节点材质",
+                       "count":  1,
+                       "bytes":  317594,
+                       "source":  "同上",
+                       "status":  "DONE"
+                   },
+                   {
+                       "name":  "全身三视图（正交）",
+                       "path":  "assets/views",
+                       "spec":  "正/侧/背，PNG 700×1400",
+                       "count":  3,
+                       "bytes":  1850122,
+                       "source":  "Cycles CPU 渲染",
+                       "status":  "DONE"
+                   },
+                   {
+                       "name":  "动作帧预览",
+                       "path":  "assets/actions",
+                       "spec":  "6 组（idle/explain/authorize/warn/guide/settle），30fps，已随 FBX 导出",
+                       "count":  6,
+                       "bytes":  2736166,
+                       "source":  "Cycles CPU 渲染（每组 1 帧）",
+                       "status":  "DONE",
+                       "items":  [
+                                     {
+                                         "clip":  "idle",
+                                         "path":  "assets/actions/idle.png"
+                                     },
+                                     {
+                                         "clip":  "explain",
+                                         "path":  "assets/actions/explain.png"
+                                     },
+                                     {
+                                         "clip":  "authorize",
+                                         "path":  "assets/actions/authorize.png"
+                                     },
+                                     {
+                                         "clip":  "warn",
+                                         "path":  "assets/actions/warn.png"
+                                     },
+                                     {
+                                         "clip":  "guide",
+                                         "path":  "assets/actions/guide.png"
+                                     },
+                                     {
+                                         "clip":  "settle",
+                                         "path":  "assets/actions/settle.png"
+                                     }
+                                 ]
+                   }
+               ]
 }

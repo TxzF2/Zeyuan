@@ -1,70 +1,70 @@
 {
-  "board": "character-changzhengji",
-  "displayName": "长征姬",
-  "version": "0.3.0",
-  "status": "done",
-  "updatedAt": "2026-10-24T12:14:27.635Z",
-  "totalFiles": 10,
-  "totalBytes": 7090645,
-  "note": "资源已就位：基础网格 8,360 tris / 细分后 18,392 tris；动作已随 FBX 导出，引擎侧可直接播放。",
-  "assets": [
-    {
-      "name": "全身模型（FBX）",
-      "path": "character-changzhengji/assets/model/changzhengji.fbx",
-      "spec": "骨架 27 根骨骼（含大氅三向摆骨、银发两段、徽章独立骨）；5 组（idle/announce/grant/levelup/reject），30fps，已随 FBX 导出",
-      "count": 1,
-      "bytes": 2798572,
-      "source": "Blender 5.2.2 LTS 程序化生成（scripts/build_rig_anim*.py）",
-      "status": "DONE"
-    },
-    {
-      "name": "Blender 工程（含骨骼与材质节点）",
-      "path": "character-changzhengji/assets/model/changzhengji_rigged.blend",
-      "spec": "可直接打开编辑；材质为节点材质",
-      "count": 1,
-      "bytes": 269324,
-      "source": "同上",
-      "status": "DONE"
-    },
-    {
-      "name": "全身三视图（正交）",
-      "path": "assets/views",
-      "spec": "正/侧/背，PNG 700×1400",
-      "count": 3,
-      "bytes": 1743104,
-      "source": "Cycles CPU 渲染",
-      "status": "DONE"
-    },
-    {
-      "name": "动作帧预览",
-      "path": "assets/actions",
-      "spec": "5 组（idle/announce/grant/levelup/reject），30fps，已随 FBX 导出",
-      "count": 5,
-      "bytes": 2279645,
-      "source": "Cycles CPU 渲染（每组 1 帧）",
-      "status": "DONE",
-      "items": [
-        {
-          "clip": "idle",
-          "path": "character-changzhengji/assets/actions/idle.png"
-        },
-        {
-          "clip": "announce",
-          "path": "character-changzhengji/assets/actions/announce.png"
-        },
-        {
-          "clip": "grant",
-          "path": "character-changzhengji/assets/actions/grant.png"
-        },
-        {
-          "clip": "levelup",
-          "path": "character-changzhengji/assets/actions/levelup.png"
-        },
-        {
-          "clip": "reject",
-          "path": "character-changzhengji/assets/actions/reject.png"
-        }
-      ]
-    }
-  ]
+    "board":  "character-changzhengji",
+    "displayName":  "长征姬",
+    "version":  "0.3.0",
+    "status":  "done",
+    "updatedAt":  "2026-10-24T12:14:27.635Z",
+    "totalFiles":  10,
+    "totalBytes":  7090645,
+    "note":  "资源已就位：基础网格 8,360 tris / 细分后 18,392 tris；动作已随 FBX 导出，引擎侧可直接播放。",
+    "assets":  [
+                   {
+                       "name":  "全身模型（FBX）",
+                       "path":  "assets/model/changzhengji.fbx",
+                       "spec":  "骨架 27 根骨骼（含大氅三向摆骨、银发两段、徽章独立骨）；5 组（idle/announce/grant/levelup/reject），30fps，已随 FBX 导出",
+                       "count":  1,
+                       "bytes":  2798572,
+                       "source":  "Blender 5.2.2 LTS 程序化生成（scripts/build_rig_anim*.py）",
+                       "status":  "DONE"
+                   },
+                   {
+                       "name":  "Blender 工程（含骨骼与材质节点）",
+                       "path":  "assets/model/changzhengji_rigged.blend",
+                       "spec":  "可直接打开编辑；材质为节点材质",
+                       "count":  1,
+                       "bytes":  269324,
+                       "source":  "同上",
+                       "status":  "DONE"
+                   },
+                   {
+                       "name":  "全身三视图（正交）",
+                       "path":  "assets/views",
+                       "spec":  "正/侧/背，PNG 700×1400",
+                       "count":  3,
+                       "bytes":  1743104,
+                       "source":  "Cycles CPU 渲染",
+                       "status":  "DONE"
+                   },
+                   {
+                       "name":  "动作帧预览",
+                       "path":  "assets/actions",
+                       "spec":  "5 组（idle/announce/grant/levelup/reject），30fps，已随 FBX 导出",
+                       "count":  5,
+                       "bytes":  2279645,
+                       "source":  "Cycles CPU 渲染（每组 1 帧）",
+                       "status":  "DONE",
+                       "items":  [
+                                     {
+                                         "clip":  "idle",
+                                         "path":  "assets/actions/idle.png"
+                                     },
+                                     {
+                                         "clip":  "announce",
+                                         "path":  "assets/actions/announce.png"
+                                     },
+                                     {
+                                         "clip":  "grant",
+                                         "path":  "assets/actions/grant.png"
+                                     },
+                                     {
+                                         "clip":  "levelup",
+                                         "path":  "assets/actions/levelup.png"
+                                     },
+                                     {
+                                         "clip":  "reject",
+                                         "path":  "assets/actions/reject.png"
+                                     }
+                                 ]
+                   }
+               ]
 }

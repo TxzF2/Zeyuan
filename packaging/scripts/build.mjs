@@ -156,11 +156,17 @@ function dirSize(dir) {
   return total
 }
 
+/** 中文交付目录：产物落这里，解决"解压后找不到文件" */
+function deliveryDir(dist) {
+  return join(ARTIFACTS, '交付', `DSH培训班-便携版-v${dist.version}-${dist.buildDate}`)
+}
+
 function buildPortable(dist, boards) {
   const name = `dsh-training-portable-v${dist.version}-${dist.buildDate}-${dist.arch}`
   const stageRoot = join(ARTIFACTS, '.staging-portable')
   const appDir = join(stageRoot, name)
-  const zipPath = join(ARTIFACTS, `${name}.zip`)
+  const outDir = deliveryDir(dist)
+  const zipPath = join(outDir, `${name}.zip`)
 
   console.log(`\n=== 阶段 2：装配便携包 ${name} ===`)
   rmSync(stageRoot, { recursive: true, force: true })
@@ -230,11 +236,13 @@ function buildPortable(dist, boards) {
   if (missing.length) throw new Error(`装配缺文件：\n  ${missing.join('\n  ')}`)
 
   console.log('· 压缩为 zip（Compress-Archive，离线）…')
-  // 清掉旧的便携包，避免 artifacts 里堆多版本（发布目录只保留本次产物）
+  // 清掉旧交付目录与遗留 zip，发布目录只保留本次产物
+  const deliveryRoot = join(ARTIFACTS, '交付')
+  if (existsSync(deliveryRoot)) rmSync(deliveryRoot, { recursive: true, force: true })
   for (const f of readdirSync(ARTIFACTS)) {
     if (/^dsh-training-portable-.*\.zip$/.test(f)) rmSync(join(ARTIFACTS, f), { force: true })
   }
-  rmSync(zipPath, { force: true })
+  mkdirSync(outDir, { recursive: true })
   execFileSync(
     'powershell',
     [
@@ -247,10 +255,32 @@ function buildPortable(dist, boards) {
 
   const zipSize = statSync(zipPath).size
   const unpacked = dirSize(appDir)
+
+  // 中文交付说明（避免解压后不知道点哪个）
+  writeFileSync(
+    join(outDir, '怎么用.txt'),
+    [
+      'DSH Agent 培训班 · 便携版',
+      `版本：v${dist.version}    构建日期：${dist.buildDate}`,
+      '',
+      '1. 右键本目录里的 zip → 「全部解压缩」（路径不要带中文）',
+      '2. 进入解出的文件夹，双击 dsh-training-installer.exe',
+      '3. 若提示「Windows 已保护你的电脑」→ 更多信息 → 仍要运行',
+      '4. 按向导走完 → 重启 DSH Desktop',
+      '5. 到 设置 → 培训班 · 协议授权 签署协议',
+      '',
+      `解压后占用约 ${(unpacked / 1024 / 1024).toFixed(0)} MB`,
+      '',
+    ].join('\\r\\n'),
+    'utf8',
+  )
+  const manualSrc = join(REPO_ROOT, 'docs', '下载者安装手册.md')
+  if (existsSync(manualSrc)) cpSync(manualSrc, join(outDir, '安装步骤.md'))
   console.log(`\n✅ 便携包已生成：${zipPath}`)
   console.log(`   解压后 ${(unpacked / 1024 / 1024).toFixed(1)} MB → zip ${(zipSize / 1024 / 1024).toFixed(1)} MB`)
   console.log(`   双击 ${name}\\dsh-training-installer.exe 运行向导`)
-  return { zipPath, zipSize, unpacked, name }
+  console.log(`   交付目录：${outDir}`)
+  return { zipPath, zipSize, unpacked, name, outDir }
 }
 
 // ---------------------------------------------------------------- 入口
@@ -284,6 +314,14 @@ function main(argv) {
   }
 
   if (stage === 2) {
+    // 契约闸门：板块 smoke 必须全绿（status=ready 的板块强制），否则拒绝出包
+    try {
+      console.log('\n=== 板块契约校验（出包闸门）===')
+      execFileSync(process.execPath, [join(HERE, 'check-boards.mjs')], { stdio: 'inherit' })
+    } catch {
+      console.error('\n⛔ 板块契约校验未通过，拒绝出包。')
+      return 1
+    }
     try {
       const r = buildPortable(dist, boards)
       writeFileSync(

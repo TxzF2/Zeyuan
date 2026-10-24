@@ -1,21 +1,33 @@
 {
-  "id": "character-changzhengji",
-  "displayName": "角色板块 · 长征姬",
-  "kind": "optional",
-  "status": "ready",
-  "dependsOn": [
-    "core"
-  ],
-  "defaultSelected": true,
-  "install": {
-    "target": "characters/changzhengji",
-    "mode": "copy"
-  },
-  "contents": [
-    "模型：changzhengji.fbx（含骨骼与动作）",
-    "工程：changzhengji_rigged.blend",
-    "三视图 3 张 + 动作帧预览若干（见 asset-manifest.json）"
-  ],
-  "assetManifest": "asset-manifest.json",
-  "installedBytes": 7090645
+    "id":  "character-changzhengji",
+    "displayName":  "角色板块 · 长征姬",
+    "kind":  "optional",
+    "status":  "ready",
+    "dependsOn":  [
+                      "core"
+                  ],
+    "defaultSelected":  true,
+    "install":  {
+                    "target":  "assets/characters/changzhengji",
+                    "mode":  "asset-copy"
+                },
+    "contents":  [
+                     "模型：changzhengji.fbx（含骨骼与动作）",
+                     "工程：changzhengji_rigged.blend",
+                     "三视图 3 张 + 动作帧预览若干（见 asset-manifest.json）"
+                 ],
+    "assetManifest":  "asset-manifest.json",
+    "installedBytes":  7090645,
+    "schemaVersion":  2,
+    "boardApi":  1,
+    "version":  "0.1.0",
+    "smoke":  "test-character-changzhengji.mjs",
+    "events":  {
+                   "emits":  [
+                                 "action-request"
+                             ],
+                   "consumes":  [
+                                    "dsh-training:core:level-up"
+                                ]
+               }
 }

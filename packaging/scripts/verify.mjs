@@ -12,11 +12,24 @@
 
 import { createHash } from "node:crypto";
 import { existsSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
-import { dirname, join, resolve } from "node:path";
+import { basename, dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const PKG_ROOT = resolve(HERE, "..");
+function walkFiles(dir) {
+  const out = []
+  for (const e of readdirSync(dir, { withFileTypes: true })) {
+    const full = join(dir, e.name)
+    if (e.isDirectory()) {
+      if (e.name.startsWith('.')) continue // 跳过 .staging-portable 等临时目录
+      out.push(...walkFiles(full))
+    }
+    else if (e.name !== '.gitkeep' && !e.name.startsWith('.')) out.push(full)
+  }
+  return out
+}
+
 const ARTIFACTS = join(PKG_ROOT, "artifacts");
 
 const dist = JSON.parse(readFileSync(join(PKG_ROOT, "distribution.json"), "utf8"));
@@ -44,12 +57,10 @@ if (!existsSync(ARTIFACTS)) {
   process.exit(2);
 }
 
-const files = readdirSync(ARTIFACTS).filter(
-  (f) =>
-    statSync(join(ARTIFACTS, f)).isFile() &&
-    f !== "SHA256SUMS.txt" &&
-    !f.startsWith("."), // 忽略 .gitkeep 等占位文件，否则会被误判为不合规产物
-);
+// 递归扫描：产物可能放在中文交付目录里（artifacts/交付/DSH培训班-便携版-.../xxx.zip）
+const files = walkFiles(ARTIFACTS)
+  .map((p) => relative(ARTIFACTS, p).replace(/\\/g, "/"))
+  .filter((rel) => /\.(zip|exe|msi|7z)$/i.test(rel));
 if (files.length === 0) {
   console.log("· artifacts/ 下暂无产物 —— 阶段一不产出 exe/zip，属正常。");
   console.log("  阶段二出包后重跑本脚本即可得到 SHA256 清单。");
@@ -62,7 +73,7 @@ let bad = 0;
 
 for (const f of files) {
   const full = join(ARTIFACTS, f);
-  const nameOk = re.test(f);
+  const nameOk = re.test(basename(f));
   if (!nameOk) bad++;
   rows.push({ file: f, size: statSync(full).size, nameOk, sha256: sha256(full) });
 }
@@ -75,9 +86,21 @@ for (const r of rows) {
 }
 
 if (bad === 0) {
-  const sums = rows.map((r) => `${r.sha256}  ${r.file}`).join("\n") + "\n";
+  const sums = rows.map((r) => `${r.sha256}  ${basename(r.file)}`).join("\n") + "\n";
   writeFileSync(join(ARTIFACTS, "SHA256SUMS.txt"), sums, "utf8");
-  console.log(`\n✅ ${rows.length} 个产物全部合规，哈希已写入 artifacts/SHA256SUMS.txt`);
+  // 交付目录里也放一份中文名校验文件，方便下载者核对
+  const deliveryParent = join(ARTIFACTS, "交付");
+  if (existsSync(deliveryParent)) {
+    for (const d of readdirSync(deliveryParent, { withFileTypes: true })) {
+      if (!d.isDirectory()) continue;
+      writeFileSync(
+        join(deliveryParent, d.name, "SHA256校验.txt"),
+        `校验方法（PowerShell）：Get-FileHash .\\<文件名> -Algorithm SHA256\\r\\n\\r\\n${sums}`,
+        "utf8",
+      );
+    }
+  }
+  console.log(`\n✅ ${rows.length} 个产物全部合规，哈希已写入 artifacts/SHA256SUMS.txt 与交付目录/SHA256校验.txt`);
   process.exit(0);
 }
 

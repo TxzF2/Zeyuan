@@ -1,21 +1,33 @@
 {
-  "id": "character-txzf",
-  "displayName": "角色板块 · 星辰（TxzF）",
-  "kind": "optional",
-  "status": "ready",
-  "dependsOn": [
-    "core"
-  ],
-  "defaultSelected": true,
-  "install": {
-    "target": "characters/txzf",
-    "mode": "copy"
-  },
-  "contents": [
-    "模型：txzf.fbx（含骨骼与动作）",
-    "工程：txzf_rigged.blend",
-    "三视图 3 张 + 动作帧预览若干（见 asset-manifest.json）"
-  ],
-  "assetManifest": "asset-manifest.json",
-  "installedBytes": 7840198
+    "id":  "character-txzf",
+    "displayName":  "角色板块 · 星辰（TxzF）",
+    "kind":  "optional",
+    "status":  "ready",
+    "dependsOn":  [
+                      "core"
+                  ],
+    "defaultSelected":  true,
+    "install":  {
+                    "target":  "assets/characters/txzf",
+                    "mode":  "asset-copy"
+                },
+    "contents":  [
+                     "模型：txzf.fbx（含骨骼与动作）",
+                     "工程：txzf_rigged.blend",
+                     "三视图 3 张 + 动作帧预览若干（见 asset-manifest.json）"
+                 ],
+    "assetManifest":  "asset-manifest.json",
+    "installedBytes":  7840198,
+    "schemaVersion":  2,
+    "boardApi":  1,
+    "version":  "0.1.0",
+    "smoke":  "test-character-txzf.mjs",
+    "events":  {
+                   "emits":  [
+                                 "action-request"
+                             ],
+                   "consumes":  [
+                                    "dsh-training:core:settlement-done"
+                                ]
+               }
 }

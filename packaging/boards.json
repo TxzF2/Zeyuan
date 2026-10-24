@@ -1,9 +1,12 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "rules": {
     "requiredCannotBeDeselected": true,
     "previewBoardsHiddenByDefault": false,
-    "idPattern": "^[a-z][a-z0-9-]*$"
+    "idPattern": "^[a-z][a-z0-9-]*$",
+    "boardApiExactMatch": true,
+    "smokeRequired": "每个板块必须自带 test-<id>.mjs；status=ready 必须 smoke 通过",
+    "eventNaming": "dsh-training:<board>:<action>"
   },
   "boards": [
     {
@@ -112,5 +115,6 @@
       "defaultSelected": false,
       "summary": "分组协作与互评。阶段三填充。"
     }
-  ]
+  ],
+  "contractVersion": 1
 }

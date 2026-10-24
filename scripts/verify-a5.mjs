@@ -96,7 +96,8 @@ if (existsSync(MOUNT_EVENTS)) {
     for (const line of lines) {
       try {
         const ev = JSON.parse(line);
-        if (ev.plugin === PKG) lastEvent = ev;
+        // 只认 Electron 宿主的事件：Node 单测/冒烟也会挂载，不能污染 A5 判定
+        if (ev.plugin === PKG && ev.host === 'electron') lastEvent = ev;
       } catch {
         /* 跳过坏行 */
       }

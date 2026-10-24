@@ -1,0 +1,51 @@
+{
+  "version": 1,
+  "naming": {
+    "prefix": "dsh-training:",
+    "template": "dsh-training:<board>:<action>",
+    "actionPattern": "^[a-z][a-z0-9]*(-[a-z0-9]+)*$",
+    "note": "action 用动词过去式或名词短语（kebab-case）；禁止参数、冒号、大写"
+  },
+  "envelope": {
+    "required": ["v", "id", "at", "source", "type", "payload"],
+    "optional": ["subject", "correlationId"],
+    "rules": [
+      "payload 只放值，必须可 JSON 化（不带函数/循环引用/文件句柄）",
+      "消费方必须幂等（按 id 去重），发布方不等待消费方",
+      "消费失败不阻塞发布，写入 dead-letter.jsonl",
+      "顺序只在同 source 内保证",
+      "新增字段必须可选；删字段或改语义必须升 v"
+    ]
+  },
+  "byBoard": {
+    "core": ["settlement-requested", "settlement-done", "level-up", "coins-changed"],
+    "feature-taskboard": [
+      "task-created",
+      "task-claimed",
+      "task-submitted",
+      "task-accepted",
+      "task-rejected",
+      "task-completed"
+    ],
+    "feature-workbench": ["draft-opened", "draft-saved", "draft-published"],
+    "feature-community": ["post-created", "post-liked", "comment-created"],
+    "feature-collab": ["group-formed", "member-joined", "review-requested", "review-done"],
+    "feature-console": ["dashboard-invalidate", "board-installed", "board-removed"],
+    "character-txzf": ["action-request"],
+    "character-changzhengji": ["action-request"]
+  },
+  "chains": [
+    {
+      "name": "任务完成 → 金币结算 → 等级提升 → 仪表盘刷新",
+      "steps": [
+        "dsh-training:feature-taskboard:task-completed",
+        "dsh-training:core:settlement-requested",
+        "dsh-training:core:settlement-done",
+        "dsh-training:core:coins-changed",
+        "dsh-training:core:level-up",
+        "dsh-training:feature-console:dashboard-invalidate",
+        "dsh-training:character-txzf:action-request"
+      ]
+    }
+  ]
+}

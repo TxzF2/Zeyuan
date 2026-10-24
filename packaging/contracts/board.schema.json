@@ -1,0 +1,73 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "dsh-training board contract v2",
+  "description": "板块清单契约。校验器：packaging/scripts/check-boards.mjs（不引入 ajv，手写校验）",
+  "type": "object",
+  "required": [
+    "id",
+    "schemaVersion",
+    "boardApi",
+    "displayName",
+    "kind",
+    "status",
+    "version",
+    "dependsOn",
+    "defaultSelected",
+    "install",
+    "contents",
+    "smoke",
+    "events"
+  ],
+  "additionalProperties": true,
+  "properties": {
+    "id": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" },
+    "schemaVersion": { "const": 2 },
+    "boardApi": {
+      "type": "integer",
+      "const": 1,
+      "description": "板块运行时接口版本。策略：整数、只兼容相等（boardApi 1 只被 boardApi 1 宿主加载）"
+    },
+    "displayName": { "type": "string", "minLength": 1 },
+    "kind": { "enum": ["required", "optional", "preview"] },
+    "status": { "enum": ["skeleton", "placeholder", "ready"] },
+    "version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+(-(alpha|beta|rc)\\.\\d+)?$" },
+    "dependsOn": { "type": "array", "items": { "type": "string" } },
+    "defaultSelected": { "type": "boolean" },
+    "install": {
+      "type": "object",
+      "required": ["target", "mode"],
+      "properties": {
+        "target": {
+          "type": "string",
+          "description": "相对 %LOCALAPPDATA%\\dsh-training 的落点；core 用 profiles/desktop（经 wire 写入）"
+        },
+        "mode": { "enum": ["plugin-link", "asset-copy", "copy"] }
+      }
+    },
+    "contents": { "type": "array", "items": { "type": "string" } },
+    "assetManifest": { "type": "string" },
+    "smoke": {
+      "type": "string",
+      "pattern": "^test-[a-z][a-z0-9-]*\\.mjs$",
+      "description": "硬契约：每个板块必须自带 smoke；status=ready 必须 smoke 通过"
+    },
+    "events": {
+      "type": "object",
+      "required": ["emits", "consumes"],
+      "properties": {
+        "emits": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "本板块发出的 action 名（短名），必须命中 contracts/events.json 的 byBoard[本板块]"
+        },
+        "consumes": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "订阅的事件，完整名 dsh-training:<board>:<action>，必须命中注册表"
+        }
+      }
+    },
+    "capabilities": { "type": "array", "items": { "type": "string" } },
+    "sizeBytes": { "type": "integer", "description": "由构建脚本回填，不手写" }
+  }
+}

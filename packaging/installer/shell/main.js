@@ -94,8 +94,20 @@ function buildPayload() {
     for (const b of boards ?? []) {
       const dir = path.join(PACKAGING_ROOT, 'boards', b.id)
       if (!fs.existsSync(dir)) continue
-      // 整目录收集：清单(.json) + 资产(assets/：FBX、三视图、动作帧)
-      files.push(...collectFiles(dir, `boards/${b.id}`))
+      // 按板块契约的 install 落点装配（契约 v2）：
+      //   plugin-link → 插件单独装（跳过，见 PLUGIN_INSTALL_REL）
+      //   asset-copy  → assets/characters|themes/<name>
+      //   copy        → features/<name>
+      let meta = null
+      try {
+        meta = JSON.parse(fs.readFileSync(path.join(dir, 'board.json'), 'utf8'))
+      } catch (err) {
+        console.warn(`[payload] ${b.id} 的 board.json 解析失败：`, err.message)
+      }
+      const mode = meta?.install?.mode ?? 'copy'
+      if (mode === 'plugin-link') continue
+      const target = (meta?.install?.target ?? `boards/${b.id}`).replace(/^\/+|\/+$/g, '')
+      files.push(...collectFiles(dir, target))
     }
   } catch (err) {
     console.warn('[payload] 读取 boards.json 失败：', err.message)
