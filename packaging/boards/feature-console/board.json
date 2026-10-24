@@ -1,34 +1,34 @@
 {
-    "id":  "feature-console",
-    "displayName":  "功能预览 · 控制面板",
-    "kind":  "preview",
-    "status":  "placeholder",
-    "dependsOn":  [
-                      "core"
-                  ],
-    "defaultSelected":  false,
-    "install":  {
-                    "target":  "features/console",
-                    "mode":  "copy"
-                },
-    "contents":  [
-                     "（占位）待阶段三填充实际产物"
-                 ],
-    "placeholderNote":  "阶段一仅骨架：本板块不产真实文件，勾选与否都不影响核心功能。",
-    "schemaVersion":  2,
-    "boardApi":  1,
-    "version":  "0.1.0",
-    "smoke":  "test-feature-console.mjs",
-    "events":  {
-                   "emits":  [
-                                 "dashboard-invalidate",
-                                 "board-installed",
-                                 "board-removed"
-                             ],
-                   "consumes":  [
-                                    "dsh-training:core:level-up",
-                                    "dsh-training:core:settlement-done",
-                                    "dsh-training:feature-taskboard:task-completed"
-                                ]
-               }
+  "id": "feature-console",
+  "displayName": "功能预览 · 控制面板",
+  "kind": "preview",
+  "status": "placeholder",
+  "dependsOn": [
+    "core"
+  ],
+  "defaultSelected": false,
+  "install": {
+    "target": "features/console",
+    "mode": "copy"
+  },
+  "contents": [
+    "（占位）待阶段三填充实际产物"
+  ],
+  "placeholderNote": "阶段一仅骨架：本板块不产真实文件，勾选与否都不影响核心功能。",
+  "schemaVersion": 2,
+  "boardApi": 1,
+  "version": "0.1.0",
+  "smoke": "test-feature-console.mjs",
+  "events": {
+    "emits": [
+      "dashboard-invalidate",
+      "board-installed",
+      "board-removed"
+    ],
+    "consumes": [
+      "dsh-training:core:level-up",
+      "dsh-training:core:settlement-done",
+      "dsh-training:tasks:task-accepted"
+    ]
+  }
 }

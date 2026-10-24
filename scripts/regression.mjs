@@ -51,6 +51,30 @@ const SUITES = [
     cwd: REPO,
   },
   {
+    name: '任务·模型与状态机',
+    cmd: process.execPath,
+    args: [join(REPO, 'packaging/scripts/test-tasks-model.mjs')],
+    cwd: REPO,
+  },
+  {
+    name: '任务·存储与锁',
+    cmd: process.execPath,
+    args: [join(REPO, 'packaging/scripts/test-tasks-store.mjs')],
+    cwd: REPO,
+  },
+  {
+    name: '任务·路由与权限',
+    cmd: process.execPath,
+    args: [join(REPO, 'packaging/scripts/test-tasks-routes.mjs')],
+    cwd: REPO,
+  },
+  {
+    name: '任务·闸门对等',
+    cmd: process.execPath,
+    args: [join(REPO, 'packaging/scripts/test-tasks-license.mjs')],
+    cwd: REPO,
+  },
+  {
     name: '插件·agents 配置',
     cmd: process.execPath,
     args: [join(REPO, 'scripts/check-agents-config.mjs')],

@@ -167,6 +167,7 @@ async function runInstall(opts) {
     signal,
     /** { profileDir, packageName, linkPath } —— 把核心板块接进 DSH profile（外部副作用，随安装事务一起回滚） */
     profileWire: wireOpt = null,
+  profileWires = [],
   } = opts
 
   const P = pathsFor(targetDir)
@@ -176,6 +177,7 @@ async function runInstall(opts) {
   let movedAppToBackup = false
   let committed = false
   let wiredOk = false
+  const wiredOpts = []
 
   const emit = (phase, percent, message) => {
     try {
@@ -268,8 +270,18 @@ async function runInstall(opts) {
     if (wireOpt) {
       emit('wire', 92, '把核心板块接入 DSH profile')
       wireResult = profileWire.wire(wireOpt)
+        wiredOpts.push(wireOpt)
       wiredOk = true
       emit('wire', 96, wireResult.changed ? 'profile 已更新（依赖 + bundles）' : 'profile 已是目标状态（幂等跳过）')
+    }
+
+    // 额外插件接线（如任务接发板块）：与核心插件同样走 wire，失败即整体回滚
+    const extraWires = []
+    for (const opt of profileWires) {
+      const r = profileWire.wire(opt)
+      wiredOpts.push(opt)
+      extraWires.push({ opt, result: r })
+      wiredOk = true
     }
 
     // ---- 6. manifest（写在 app 内，跟随版本一起回滚）----
@@ -281,18 +293,28 @@ async function runInstall(opts) {
       stagingId: ts,
       backupDir: backupDir ? path.relative(P.root, backupDir) : null,
       files,
-      externalWrites: wireResult
-        ? [
-            {
-              type: 'profile-wire',
-              profileDir: wireOpt.profileDir,
-              packageName: wireOpt.packageName,
-              depSpec: wireResult.depSpec,
-              backup: wireResult.backup,
-              changed: wireResult.changed,
-            },
-          ]
-        : [],
+      externalWrites: [
+        ...(wireResult && wireOpt
+          ? [
+              {
+                type: 'profile-wire',
+                profileDir: wireOpt.profileDir,
+                packageName: wireOpt.packageName,
+                depSpec: wireResult.depSpec,
+                backup: wireResult.backup,
+                changed: wireResult.changed,
+              },
+            ]
+          : []),
+        ...extraWires.map(({ opt, result }) => ({
+          type: 'profile-wire',
+          profileDir: opt.profileDir,
+          packageName: opt.packageName,
+          depSpec: result.depSpec,
+          backup: result.backup,
+          changed: result.changed,
+        })),
+      ],
     }
     await fsp.writeFile(path.join(P.app, LAYOUT.manifest), JSON.stringify(manifest, null, 2) + '\n', 'utf8')
     emit('finish', 100, `安装完成：v${version}`)
@@ -332,15 +354,16 @@ async function runInstall(opts) {
       }
     }
     // 外部副作用也要撤回，否则会留下「装了又回滚、profile 里还有条目」的脏状态
-    if (wiredOk && wireOpt) {
-      try {
-        profileWire.unwire(wireOpt)
-        emit('rollback', 50, 'profile 写入已撤回')
-      } catch (unwireErr) {
-        console.error('[install] 回滚时撤回 profile 失败：', unwireErr.message)
+    if (wiredOpts.length) {
+      for (const opt of wiredOpts) {
+        try {
+          profileWire.unwire(opt)
+        } catch (unwireErr) {
+          console.error('[install] 回滚时撤销 profile 接线失败：', unwireErr.message)
+        }
       }
-    }
-    await fsp
+      emit('rollback', 50, 'profile 写入已撤销')
+    }    await fsp
       .writeFile(
         P.lastInstall,
         JSON.stringify({ at: new Date().toISOString(), action: 'install', version, result: 'failed', code: err.code ?? 'E-207', message: err.message }, null, 2) + '\n',

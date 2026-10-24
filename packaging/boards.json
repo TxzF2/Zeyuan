@@ -1,120 +1,122 @@
 {
-  "schemaVersion": 2,
-  "rules": {
-    "requiredCannotBeDeselected": true,
-    "previewBoardsHiddenByDefault": false,
-    "idPattern": "^[a-z][a-z0-9-]*$",
-    "boardApiExactMatch": true,
-    "smokeRequired": "每个板块必须自带 test-<id>.mjs；status=ready 必须 smoke 通过",
-    "eventNaming": "dsh-training:<board>:<action>"
-  },
-  "boards": [
-    {
-      "id": "core",
-      "displayName": "核心板块 · DSH 运行时 + 协议插件",
-      "kind": "required",
-      "status": "skeleton",
-      "boardDir": "boards/core",
-      "dependsOn": [],
-      "defaultSelected": true,
-      "summary": "DSH 运行时（内置 Node）+ dsh-training-protocol 插件（LV0→LV1 协议授权）。必装，不可取消勾选。"
-    },
-    {
-      "id": "character-txzf",
-      "displayName": "角色板块 · 星辰（TxzF）",
-      "kind": "optional",
-      "status": "ready",
-      "boardDir": "boards/character-txzf",
-      "dependsOn": [
-        "core"
-      ],
-      "defaultSelected": true,
-      "summary": "男性引导角色（星辰/路鸣泽风格）：开场引导、关卡提示、通关点评。已含 FBX（骨架+6 动作）、Blender 工程、三视图与动作帧。"
-    },
-    {
-      "id": "character-changzhengji",
-      "displayName": "角色板块 · 长征姬",
-      "kind": "optional",
-      "status": "ready",
-      "boardDir": "boards/character-changzhengji",
-      "dependsOn": [
-        "core"
-      ],
-      "defaultSelected": true,
-      "summary": "长征主题高冷御姐：纪律考核、进度催办、错题复盘。已含 FBX（骨架+5 动作）、Blender 工程、三视图、动作帧与协议过场占位镜头。"
-    },
-    {
-      "id": "theme-xingchen",
-      "displayName": "角色板块 · 星辰主题色板",
-      "kind": "optional",
-      "status": "placeholder",
-      "boardDir": "boards/theme-xingchen",
-      "dependsOn": [
-        "core"
-      ],
-      "defaultSelected": true,
-      "summary": "寻梦山海视觉：色彩/字体/间距/星屑动效 token。资源以占位清单打包。"
-    },
-    {
-      "id": "feature-taskboard",
-      "displayName": "功能预览 · 任务接发",
-      "kind": "preview",
-      "status": "placeholder",
-      "boardDir": "boards/feature-taskboard",
-      "dependsOn": [
-        "core"
-      ],
-      "defaultSelected": false,
-      "summary": "任务接发面板。阶段三填充，现阶段装上也只有一个空占位页。"
-    },
-    {
-      "id": "feature-workbench",
-      "displayName": "功能预览 · 工作台",
-      "kind": "preview",
-      "status": "placeholder",
-      "boardDir": "boards/feature-workbench",
-      "dependsOn": [
-        "core"
-      ],
-      "defaultSelected": false,
-      "summary": "学员工作台。阶段三填充。"
-    },
-    {
-      "id": "feature-community",
-      "displayName": "功能预览 · 社区",
-      "kind": "preview",
-      "status": "placeholder",
-      "boardDir": "boards/feature-community",
-      "dependsOn": [
-        "core"
-      ],
-      "defaultSelected": false,
-      "summary": "班级社区。阶段三填充。"
-    },
-    {
-      "id": "feature-console",
-      "displayName": "功能预览 · 控制面板",
-      "kind": "preview",
-      "status": "placeholder",
-      "boardDir": "boards/feature-console",
-      "dependsOn": [
-        "core"
-      ],
-      "defaultSelected": false,
-      "summary": "板块增删、更新、诊断入口。阶段三填充（安装后增删板块靠它）。"
-    },
-    {
-      "id": "feature-collab",
-      "displayName": "功能预览 · 协作分组",
-      "kind": "preview",
-      "status": "placeholder",
-      "boardDir": "boards/feature-collab",
-      "dependsOn": [
-        "core"
-      ],
-      "defaultSelected": false,
-      "summary": "分组协作与互评。阶段三填充。"
-    }
-  ],
-  "contractVersion": 1
+    "schemaVersion":  2,
+    "rules":  {
+                  "requiredCannotBeDeselected":  true,
+                  "previewBoardsHiddenByDefault":  false,
+                  "idPattern":  "^[a-z][a-z0-9-]*$",
+                  "boardApiExactMatch":  true,
+                  "smokeRequired":  "每个板块必须自带 test-\u003cid\u003e.mjs；status=ready 必须 smoke 通过",
+                  "eventNaming":  "dsh-training:\u003cboard\u003e:\u003caction\u003e"
+              },
+    "boards":  [
+                   {
+                       "id":  "core",
+                       "displayName":  "核心板块 · DSH 运行时 + 协议插件",
+                       "kind":  "required",
+                       "status":  "skeleton",
+                       "boardDir":  "boards/core",
+                       "dependsOn":  [
+
+                                     ],
+                       "defaultSelected":  true,
+                       "summary":  "DSH 运行时（内置 Node）+ dsh-training-protocol 插件（LV0→LV1 协议授权）。必装，不可取消勾选。"
+                   },
+                   {
+                       "id":  "character-txzf",
+                       "displayName":  "角色板块 · 星辰（TxzF）",
+                       "kind":  "optional",
+                       "status":  "ready",
+                       "boardDir":  "boards/character-txzf",
+                       "dependsOn":  [
+                                         "core"
+                                     ],
+                       "defaultSelected":  true,
+                       "summary":  "男性引导角色（星辰/路鸣泽风格）：开场引导、关卡提示、通关点评。已含 FBX（骨架+6 动作）、Blender 工程、三视图与动作帧。"
+                   },
+                   {
+                       "id":  "character-changzhengji",
+                       "displayName":  "角色板块 · 长征姬",
+                       "kind":  "optional",
+                       "status":  "ready",
+                       "boardDir":  "boards/character-changzhengji",
+                       "dependsOn":  [
+                                         "core"
+                                     ],
+                       "defaultSelected":  true,
+                       "summary":  "长征主题高冷御姐：纪律考核、进度催办、错题复盘。已含 FBX（骨架+5 动作）、Blender 工程、三视图、动作帧与协议过场占位镜头。"
+                   },
+                   {
+                       "id":  "theme-xingchen",
+                       "displayName":  "角色板块 · 星辰主题色板",
+                       "kind":  "optional",
+                       "status":  "placeholder",
+                       "boardDir":  "boards/theme-xingchen",
+                       "dependsOn":  [
+                                         "core"
+                                     ],
+                       "defaultSelected":  true,
+                       "summary":  "寻梦山海视觉：色彩/字体/间距/星屑动效 token。资源以占位清单打包。"
+                   },
+                   {
+                       "id":  "tasks",
+                       "displayName":  "任务接发",
+                       "kind":  "preview",
+                       "status":  "ready",
+                       "boardDir":  "boards/tasks",
+                       "dependsOn":  [
+                                         "core"
+                                     ],
+                       "defaultSelected":  false,
+                       "summary":  "学员发布/领取/提交/验收任务，验收后向货币系统发起赏金结算（事件 dsh-training:tasks:reward）。"
+                   },
+                   {
+                       "id":  "feature-workbench",
+                       "displayName":  "功能预览 · 工作台",
+                       "kind":  "preview",
+                       "status":  "placeholder",
+                       "boardDir":  "boards/feature-workbench",
+                       "dependsOn":  [
+                                         "core"
+                                     ],
+                       "defaultSelected":  false,
+                       "summary":  "学员工作台。阶段三填充。"
+                   },
+                   {
+                       "id":  "feature-community",
+                       "displayName":  "功能预览 · 社区",
+                       "kind":  "preview",
+                       "status":  "placeholder",
+                       "boardDir":  "boards/feature-community",
+                       "dependsOn":  [
+                                         "core"
+                                     ],
+                       "defaultSelected":  false,
+                       "summary":  "班级社区。阶段三填充。"
+                   },
+                   {
+                       "id":  "feature-console",
+                       "displayName":  "功能预览 · 控制面板",
+                       "kind":  "preview",
+                       "status":  "placeholder",
+                       "boardDir":  "boards/feature-console",
+                       "dependsOn":  [
+                                         "core"
+                                     ],
+                       "defaultSelected":  false,
+                       "summary":  "板块增删、更新、诊断入口。阶段三填充（安装后增删板块靠它）。"
+                   },
+                   {
+                       "id":  "feature-collab",
+                       "displayName":  "功能预览 · 协作分组",
+                       "kind":  "preview",
+                       "status":  "placeholder",
+                       "boardDir":  "boards/feature-collab",
+                       "dependsOn":  [
+                                         "core"
+                                     ],
+                       "defaultSelected":  false,
+                       "summary":  "分组协作与互评。阶段三填充。"
+                   }
+               ],
+    "contractVersion":  1
 }

@@ -43,6 +43,7 @@ const HERE = dirname(fileURLToPath(import.meta.url))
 const PKG_ROOT = resolve(HERE, '..')
 const REPO_ROOT = resolve(PKG_ROOT, '..')
 const SHELL_DIR = join(PKG_ROOT, 'installer', 'shell')
+const PLUGIN_NAMES = ['dsh-training-protocol', 'dsh-training-tasks']
 const PLUGIN_DIR = join(REPO_ROOT, 'plugins', 'dsh-training-protocol')
 const ELECTRON_DIST = join(SHELL_DIR, 'node_modules', 'electron', 'dist')
 const ARTIFACTS = join(PKG_ROOT, 'artifacts')
@@ -125,7 +126,8 @@ function validateBoards() {
 
 function validatePayloads() {
   const checks = [
-    [join(PLUGIN_DIR, 'dist', 'index.js'), '插件 dist（先 pnpm build）'],
+    [join(PLUGIN_DIR, 'dist', 'index.js'), '核心插件 dist（先编译）'],
+    [join(REPO_ROOT, 'plugins', 'dsh-training-tasks', 'dist', 'index.js'), '任务插件 dist（先编译）'],
     [join(PLUGIN_DIR, 'lib', 'client.js'), '插件 client 半 lib/client.js'],
     [join(SHELL_DIR, 'main.js'), '安装器 shell main.js'],
     [join(PKG_ROOT, 'installer', 'wizard', 'index.html'), '向导页 installer/wizard/index.html'],
@@ -204,14 +206,23 @@ function buildPortable(dist, boards) {
   cpSync(join(SHELL_DIR, 'lib'), join(appRes, 'lib'), { recursive: true })
   cpSync(join(PKG_ROOT, 'installer', 'wizard'), join(appRes, 'wizard'), { recursive: true })
 
-  console.log('· 写入 payload（插件 dist + 板块清单）…')
+  console.log('· 写入 payload（插件 dist + 板块清单 + 角色资产）…')
   const payload = join(appRes, 'payload')
-  const pluginOut = join(payload, 'dsh-training-protocol')
-  mkdirSync(pluginOut, { recursive: true })
-  cpSync(join(PLUGIN_DIR, 'dist'), join(pluginOut, 'dist'), { recursive: true })
-  cpSync(join(PLUGIN_DIR, 'lib'), join(pluginOut, 'lib'), { recursive: true })
-  cpSync(join(PLUGIN_DIR, 'package.json'), join(pluginOut, 'package.json'))
-  cpSync(join(PLUGIN_DIR, 'cordis.patch.yml'), join(pluginOut, 'cordis.patch.yml'))
+  const pluginsOut = join(payload, 'plugins')
+  for (const pluginName of PLUGIN_NAMES) {
+    const src = join(REPO_ROOT, 'plugins', pluginName)
+    if (!existsSync(src)) {
+      console.warn(`   ! 插件缺失，跳过：${pluginName}`)
+      continue
+    }
+    const out = join(pluginsOut, pluginName)
+    mkdirSync(out, { recursive: true })
+    for (const sub of ['dist', 'lib']) {
+      if (existsSync(join(src, sub))) cpSync(join(src, sub), join(out, sub), { recursive: true })
+    }
+    for (const f of ['package.json', 'cordis.patch.yml']) cpSync(join(src, f), join(out, f))
+  }
+  const pluginOut = join(pluginsOut, 'dsh-training-protocol')
 
   cpSync(join(PKG_ROOT, 'boards.json'), join(payload, 'boards.json'))
   cpSync(join(PKG_ROOT, 'distribution.json'), join(payload, 'distribution.json'))
@@ -230,6 +241,7 @@ function buildPortable(dist, boards) {
     join(appRes, 'lib', 'installer.js'),
     join(appRes, 'lib', 'profile-wire.js'),
     join(pluginOut, 'dist', 'index.js'),
+    join(pluginsOut, 'dsh-training-tasks', 'dist', 'index.js'),
     join(payload, 'boards.json'),
   ]
   const missing = must.filter((p) => !existsSync(p))

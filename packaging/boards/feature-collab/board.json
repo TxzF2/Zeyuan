@@ -1,33 +1,33 @@
 {
-    "id":  "feature-collab",
-    "displayName":  "功能预览 · 协作分组",
-    "kind":  "preview",
-    "status":  "placeholder",
-    "dependsOn":  [
-                      "core"
-                  ],
-    "defaultSelected":  false,
-    "install":  {
-                    "target":  "features/collab",
-                    "mode":  "copy"
-                },
-    "contents":  [
-                     "（占位）待阶段三填充实际产物"
-                 ],
-    "placeholderNote":  "阶段一仅骨架：本板块不产真实文件，勾选与否都不影响核心功能。",
-    "schemaVersion":  2,
-    "boardApi":  1,
-    "version":  "0.1.0",
-    "smoke":  "test-feature-collab.mjs",
-    "events":  {
-                   "emits":  [
-                                 "group-formed",
-                                 "member-joined",
-                                 "review-requested",
-                                 "review-done"
-                             ],
-                   "consumes":  [
-                                    "dsh-training:feature-taskboard:task-submitted"
-                                ]
-               }
+  "id": "feature-collab",
+  "displayName": "功能预览 · 协作分组",
+  "kind": "preview",
+  "status": "placeholder",
+  "dependsOn": [
+    "core"
+  ],
+  "defaultSelected": false,
+  "install": {
+    "target": "features/collab",
+    "mode": "copy"
+  },
+  "contents": [
+    "（占位）待阶段三填充实际产物"
+  ],
+  "placeholderNote": "阶段一仅骨架：本板块不产真实文件，勾选与否都不影响核心功能。",
+  "schemaVersion": 2,
+  "boardApi": 1,
+  "version": "0.1.0",
+  "smoke": "test-feature-collab.mjs",
+  "events": {
+    "emits": [
+      "group-formed",
+      "member-joined",
+      "review-requested",
+      "review-done"
+    ],
+    "consumes": [
+      "dsh-training:tasks:task-submitted"
+    ]
+  }
 }

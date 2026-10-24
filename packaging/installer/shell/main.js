@@ -42,20 +42,27 @@ const ARTIFACTS_DIR = HAS_BUNDLED_PAYLOAD
 /** 载荷根：开发态=packaging/，便携态=resources/app/payload */
 const PACKAGING_ROOT = HAS_BUNDLED_PAYLOAD ? path.join(__dirname, 'payload') : path.join(__dirname, '..', '..')
 /** 插件源目录（开发态指向仓库，便携态指向 payload） */
-const PLUGIN_SOURCE_DIR = HAS_BUNDLED_PAYLOAD
-  ? path.join(__dirname, 'payload', 'dsh-training-protocol')
-  : path.join(__dirname, '..', '..', '..', 'plugins', 'dsh-training-protocol')
+/** 随包安装的插件（顺序即装配顺序；首个为 core） */
+const PLUGIN_NAMES = ['dsh-training-protocol', 'dsh-training-tasks']
+/** 插件在安装目标里的相对目录前缀（app/plugins/<name>） */
+const PLUGIN_INSTALL_BASE = 'plugins'
+/** 某个插件的源目录（开发态=仓库，便携态=payload/plugins） */
+const pluginSourceDir = (name) =>
+  HAS_BUNDLED_PAYLOAD
+    ? path.join(__dirname, 'payload', 'plugins', name)
+    : path.join(__dirname, '..', '..', '..', 'plugins', name)
+/** 某个插件安装后的绝对路径 */
+const pluginInstallPath = (name) => path.join(TARGET_DIR, 'app', ...PLUGIN_INSTALL_BASE.split('/'), name)
 /** 向导页目录：开发态在 shell 的上一级，便携态在 resources/app/wizard */
 const WIZARD_DIR = fs.existsSync(path.join(__dirname, 'wizard'))
   ? path.join(__dirname, 'wizard')
   : path.join(__dirname, '..', 'wizard')
-/** 插件在安装目标里的相对位置（app/plugin/dsh-training-protocol） */
-const PLUGIN_INSTALL_REL = 'plugin/dsh-training-protocol'
-/** 要接入的 DSH profile（默认 desktop；自检用 env 指到临时目录，避免污染真实配置） */
+
+/** 要接入的 DSH profile（默认 desktop；自检用 env 指到临时目录） */
 const PROFILE_DIR =
   process.env.DSH_TRAINING_PROFILE_DIR ||
   path.join(process.env.DSH_HOME || path.join(os.homedir(), '.dsh'), 'profiles', 'desktop')
-/** 插件包名（写进 dependencies 与 dsh.profile.bundles 的那个 key） */
+
 const CORE_PLUGIN_NAME = 'dsh-training-protocol'
 
 /** 递归收集目录里的文件，映射成 <base>/<相对路径> */
@@ -114,16 +121,21 @@ function buildPayload() {
   }
 
   // 核心插件本体
-  if (fs.existsSync(PLUGIN_SOURCE_DIR)) {
+  // 插件本体（core + 其它已随包插件）
+  for (const pluginName of PLUGIN_NAMES) {
+    const srcDir = pluginSourceDir(pluginName)
+    if (!fs.existsSync(srcDir)) {
+      console.warn('[payload] 插件源目录不存在，跳过：', pluginName)
+      continue
+    }
+    const rel = `${PLUGIN_INSTALL_BASE}/${pluginName}`
     for (const sub of ['dist', 'lib']) {
-      const dir = path.join(PLUGIN_SOURCE_DIR, sub)
-      if (fs.existsSync(dir)) files.push(...collectFiles(dir, `${PLUGIN_INSTALL_REL}/${sub}`))
+      const dir = path.join(srcDir, sub)
+      if (fs.existsSync(dir)) files.push(...collectFiles(dir, `${rel}/${sub}`))
     }
     for (const f of ['package.json', 'cordis.patch.yml']) {
-      add(path.join(PLUGIN_SOURCE_DIR, f), `${PLUGIN_INSTALL_REL}/${f}`)
+      add(path.join(srcDir, f), `${rel}/${f}`)
     }
-  } else {
-    console.warn('[payload] 插件源目录不存在，安装后无法 wire 插件：', PLUGIN_SOURCE_DIR)
   }
 
   return files
@@ -131,7 +143,7 @@ function buildPayload() {
 
 /** 把核心板块接进 profile 时，link: 指向**安装后的插件目录** */
 function corePluginLinkPath() {
-  return path.join(TARGET_DIR, 'app', ...PLUGIN_INSTALL_REL.split('/'))
+  return pluginInstallPath(CORE_PLUGIN_NAME)
 }
 
 function readVersion() {
@@ -278,7 +290,7 @@ async function runSmokeTest() {
     step('LV0 协议页入口', lv0, lv0.exists === true && lv0.hasLv0 === true && lv0.hasLv1 === true)
 
     // 6.5 真实载荷核验：插件是否真的装进 app/plugin，且 profile 接线指向它
-    const pluginEntry = path.join(TARGET_DIR, 'app', ...PLUGIN_INSTALL_REL.split('/'), 'dist', 'index.js')
+    const pluginEntry = path.join(pluginInstallPath(CORE_PLUGIN_NAME), 'dist', 'index.js')
     let wired = { hasDep: false, linkOk: false, inBundles: false }
     try {
       const pj = JSON.parse(fs.readFileSync(path.join(PROFILE_DIR, 'package.json'), 'utf8'))
@@ -291,8 +303,28 @@ async function runSmokeTest() {
     } catch (err) {
       wired = { hasDep: false, linkOk: false, inBundles: false, error: err.message }
     }
-    const payloadOk = fs.existsSync(pluginEntry) && wired.hasDep && wired.linkOk && wired.inBundles
-    step('真实载荷与 profile 接线', { pluginEntryExists: fs.existsSync(pluginEntry), ...wired }, payloadOk)
+    // 每个随包插件都必须落盘并接线（core + tasks）
+    const pluginChecks = PLUGIN_NAMES.map((n) => {
+      const entry = path.join(pluginInstallPath(n), 'dist', 'index.js')
+      let dep = null
+      let linkOk = false
+      let inBundles = false
+      try {
+        const pj = JSON.parse(fs.readFileSync(path.join(PROFILE_DIR, 'package.json'), 'utf8'))
+        dep = pj.dependencies?.[n] ?? null
+        linkOk =
+          typeof dep === 'string' &&
+          path.resolve(dep.replace(/^link:/, '')).toLowerCase() === path.resolve(pluginInstallPath(n)).toLowerCase()
+        inBundles = (pj.dsh?.profile?.bundles ?? []).includes(n)
+      } catch {
+        /* 下面统一判 fail */
+      }
+      return { plugin: n, entryExists: fs.existsSync(entry), hasDep: typeof dep === 'string', linkOk, inBundles }
+    })
+    const payloadOk =
+      pluginChecks.every((x) => x.entryExists && x.hasDep && x.linkOk && x.inBundles) &&
+      wired.hasDep && wired.linkOk && wired.inBundles
+    step('真实载荷与 profile 接线', { plugins: pluginChecks, core: wired }, payloadOk)
 
     // 7. 截图留证（可选步骤：capturePage 在窗口最小化/GPU 异常时会抛 UnknownVizError，
     //    这属于取证失败而不是功能失败，不能让整条冒烟挂掉）
@@ -475,6 +507,9 @@ ipcMain.handle('dsh-training:install', async (event, opts = {}) => {
       version: readVersion(),
       boards,
       profileWire: { profileDir: PROFILE_DIR, packageName: CORE_PLUGIN_NAME, linkPath: corePluginLinkPath() },
+        profileWires: PLUGIN_NAMES.filter((n) => n !== CORE_PLUGIN_NAME)
+          .filter((n) => fs.existsSync(pluginSourceDir(n)))
+          .map((n) => ({ profileDir: PROFILE_DIR, packageName: n, linkPath: pluginInstallPath(n) })),
       onProgress: (p) => {
         // 进度事件走独立通道，渲染层订阅即可
         if (!event.sender.isDestroyed()) event.sender.send('dsh-training:install-progress', p)
