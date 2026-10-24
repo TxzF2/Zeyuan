@@ -285,11 +285,30 @@ export function apply(ctx: Context) {
     host: process.versions.electron ? 'electron' : 'node',
   })
 
-  // ④ 面板路由（有 webServer 才注册；裸 Context 下自动跳过）
+  // ④ 面板路由：**动态等待 webServer**。
+  //    不能声明 inject:['webServer']——裸 Context（单测/冒烟）里没有该服务，
+  //    声明后插件永不 apply，A5 的 L2 证据会失效。
+  //    也不能只在 apply 时查一次 ctx.webServer——DSH 里服务是稍后就绪的，
+  //    实测 apply 时它还没挂上，导致路由 404（2026-10-24 踩到）。
+  //    正确做法：ctx.inject(deps, cb)，服务就绪时才执行注册。
   try {
-    registerRoutes(ctx)
+    const anyCtx = ctx as unknown as { inject?: (deps: string[], cb: (c: Context) => void) => unknown }
+    if (typeof anyCtx.inject === 'function') {
+      anyCtx.inject(['webServer'], (inner: Context) => {
+        try {
+          registerRoutes(inner)
+        } catch (err) {
+          console.warn(`[dsh-training-protocol] 注册路由失败（不影响授权判定）：${(err as Error).message}`)
+        }
+      })
+      console.log('[dsh-training-protocol] 已在 webServer 就绪后注册面板路由')
+    } else if ((ctx as unknown as { webServer?: unknown }).webServer) {
+      registerRoutes(ctx)
+    } else {
+      console.log('[dsh-training-protocol] 无 inject 且无 webServer，面板路由跳过（插件仍可用）')
+    }
   } catch (err) {
-    console.warn(`[dsh-training-protocol] 注册路由失败（不影响授权判定）：${(err as Error).message}`)
+    console.warn(`[dsh-training-protocol] 等待 webServer 失败：${(err as Error).message}`)
   }
 
   // ⑤ 可逆清理证明：卸载时应看到 DISPOSED，并把标记改成 unmounted

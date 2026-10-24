@@ -149,6 +149,32 @@ try {
   check("复查 level", s7.body.level, "LV0");
   check("复查 code", s7.body.check.code, "E-601");
 
+  console.log("\n=== 场景 6 · 注入型 ctx（模拟 DSH：apply 时无 webServer）===");
+  const routes2 = new Map();
+  const injectedDeps = [];
+  const ctx2 = {
+    effect(fn) {
+      return fn();
+    },
+    on() {},
+    inject(deps, cb) {
+      injectedDeps.push(deps.join(","));
+      // 模拟"服务稍后就绪"
+      cb({
+        effect: ctx2.effect,
+        webServer: {
+          register(spec) {
+            routes2.set(spec.path, spec.handler);
+            return () => {};
+          },
+        },
+      });
+    },
+  };
+  mod.apply(ctx2);
+  check("声明了 inject(['webServer'])", injectedDeps[0], "webServer");
+  check("注入就绪后注册路由数", routes2.size, 4);
+
   console.log("\n=== 卸载清理 ===");
   for (const d of disposers) d();
   console.log(`   已执行 ${disposers.length} 个 disposer`);

@@ -139,7 +139,7 @@ window.__ModuleLoader__.load({
           .catch(() => setState({ status: 'error', data: null, notice: '' }))
       }, [])
 
-      useEffect(load, [load])
+      useEffect(() => { load() }, [load])
 
       const call = (path, body) =>
         fetch(`${API}/${path}`, {
