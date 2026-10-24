@@ -325,6 +325,14 @@ export function apply(ctx: Context): void {
       anyCtx.on(TASK_ACCEPTED, (env: Envelope) => {
         try {
           const r = consumeAccepted(env)
+          // 自动建稿也要发事件（与手动 create 保持一致）
+          if (r.created && r.draftId) {
+            emitEvent(
+              'dsh-training:feature-workbench:draft-opened',
+              { draftId: r.draftId, owner: env.payload?.to ?? env.payload?.assignee ?? null, sourceTaskId: env.payload?.taskId ?? null, via: 'task-accepted' },
+              { draftId: r.draftId },
+            )
+          }
           console.log(`[dsh-training-workbench] 消费 ${TASK_ACCEPTED} → created=${r.created} ${r.reason ?? r.draftId ?? ''}`)
         } catch (err) {
           console.warn(`[dsh-training-workbench] 消费事件失败：${(err as Error).message}`)
@@ -340,6 +348,9 @@ export function apply(ctx: Context): void {
   try {
     const r = replayLog()
     if (r.scanned > 0) {
+      for (const draftId of r.drafts ?? []) {
+        emitEvent('dsh-training:feature-workbench:draft-opened', { draftId, via: 'replay' }, { draftId })
+      }
       console.log(`[dsh-training-workbench] 补扫事件日志：命中 ${r.scanned} 条 task-accepted，新建草稿 ${r.created} 份`)
     }
   } catch (err) {

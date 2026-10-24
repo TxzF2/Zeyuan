@@ -97,6 +97,9 @@ const events = () =>
         .map((l) => JSON.parse(l))
     : []
 
+const types_of_events = () => events().map((e) => e.type)
+const types_has_opened = () => types_of_events().includes('dsh-training:feature-workbench:draft-opened')
+
 try {
   console.log('=== 1 · 注册与等级 ===')
   mod.apply(ctx)
@@ -182,6 +185,7 @@ try {
   r = await call('GET', 'replay', undefined, 'alice')
   check('replay 只接受 POST', r.status, 405)
 
+  checkTrue('自动建稿也发 draft-opened', types_has_opened(), types_of_events().join(','))
   console.log('\n=== 5 · 事件 ===')
   const types = events().map((e) => e.type)
   checkTrue('draft-opened 已发', types.includes('dsh-training:feature-workbench:draft-opened'))
