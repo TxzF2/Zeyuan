@@ -26,7 +26,7 @@ function patternToRegex() {
   const p = dist.filePattern
     .replace(/[.]/g, "\\.")
     .replace("{form}", "(portable|setup|board)")
-    .replace("{version}", "v\\d+\\.\\d+\\.\\d+(?:-(?:alpha|beta|rc)\\.\\d+)?")
+    .replace("{version}", "\\d+\\.\\d+\\.\\d+(?:-(?:alpha|beta|rc)\\.\\d+)?")
     .replace("{date}", "\\d{8}")
     .replace("{arch}", "[a-z0-9]+")
     .replace("{ext}", "(?:zip|exe|msi|7z)");
