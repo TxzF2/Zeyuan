@@ -32,6 +32,28 @@ export interface ConsumeResult {
   reason?: string
 }
 
+/** 从事件日志里找赏金结算事件的收款人（task-accepted 可能不带领取人） */
+function ownerFromLog(taskId: string): string | null {
+  try {
+    const file = join(stateDir(), 'event-log.jsonl')
+    if (!existsSync(file)) return null
+    for (const line of readFileSync(file, 'utf8').split(/\r?\n/)) {
+      if (!line.trim()) continue
+      try {
+        const ev = JSON.parse(line) as Envelope
+        if (ev.type === 'dsh-training:tasks:reward' && ev.payload?.taskId === taskId && typeof ev.payload.to === 'string') {
+          return ev.payload.to
+        }
+      } catch {
+        /* skip */
+      }
+    }
+  } catch {
+    /* ignore */
+  }
+  return null
+}
+
 function taskIdOf(env: Envelope): string | null {
   const fromPayload = env.payload?.taskId
   const fromSubject = env.subject?.taskId
@@ -54,6 +76,11 @@ export function consumeAccepted(envelope: Envelope, now: Date = new Date()): Con
     }
 
     const built = draftFromTaskEvent(envelope, '', now)
+    // owner 兵底：事件没带领取人时，从 reward 事件里取收款人
+    if ((!built.owner || built.owner === 'unknown') && taskId) {
+      const fromLog = ownerFromLog(taskId)
+      if (fromLog) built.owner = fromLog
+    }
     const seq = doc.seq + 1
     const draft = createDraft(
       { ...built.value, tags: [...built.value.tags] },

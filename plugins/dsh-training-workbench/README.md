@@ -16,6 +16,9 @@
 | **在线** | `tasks` 插件发布事件时 `ctx.emit`，工作台 `ctx.on('dsh-training:tasks:task-accepted')` 立即建草稿 |
 | **补扫** | 工作台挂载时读 `event-log.jsonl`，把未加载期间错过的 `task-accepted` 补消费 |
 
+**owner 兜底**：
+事件带 `assignee`/`to` 优先；若缺失（旧事件），从 `tasks:reward` 的 `to` 反查领取人。
+
 **幂等双保险**：
 
 1. 事件 id 去重（`drafts.json` 的 `consumed[]`，保留最近 2000 条）；
@@ -32,7 +35,7 @@
 
 状态：`draft → published`（发布后只读）。标题继承任务号，正文由学员填写（Markdown）。
 
-## 3. 路由（6 条）
+## 3. 路由（7 条）
 
 | 方法 | 路径 | 权限 |
 |---|---|---|
@@ -40,6 +43,7 @@
 | GET | `/dsh-training/workbench/list?status=&mine=1` | 无 |
 | GET | `/dsh-training/workbench/detail?id=` | 无 |
 | POST | `/create` `/save` `/publish` | LV1；`save`/`publish` 还要求是草稿 owner |
+| POST | `/replay` | LV1；手动补扫事件日志（运维兜底） |
 
 错误码：`E-901` 已发布不可改（409）、`E-902` 非本人草稿（403）、`E-903` 字段非法（400）、`E-904` 不存在（404）、`E-910/911/912` 存储类。
 

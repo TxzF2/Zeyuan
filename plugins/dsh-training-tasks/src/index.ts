@@ -324,7 +324,18 @@ function registerRoutes(ctx: Context): void {
         accept: 'dsh-training:tasks:task-accepted',
         reject: 'dsh-training:tasks:task-rejected',
       }
-      emitEvent(eventMap[action as TaskAction], { taskId: task.id, by: actor, ...(reason ? { reason } : {}) }, { taskId: task.id })
+      emitEvent(
+        eventMap[action as TaskAction],
+        {
+          taskId: task.id,
+          by: actor,
+          assignee: task.assignee,
+          creator: task.creator,
+          ...(action === 'accept' ? { to: task.assignee } : {}),
+          ...(reason ? { reason } : {}),
+        },
+        { taskId: task.id },
+      )
 
       // 验收通过 → 赏金结算请求（本板块不记账，交给货币系统）
       if (action === 'accept') {

@@ -299,7 +299,15 @@ function registerRoutes(ctx: Context): void {
     json(res, 200, { ok: true, data: draft })
   })
 
-  console.log(`[dsh-training-workbench] 已注册 6 条路由（${base}/*）`)
+  // 手动补扫：运维兜底（也供测试），把日志里漏掉的 task-accepted 重新消费
+  route(`${base}/replay`, async (req, res) => {
+    if (req.method !== 'POST') return json(res, 405, { ok: false, code: 'E-905', message: '只接受 POST。' })
+    if (requireLv1(res) === null) return
+    const r = replayLog()
+    json(res, 200, { ok: true, data: r })
+  })
+
+  console.log(`[dsh-training-workbench] 已注册 7 条路由（${base}/*）`)
 }
 
 // ---------------------------------------------------------------- 入口

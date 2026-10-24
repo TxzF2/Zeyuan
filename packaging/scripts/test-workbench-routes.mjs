@@ -100,7 +100,7 @@ const events = () =>
 try {
   console.log('=== 1 · 注册与等级 ===')
   mod.apply(ctx)
-  check('注册路由数', routes.size, 6)
+  check('注册路由数', routes.size, 7)
   checkTrue('已订阅 task-accepted', listeners.has('dsh-training:tasks:task-accepted'))
   checkTrue('已订阅补扫完成（launch）', existsSync(join(STATE, 'mount-events.jsonl')))
 
@@ -174,6 +174,13 @@ try {
   })
   const after2 = (await call('GET', 'list', undefined, 'alice')).body.data.total
   check('重复事件幂等', after2, after)
+
+  console.log('\n=== 4.5 · 手动补扫路由 ===')
+  r = await call('POST', 'replay', {}, 'alice')
+  check('replay 返回 ok', r.body.ok, true)
+  checkTrue('replay 返回扫描数', typeof r.body.data.scanned === 'number')
+  r = await call('GET', 'replay', undefined, 'alice')
+  check('replay 只接受 POST', r.status, 405)
 
   console.log('\n=== 5 · 事件 ===')
   const types = events().map((e) => e.type)
