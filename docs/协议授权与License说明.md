@@ -114,8 +114,21 @@ node packaging/scripts/test-protocol-routes.mjs
 
 ## 7. 已知限制（下一轮）
 
-1. 面板 UI 的**真机截图**需重启 DSH 后在「设置 → 培训班 · 协议授权」确认（我无法在运行中的应用内截图）；
+1. ~~面板 UI 真机确认~~ ✅ **2026-10-24 已确认**：设置 → 培训班 · 协议授权 面板存在且能取到数据；
 2. 协议页目前是**卡片式**，未做"逐条滚动阅读 + 勾选同意"的正式签署流；
-3. 密钥为本地对称密钥（见 3.2），升级路径见 backlog D-003。
+3. 密钥为本地对称密钥（见 3.2），升级路径见 backlog D-003；
+4. **编码注意**：经 PowerShell 发中文 JSON 时 `subject` 会变成 `????`（PowerShell 侧编码问题，非插件缺陷）；
+   用 UTF-8 客户端（浏览器 / Node fetch）签署则正常——已实测 `subject="本机学员"` 正确落盘。
+
+### 7.1 真机验证记录（2026-10-24）
+
+| 项 | 结果 |
+|---|---|
+| 插件挂载 | `mounted @ 2026-10-24T11:05:14Z`，`version 0.3.0`，`host electron` |
+| 协议路由 | `GET /dsh-training/protocol/state` → **200**（修复前是 404） |
+| 签署 | `POST /sign {confirm:true,days:30}` → `level=LV1 code=OK` |
+| HMAC 校验 | `checks = {exists,shape,keyPresent,signature,notExpired,scope} = 全 true` |
+| 吊销 | `POST /revoke` → `level=LV0 code=E-601` |
+| 面板 | 设置 → 培训班 · 协议授权 **存在**（用户确认） |
 
 _最后更新：2026-10-23 ｜ 插件 v0.3.0_
