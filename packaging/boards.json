@@ -73,13 +73,13 @@
                        "id":  "feature-workbench",
                        "displayName":  "功能预览 · 工作台",
                        "kind":  "preview",
-                       "status":  "placeholder",
+                       "status":  "ready",
                        "boardDir":  "boards/feature-workbench",
                        "dependsOn":  [
                                          "core"
                                      ],
                        "defaultSelected":  false,
-                       "summary":  "学员工作台。阶段三填充。"
+                       "summary":  "消费任务验收事件自动建草稿，支持 Markdown 编辑与发布（发布事件供社区板块消费）。"
                    },
                    {
                        "id":  "feature-community",

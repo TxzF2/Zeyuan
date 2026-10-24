@@ -1,32 +1,35 @@
 {
-  "id": "feature-workbench",
-  "displayName": "功能预览 · 工作台",
-  "kind": "preview",
-  "status": "placeholder",
-  "dependsOn": [
-    "core"
-  ],
-  "defaultSelected": false,
-  "install": {
-    "target": "features/workbench",
-    "mode": "copy"
-  },
-  "contents": [
-    "（占位）待阶段三填充实际产物"
-  ],
-  "placeholderNote": "阶段一仅骨架：本板块不产真实文件，勾选与否都不影响核心功能。",
-  "schemaVersion": 2,
-  "boardApi": 1,
-  "version": "0.1.0",
-  "smoke": "test-feature-workbench.mjs",
-  "events": {
-    "emits": [
-      "draft-opened",
-      "draft-saved",
-      "draft-published"
-    ],
-    "consumes": [
-      "dsh-training:tasks:task-accepted"
-    ]
-  }
+    "id":  "feature-workbench",
+    "displayName":  "功能预览 · 工作台",
+    "kind":  "preview",
+    "status":  "ready",
+    "dependsOn":  [
+                      "core"
+                  ],
+    "defaultSelected":  false,
+    "install":  {
+                    "target":  "features/workbench",
+                    "mode":  "copy"
+                },
+    "contents":  [
+                     "HOST 半：消费 tasks:task-accepted（总线 + 启动补扫，事件 id 与 sourceTaskId 双去重）→ 自动建草稿",
+                     "HOST 半：6 条路由（me/list/detail/create/save/publish），LV1 才能写，只能改自己的草稿",
+                     "BROWSER 半：设置面板「培训班 · 工作台」——草稿列表 + Markdown 编辑 + 保存/发布（墨绿+星辰）",
+                     "数据：%LOCALAPPDATA%\\dsh-training\\data\\drafts.json（原子写 + 文件锁 + consumed 幂等表）"
+                 ],
+    "placeholderNote":  "阶段一仅骨架：本板块不产真实文件，勾选与否都不影响核心功能。",
+    "schemaVersion":  2,
+    "boardApi":  1,
+    "version":  "0.1.0",
+    "smoke":  "test-feature-workbench.mjs",
+    "events":  {
+                   "consumes":  [
+                                    "dsh-training:tasks:task-accepted"
+                                ],
+                   "emits":  [
+                                 "draft-opened",
+                                 "draft-saved",
+                                 "draft-published"
+                             ]
+               }
 }

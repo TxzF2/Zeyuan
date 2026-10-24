@@ -75,6 +75,9 @@ const MAX_BODY_BYTES = 64 * 1024
 
 const host = (): string => (process.versions.electron ? 'electron' : 'node')
 
+/** 进程内事件总线引用（apply 时注入；单测可为 null） */
+let bus: Context | null = null
+
 function ensureStateDir(): void {
   mkdirSync(stateDir(), { recursive: true })
 }
@@ -99,6 +102,12 @@ export function emitEvent(
     appendFileSync(join(stateDir(), 'event-log.jsonl'), JSON.stringify(envelope) + '\n', 'utf8')
   } catch (err) {
     console.warn(`[dsh-training-tasks] 写事件日志失败（不影响业务）：${(err as Error).message}`)
+  }
+  // 进程内广播（工作台等板块签听）；无 bus 时仅落日志
+  try {
+    ;(bus as unknown as { emit?: (t: string, p: unknown) => void } | null)?.emit?.(type, envelope)
+  } catch (err) {
+    console.warn(`[dsh-training-tasks] 总线广播失败：${(err as Error).message}`)
   }
   console.log(`[dsh-training-tasks] event ${type} ${JSON.stringify(payload)}`)
 }
@@ -335,6 +344,7 @@ function registerRoutes(ctx: Context): void {
 
 // ---------------------------------------------------------------- 插件入口
 export function apply(ctx: Context): void {
+  bus = ctx
   writeMountEvent('mounted')
 
   const access = checkAccess()

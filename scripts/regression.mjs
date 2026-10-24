@@ -75,6 +75,24 @@ const SUITES = [
     cwd: REPO,
   },
   {
+    name: '工作台·草稿模型',
+    cmd: process.execPath,
+    args: [join(REPO, 'packaging/scripts/test-workbench-model.mjs')],
+    cwd: REPO,
+  },
+  {
+    name: '工作台·事件消费',
+    cmd: process.execPath,
+    args: [join(REPO, 'packaging/scripts/test-workbench-bus.mjs')],
+    cwd: REPO,
+  },
+  {
+    name: '工作台·路由与权限',
+    cmd: process.execPath,
+    args: [join(REPO, 'packaging/scripts/test-workbench-routes.mjs')],
+    cwd: REPO,
+  },
+  {
     name: '插件·agents 配置',
     cmd: process.execPath,
     args: [join(REPO, 'scripts/check-agents-config.mjs')],
