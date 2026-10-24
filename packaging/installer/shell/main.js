@@ -43,7 +43,7 @@ const ARTIFACTS_DIR = HAS_BUNDLED_PAYLOAD
 const PACKAGING_ROOT = HAS_BUNDLED_PAYLOAD ? path.join(__dirname, 'payload') : path.join(__dirname, '..', '..')
 /** 插件源目录（开发态指向仓库，便携态指向 payload） */
 /** 随包安装的插件（顺序即装配顺序；首个为 core） */
-const PLUGIN_NAMES = ['dsh-training-protocol', 'dsh-training-tasks', 'dsh-training-workbench']
+const PLUGIN_NAMES = ['dsh-training-protocol', 'dsh-training-tasks', 'dsh-training-workbench', 'dsh-training-community']
 /** 插件在安装目标里的相对目录前缀（app/plugins/<name>） */
 const PLUGIN_INSTALL_BASE = 'plugins'
 /** 某个插件的源目录（开发态=仓库，便携态=payload/plugins） */

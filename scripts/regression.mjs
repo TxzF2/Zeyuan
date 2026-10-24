@@ -93,6 +93,24 @@ const SUITES = [
     cwd: REPO,
   },
   {
+    name: '社区·帖子模型',
+    cmd: process.execPath,
+    args: [join(REPO, 'packaging/scripts/test-community-model.mjs')],
+    cwd: REPO,
+  },
+  {
+    name: '社区·事件消费',
+    cmd: process.execPath,
+    args: [join(REPO, 'packaging/scripts/test-community-bus.mjs')],
+    cwd: REPO,
+  },
+  {
+    name: '社区·路由与可见性',
+    cmd: process.execPath,
+    args: [join(REPO, 'packaging/scripts/test-community-routes.mjs')],
+    cwd: REPO,
+  },
+  {
     name: '插件·agents 配置',
     cmd: process.execPath,
     args: [join(REPO, 'scripts/check-agents-config.mjs')],

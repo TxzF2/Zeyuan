@@ -1,32 +1,39 @@
 {
-    "id":  "feature-community",
-    "displayName":  "功能预览 · 社区",
-    "kind":  "preview",
-    "status":  "placeholder",
-    "dependsOn":  [
-                      "core"
-                  ],
-    "defaultSelected":  false,
-    "install":  {
-                    "target":  "features/community",
-                    "mode":  "copy"
-                },
-    "contents":  [
-                     "（占位）待阶段三填充实际产物"
-                 ],
-    "placeholderNote":  "阶段一仅骨架：本板块不产真实文件，勾选与否都不影响核心功能。",
-    "schemaVersion":  2,
-    "boardApi":  1,
-    "version":  "0.1.0",
-    "smoke":  "test-feature-community.mjs",
-    "events":  {
-                   "emits":  [
-                                 "post-created",
-                                 "post-liked",
-                                 "comment-created"
-                             ],
-                   "consumes":  [
-                                    "dsh-training:feature-workbench:draft-published"
-                                ]
-               }
+  "id": "feature-community",
+  "displayName": "功能预览 · 社区",
+  "kind": "preview",
+  "status": "ready",
+  "dependsOn": [
+    "core"
+  ],
+  "defaultSelected": false,
+  "install": {
+    "target": "features/community",
+    "mode": "copy"
+  },
+  "contents": [
+    "HOST 半：消费 workbench:draft-published → 自动生成帖子草稿（作者确认后才公开）",
+    "HOST 半：10 条路由（me/list/detail + draft/save/publish/like/delete + hide/unhide）",
+    "可见性：draft 仅作者；hidden 作者+管理员；published 所有人",
+    "BROWSER 半：设置面板「培训班 · 社区」——列表/标签筛选/详情/点赞/发布（墨绿+星辰）",
+    "数据：%LOCALAPPDATA%dsh-trainingdataposts.json（原子写 + 文件锁 + consumed 幂等表）"
+  ],
+  "placeholderNote": "阶段一仅骨架：本板块不产真实文件，勾选与否都不影响核心功能。",
+  "schemaVersion": 2,
+  "boardApi": 1,
+  "version": "0.1.0",
+  "smoke": "test-feature-community.mjs",
+  "events": {
+    "emits": [
+      "post-drafted",
+      "post-published",
+      "post-liked",
+      "post-hidden",
+      "post-unhidden",
+      "post-deleted"
+    ],
+    "consumes": [
+      "dsh-training:feature-workbench:draft-published"
+    ]
+  }
 }

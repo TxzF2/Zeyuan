@@ -48,9 +48,12 @@
       "draft-published"
     ],
     "feature-community": [
-      "post-created",
+      "post-drafted",
+      "post-published",
       "post-liked",
-      "comment-created"
+      "post-hidden",
+      "post-unhidden",
+      "post-deleted"
     ],
     "feature-collab": [
       "group-formed",
@@ -82,6 +85,15 @@
         "dsh-training:core:level-up",
         "dsh-training:feature-console:dashboard-invalidate",
         "dsh-training:character-txzf:action-request"
+      ]
+    },
+    {
+      "name": "任务验收 → 工作台草稿 → 发布 → 社区帖子",
+      "steps": [
+        "dsh-training:tasks:task-accepted",
+        "dsh-training:feature-workbench:draft-published",
+        "dsh-training:feature-community:post-drafted",
+        "dsh-training:feature-community:post-published"
       ]
     }
   ]
