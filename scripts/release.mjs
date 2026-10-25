@@ -170,7 +170,7 @@ export function renderDownloadPage({ dist, repo, hash, size, upgradeText = '' })
 
   <div class="todo">
     国内镜像：<b>待总控决策</b>（Gitee 注册需手机号实名，涉及账号归属，明日议）。<br />
-    raw 链接若打不开，请改用<b>仓库文件页</b>下载：<a href="https://github.com/${repo}/tree/main/release-assets/v${dist.version}">release-assets / v${dist.version}</a>（点文件 → Download）。
+    raw 链接若打不开，请改用<b>仓库文件页</b>下载：<a href="https://github.com/${repo}/tree/main/releases/v${dist.version}">releases / v${dist.version}</a>（点文件 → Download）。
   </div>
 
   <footer>泽元 · 下载页由 scripts/release.mjs 生成，随 docs 一起发布到 GitHub Pages。</footer>
@@ -193,9 +193,9 @@ export function writePage({ repo, pageOut = PAGE_OUT } = {}) {
   return { page: pageOut, version: dist.version, buildDate: dist.buildDate, hash, hash8: sha8(hash), zip }
 }
 
-/** 分卷下载区块：读 release-assets/v<ver>/PARTS.txt，生成 raw 链接与合并说明 */
+/** 分卷下载区块：读 releases/v<ver>/PARTS.txt，生成 raw 链接与合并说明 */
 export function buildPartsBlock({ dist, repo }) {
-  const dir = join(REPO_ROOT, 'release-assets', `v${dist.version}`)
+  const dir = join(REPO_ROOT, 'releases', `v${dist.version}`)
   const manifest = join(dir, 'PARTS.txt')
   if (!existsSync(manifest)) return ''
   const rows = readFileSync(manifest, 'utf8')
@@ -204,7 +204,7 @@ export function buildPartsBlock({ dist, repo }) {
     .map((l) => l.split('\t'))
     .filter((c) => c.length === 3)
   if (rows.length === 0) return ''
-  const rawBase = `https://raw.githubusercontent.com/${repo}/main/release-assets/v${dist.version}`
+  const rawBase = `https://raw.githubusercontent.com/${repo}/main/releases/v${dist.version}`
   const link = (name) => `${rawBase}/${encodeURIComponent(name)}`
   const items = rows
     .map(([name, size, sha]) => `<li><a href="${link(name)}">${name}</a> <span style="color:var(--muted)">${(Number(size) / 1024 / 1024).toFixed(2)} MB · sha256 ${sha.slice(0, 12)}…</span></li>`)
