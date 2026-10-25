@@ -51,7 +51,13 @@ export function setAuthz(next: Authz): void {
 }
 
 export function emitBus(type: string, payload: Record<string, unknown>): void {
-  const envelope = { v: 1, id: `ev-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, at: new Date().toISOString(), source: 'exchange', type, subject: {}, payload }
+  const envelope = {
+    event: type,
+    id: `ev-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    ts: new Date().toISOString(),
+    actor: (payload as Record<string, unknown> | null)?.by ?? null,
+    payload,
+  }
   try {
     ;(bus as unknown as { emit?: (t: string, p: unknown) => void } | null)?.emit?.(type, envelope)
   } catch (err) {

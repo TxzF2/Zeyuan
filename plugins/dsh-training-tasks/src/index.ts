@@ -93,12 +93,10 @@ export function emitEvent(
   subject: Record<string, unknown> = {},
 ): void {
   const envelope = {
-    v: 1,
+    event: type,
     id: `ev-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-    at: new Date().toISOString(),
-    source: 'tasks',
-    type,
-    subject,
+    ts: new Date().toISOString(),
+    actor: (payload as Record<string, unknown> | null)?.by ?? null,
     payload,
   }
   try {

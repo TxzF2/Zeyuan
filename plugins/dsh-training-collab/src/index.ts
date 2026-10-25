@@ -67,7 +67,13 @@ function ensureStateDir(): void {
 }
 
 export function emitEvent(type: EmittedEvent, payload: Record<string, unknown>): void {
-  const envelope = { v: 1, id: `ev-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, at: new Date().toISOString(), source: 'collab', type, subject: {}, payload }
+  const envelope = {
+    event: type,
+    id: `ev-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    ts: new Date().toISOString(),
+    actor: (payload as Record<string, unknown> | null)?.by ?? null,
+    payload,
+  }
   try {
     ensureStateDir()
     appendFileSync(join(stateDir(), 'event-log.jsonl'), JSON.stringify(envelope) + '\n', 'utf8')

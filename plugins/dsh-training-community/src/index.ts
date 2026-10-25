@@ -65,12 +65,10 @@ function ensureStateDir(): void {
 
 export function emitEvent(type: EmittedEvent, payload: Record<string, unknown>, subject: Record<string, unknown> = {}): void {
   const envelope = {
-    v: 1,
+    event: type,
     id: `ev-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-    at: new Date().toISOString(),
-    source: 'feature-community',
-    type,
-    subject,
+    ts: new Date().toISOString(),
+    actor: (payload as Record<string, unknown> | null)?.by ?? null,
     payload,
   }
   try {
