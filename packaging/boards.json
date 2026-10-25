@@ -114,6 +114,15 @@
       ],
       "defaultSelected": false,
       "summary": "固定编制（1 组长 + 3 组员）的协作小组：满编激活后可发布组内任务、改派、组内评审、申请金币（审批在控制台）。"
+    },
+    {
+      "id": "exchange",
+      "boardDir": "boards/exchange",
+      "displayName": "泽元中转站",
+      "kind": "optional",
+      "status": "ready",
+      "summary": "匿名文件中转：流式上传/下载、列表、删除（上传者或 P6+）；30 天过期清理待第二步。",
+      "defaultSelected": true
     }
   ],
   "contractVersion": 1

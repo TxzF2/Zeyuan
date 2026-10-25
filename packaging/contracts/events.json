@@ -85,6 +85,12 @@
       "review-requested",
       "review-done",
       "coins-requested"
+    ],
+    "exchange": [
+      "file-uploaded",
+      "file-downloaded",
+      "file-deleted",
+      "file-expired"
     ]
   },
   "chains": [

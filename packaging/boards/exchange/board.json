@@ -1,0 +1,33 @@
+{
+  "id": "exchange",
+  "displayName": "泽元中转站",
+  "kind": "optional",
+  "status": "ready",
+  "dependsOn": [
+    "core"
+  ],
+  "defaultSelected": true,
+  "install": {
+    "target": "features/exchange",
+    "mode": "copy"
+  },
+  "contents": [
+    "HOST 半：上传（流式写盘，单文件 500MB）/ 列表 / 下载（流式）/ 删除（上传者或 P6+）",
+    "存储 data/exchange/<id>.bin + <id>.meta.json；匿名口径：上传者=节点 ID",
+    "BROWSER 半：最小 UI（移动端可用）",
+    "后续小步：分片续传、30 天定时清理"
+  ],
+  "schemaVersion": 2,
+  "boardApi": 1,
+  "version": "0.1.0",
+  "smoke": "test-exchange.mjs",
+  "events": {
+    "emits": [
+      "file-uploaded",
+      "file-downloaded",
+      "file-deleted",
+      "file-expired"
+    ],
+    "consumes": []
+  }
+}

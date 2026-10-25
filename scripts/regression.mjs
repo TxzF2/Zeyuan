@@ -177,6 +177,12 @@ const SUITES = [
     cwd: REPO,
   },
   {
+    name: '中转站·上传下载删除',
+    cmd: process.execPath,
+    args: [join(REPO, 'packaging/scripts/test-exchange-routes.mjs')],
+    cwd: REPO,
+  },
+  {
     name: '插件·agents 配置',
     cmd: process.execPath,
     args: [join(REPO, 'scripts/check-agents-config.mjs')],
