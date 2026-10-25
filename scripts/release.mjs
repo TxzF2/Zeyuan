@@ -169,7 +169,8 @@ export function renderDownloadPage({ dist, repo, hash, size, upgradeText = '' })
   </div>
 
   <div class="todo">
-    国内镜像：TODO（发布后同步一份到 Gitee / 网盘，填入备用链接）。当前请优先使用上方 GitHub 直链。
+    国内镜像：<b>待总控决策</b>（Gitee 注册需手机号实名，涉及账号归属，明日议）。<br />
+    raw 链接若打不开，请改用<b>仓库文件页</b>下载：<a href="https://github.com/${repo}/tree/main/release-assets/v${dist.version}">release-assets / v${dist.version}</a>（点文件 → Download）。
   </div>
 
   <footer>泽元 · 下载页由 scripts/release.mjs 生成，随 docs 一起发布到 GitHub Pages。</footer>
