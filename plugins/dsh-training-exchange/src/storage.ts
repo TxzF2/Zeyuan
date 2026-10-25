@@ -14,12 +14,28 @@
 
 import { createHash, randomUUID } from 'node:crypto'
 import { closeSync, createReadStream, existsSync, fsyncSync, mkdirSync, openSync, renameSync, rmSync, statSync, writeSync } from 'node:fs'
+import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import type { Readable } from 'node:stream'
 import { stateDir } from './license-gate.js'
 
-/** 大小上限：可配置，默认 50MB（早拒，不读完再拒） */
-export const MAX_UPLOAD_BYTES = Number(process.env.DSH_EXCHANGE_MAX_UPLOAD ?? 50 * 1024 * 1024)
+/** 大小上限：默认 50MB。优先级 env > data/exchange/config.json > 默认（每次调用实时解析，改配置无需重启） */
+export const DEFAULT_MAX_UPLOAD_BYTES = 50 * 1024 * 1024
+
+export function maxUploadBytes(): number {
+  const env = Number(process.env.DSH_EXCHANGE_MAX_UPLOAD)
+  if (Number.isFinite(env) && env > 0) return env
+  try {
+    const cfg = JSON.parse(readFileSync(join(exchangeDir(), 'config.json'), 'utf8')) as { maxUploadBytes?: number }
+    if (Number.isFinite(cfg.maxUploadBytes) && (cfg.maxUploadBytes as number) > 0) return cfg.maxUploadBytes as number
+  } catch {
+    /* 无配置用默认 */
+  }
+  return DEFAULT_MAX_UPLOAD_BYTES
+}
+
+/** 兼容旧引用（模块加载快照；运行时请用 maxUploadBytes()） */
+export const MAX_UPLOAD_BYTES = maxUploadBytes()
 
 /** 保留期：TODO(总控裁决)，先给 30 天占位 */
 export const RETENTION_DAYS = 30
@@ -93,8 +109,8 @@ export async function putTemp(stream: Readable | AsyncIterable<unknown>): Promis
     for await (const chunk of pump(stream as AsyncIterable<unknown> | EventLike)) {
       const buf = Buffer.isBuffer(chunk) ? chunk : Buffer.from(String(chunk))
       size += buf.length
-      if (size > MAX_UPLOAD_BYTES) {
-        throw Object.assign(new Error(`单文件上限 ${Math.floor(MAX_UPLOAD_BYTES / 1024 / 1024)}MB`), { status: 413, code: 'E-1501' })
+      if (size > maxUploadBytes()) {
+        throw Object.assign(new Error(`单文件上限 ${Math.floor(maxUploadBytes() / 1024 / 1024)}MB`), { status: 413, code: 'E-1501' })
       }
       hash.update(buf)
       writeSync(fd, buf)

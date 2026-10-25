@@ -189,6 +189,12 @@ const SUITES = [
     cwd: REPO,
   },
   {
+    name: '中转站·分片续传（node:test）',
+    cmd: process.execPath,
+    args: ['--test', join(REPO, 'test/test-exchange-chunked.mjs')],
+    cwd: REPO,
+  },
+  {
     name: '插件·agents 配置',
     cmd: process.execPath,
     args: [join(REPO, 'scripts/check-agents-config.mjs')],

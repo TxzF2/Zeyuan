@@ -16,16 +16,18 @@
  * ---------------------------------------------------------------------------
  */
 
-import { appendFileSync, existsSync, mkdirSync, readdirSync } from 'node:fs'
+import { appendFileSync, existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { createHash } from 'node:crypto'
 import { join } from 'node:path'
 import type { Context } from '@deepseek-ai/cordis'
 import type { Readable } from 'node:stream'
 
 import { checkAccess, stateDir } from './license-gate.js'
-import { MAX_UPLOAD_BYTES, RETENTION_DAYS, binPath, commit, ensureDir, exchangeDir, isValidId, newId, putTemp, readStream, removeBin } from './storage.js'
+import { MAX_UPLOAD_BYTES, maxUploadBytes, RETENTION_DAYS, binPath, commit, ensureDir, exchangeDir, isValidId, newId, putTemp, readStream, removeBin } from './storage.js'
 import { NAME_MAX, readMeta, removeMeta, stateOf, validateName, writeMeta, type FileMeta } from './meta.js'
 import { assertCanDelete, assertCanDownload, defaultAuthz, type Authz, type NodeId } from './auth.js'
 import { emitFileEvent } from './events.js'
+import { CHUNK_SIZE, PENDING_TTL_MS, assemble, isValidUploadId, newUploadState, readState, removeUpload, saveChunk, sweepStale, totalChunks, uploadsDir, writeState, type UploadState } from './chunks.js'
 
 export const name = 'dsh-training-exchange'
 export const VERSION = '0.1.0'
@@ -152,6 +154,119 @@ export async function deleteFile(id: string, viewer: NodeId): Promise<void> {
   emitBus('dsh-training:exchange:file-deleted', { id, by: viewer })
 }
 
+// ---------------------------------------------------------------- 分片上传（P0.5）
+const DONE_MARKER = (uploadId: string): string => `${uploadsDir()}/${uploadId}.done.json`
+
+function readDoneMarker(uploadId: string): { uploadId: string; fileId: string; at: string } | null {
+  try {
+    const file = DONE_MARKER(uploadId)
+    if (!existsSync(file)) return null
+    return JSON.parse(readFileSync(file, 'utf8')) as { uploadId: string; fileId: string; at: string }
+  } catch {
+    return null
+  }
+}
+
+function writeDoneMarker(uploadId: string, fileId: string): void {
+  mkdirSync(uploadsDir(), { recursive: true })
+  writeFileSync(DONE_MARKER(uploadId), JSON.stringify({ uploadId, fileId, at: new Date().toISOString() }, null, 2) + '\n', 'utf8')
+}
+
+export function initUpload(input: { name: unknown; size: unknown; mime?: string; uploader: NodeId }): {
+  uploadId: string
+  chunkSize: number
+  size: number
+  received: number[]
+} {
+  const name = validateName(input.name)
+  const size = Number(input.size)
+  if (!Number.isInteger(size) || size <= 0) throw new ServiceError(400, 'E-1503', 'size 必须是正整数')
+  const cap = maxUploadBytes()
+  if (size > cap) throw new ServiceError(413, 'E-1501', `单文件上限 ${Math.floor(cap / 1024 / 1024)}MB`)
+  sweepStale() // 顺手清理过期未完成上传（24h）
+  const st = newUploadState({ name, size, mime: (input.mime ?? 'application/octet-stream').slice(0, 128), uploader: input.uploader })
+  writeState(st)
+  return { uploadId: st.uploadId, chunkSize: st.chunkSize, size, received: [] }
+}
+
+export function putChunk(input: { uploadId: string; index: number | string; data: unknown; sha256?: string; viewer: NodeId }): {
+  index: number
+  received: number[]
+} {
+  const st = readState(input.uploadId)
+  if (!st) throw new ServiceError(404, 'E-1504', '上传会话不存在或已过期')
+  if (st.status === 'completed') throw new ServiceError(409, 'E-1511', '该上传已完成')
+  const total = totalChunks(st.size, st.chunkSize)
+  const index = Number(input.index)
+  if (!Number.isInteger(index) || index < 0 || index >= total) throw new ServiceError(400, 'E-1503', `分片序号应在 0..${total - 1}`)
+  const data = Buffer.isBuffer(input.data) ? input.data : Buffer.from(String(input.data ?? ''))
+  const expected = index === total - 1 ? st.size - st.chunkSize * (total - 1) : st.chunkSize
+  if (data.length !== expected) throw new ServiceError(400, 'E-1503', `分片 ${index} 长度应为 ${expected}，实际 ${data.length}`)
+  const got = createHash('sha256').update(data).digest('hex')
+  if (input.sha256 && input.sha256.toLowerCase() !== got) throw new ServiceError(400, 'E-1508', '分片哈希不符')
+  const rec = saveChunk(st.uploadId, index, data)
+  const chunks = [...st.chunks.filter((c) => c.index !== index), rec].sort((a, b) => a.index - b.index)
+  writeState({ ...st, chunks, updatedAt: new Date().toISOString() })
+  return { index, received: chunks.map((c) => c.index) }
+}
+
+export function uploadStatus(uploadId: string): {
+  uploadId: string
+  chunkSize: number
+  size: number
+  total: number
+  received: number[]
+  missing: number[]
+  complete: boolean
+} {
+  const st: UploadState | null = readState(uploadId)
+  if (!st) throw new ServiceError(404, 'E-1504', '上传会话不存在或已过期')
+  const total = totalChunks(st.size, st.chunkSize)
+  const got = new Set(st.chunks.map((c) => c.index))
+  const received = [...got].sort((a, b) => a - b)
+  const missing = Array.from({ length: total }, (_, i) => i).filter((i) => !got.has(i))
+  return { uploadId: st.uploadId, chunkSize: st.chunkSize, size: st.size, total, received, missing, complete: missing.length === 0 }
+}
+
+export async function completeUpload(input: { uploadId: string; viewer: NodeId }): Promise<FileMeta> {
+  // 幂等：已完成的上传再次 complete → 返回同一文件
+  const done = readDoneMarker(input.uploadId)
+  if (done) {
+    const meta = readMeta(done.fileId)
+    if (meta) return meta
+    throw new ServiceError(404, 'E-1504', '文件已被清理')
+  }
+  const st = readState(input.uploadId)
+  if (!st) throw new ServiceError(404, 'E-1504', '上传会话不存在或已过期')
+  const total = totalChunks(st.size, st.chunkSize)
+  const got = new Set(st.chunks.map((c) => c.index))
+  const missing = Array.from({ length: total }, (_, i) => i).filter((i) => !got.has(i))
+  if (missing.length > 0) throw new ServiceError(409, 'E-1510', `缺少分片：${missing.join(',')}`)
+  const sum = st.chunks.reduce((acc, c) => acc + c.size, 0)
+  if (sum !== st.size) throw new ServiceError(409, 'E-1510', `分片总大小不符（${sum} ≠ ${st.size}）`)
+
+  const asm = assemble(st.uploadId, st)
+  const id = newId()
+  commit(asm.tmpPath, id) // bin 先落
+  const now = new Date()
+  const meta: FileMeta = {
+    id,
+    name: st.name,
+    size: asm.size,
+    sha256: asm.sha256, // 合并后哈希（应与源文件一致）
+    mime: st.mime,
+    uploader: st.uploader,
+    createdAt: now.toISOString(),
+    expiresAt: new Date(now.getTime() + RETENTION_DAYS * 24 * 3600 * 1000).toISOString(), // TODO(总控裁决)
+  }
+  writeMeta(meta) // meta 提交点
+  writeDoneMarker(st.uploadId, id)
+  removeUpload(st.uploadId)
+  await emitFileEvent('uploaded', meta, input.viewer)
+  emitBus('dsh-training:exchange:file-uploaded', { id, size: meta.size, by: input.viewer, via: 'chunked' })
+  return meta
+}
+
 async function verifySha(id: string, expected: string): Promise<boolean> {
   const { createHash } = await import('node:crypto')
   const hash = createHash('sha256')
@@ -244,8 +359,9 @@ function registerRoutes(ctx: Context): void {
     if (!requireLv1(res)) return
     const url = new URL(req.url ?? '/', 'http://localhost')
     const declared = Number(header(req, 'content-length') || '0')
-    if (declared > MAX_UPLOAD_BYTES) {
-      return json(res, 413, { ok: false, code: 'E-1501', message: `单文件上限 ${Math.floor(MAX_UPLOAD_BYTES / 1024 / 1024)}MB。` })
+    const cap = maxUploadBytes()
+    if (declared > cap) {
+      return json(res, 413, { ok: false, code: 'E-1501', message: `单文件上限 ${Math.floor(cap / 1024 / 1024)}MB。` })
     }
     const meta = await uploadStream(req as unknown as AsyncIterable<unknown>, {
       name: decodeURIComponent(url.searchParams.get('name') ?? ''),
@@ -290,15 +406,79 @@ function registerRoutes(ctx: Context): void {
     json(res, 200, { ok: true, data: { id: body.id, deleted: true } })
   })
 
-  console.log(`[dsh-training-exchange] 已注册 4 条路由（${base}/*）`)
+  // ---------------- 分片上传 / 断点续传 ----------------
+  const readRaw = (req: ServerRequestLike, maxBytes = CHUNK_SIZE + 1024): Promise<Buffer> =>
+    new Promise((resolve, reject) => {
+      const parts: Buffer[] = []
+      let size = 0
+      req.on('data', (c) => {
+        const buf = Buffer.isBuffer(c) ? c : Buffer.from(String(c ?? ''))
+        size += buf.length
+        if (size > maxBytes) {
+          reject(new ServiceError(413, 'E-1501', '分片超出大小上限'))
+          return
+        }
+        parts.push(buf)
+      })
+      req.on('end', () => resolve(Buffer.concat(parts)))
+      req.on('error', () => reject(new ServiceError(500, 'E-1502', '读取失败')))
+    })
+
+  route(`${base}/upload/init`, async (req, res) => {
+    if (req.method !== 'POST') return json(res, 405, { ok: false, code: 'E-1505', message: '只接受 POST。' })
+    if (!requireLv1(res)) return
+    const body = await readBody(req)
+    const data = initUpload({ name: body.name, size: body.size, mime: typeof body.mime === 'string' ? body.mime : undefined, uploader: actorOf(req) })
+    json(res, 200, { ok: true, data })
+  })
+
+  route(`${base}/upload/chunk`, async (req, res) => {
+    if (req.method !== 'POST') return json(res, 405, { ok: false, code: 'E-1505', message: '只接受 POST。' })
+    if (!requireLv1(res)) return
+    const url = new URL(req.url ?? '/', 'http://localhost')
+    const uploadId = url.searchParams.get('uploadId') ?? ''
+    if (!isValidUploadId(uploadId)) return json(res, 400, { ok: false, code: 'E-1503', message: 'uploadId 非法' })
+    const data = await readRaw(req)
+    const data2 = putChunk({
+      uploadId,
+      index: url.searchParams.get('index') ?? '',
+      data,
+      sha256: header(req, 'x-chunk-sha256') || undefined,
+      viewer: actorOf(req),
+    })
+    json(res, 200, { ok: true, data: data2 })
+  })
+
+  route(`${base}/upload/status`, (req, res) => {
+    if (!requireLv1(res)) return
+    const url = new URL(req.url ?? '/', 'http://localhost')
+    json(res, 200, { ok: true, data: uploadStatus(url.searchParams.get('uploadId') ?? '') })
+  })
+
+  route(`${base}/upload/complete`, async (req, res) => {
+    if (req.method !== 'POST') return json(res, 405, { ok: false, code: 'E-1505', message: '只接受 POST。' })
+    if (!requireLv1(res)) return
+    const body = await readBody(req)
+    const meta = await completeUpload({ uploadId: String(body.uploadId ?? ''), viewer: actorOf(req) })
+    json(res, 200, { ok: true, data: meta })
+  })
+
+  console.log(`[dsh-training-exchange] 已注册 8 条路由（${base}/*）`)
 }
 
 // ---------------------------------------------------------------- 入口
 export function apply(ctx: Context): void {
   bus = ctx
   writeMountEvent('mounted')
+  try {
+    const swept = sweepStale() // 启动清理：未完成上传超 24h 丢弃
+    if (swept > 0) console.log(`[dsh-training-exchange] 清理过期未完成上传 ${swept} 个`)
+  } catch (err) {
+    console.warn(`[exchange] 启动清理失败：${(err as Error).message}`)
+  }
+  console.log(`[exchange] chunk=${Math.floor(CHUNK_SIZE / 1024 / 1024)}MB · 未完成上传保留 ${Math.floor(PENDING_TTL_MS / 3600000)}h`)
   const access = checkAccess()
-  console.log(`[dsh-training-exchange] mounted — v${VERSION} · ${access.level} · files=${listFiles().length} · max=${Math.floor(MAX_UPLOAD_BYTES / 1024 / 1024)}MB`)
+  console.log(`[dsh-training-exchange] mounted — v${VERSION} · ${access.level} · files=${listFiles().length} · max=${Math.floor(maxUploadBytes() / 1024 / 1024)}MB`)
 
   ctx.effect(() => {
     console.log('[dsh-training-exchange] ready')
