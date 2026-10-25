@@ -34,7 +34,7 @@
       "dashboard-invalidate"
     ],
     "consumes": [
-      "dsh-training:tasks:reward"
+      "zeyuan:tasks:reward"
     ]
   }
 }

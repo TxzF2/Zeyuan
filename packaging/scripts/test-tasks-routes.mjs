@@ -12,9 +12,9 @@ const ROOT = resolve(HERE, '..', '..')
 const STATE = mkdtempSync(join(tmpdir(), 'dsh-tasks-routes-'))
 process.env.DSH_TRAINING_STATE_DIR = STATE
 
-const license = await import(pathToFileURL(resolve(ROOT, 'plugins/dsh-training-protocol/dist/license.js')).href)
-const gate = await import(pathToFileURL(resolve(ROOT, 'plugins/dsh-training-tasks/dist/license-gate.js')).href)
-const mod = await import(pathToFileURL(resolve(ROOT, 'plugins/dsh-training-tasks/dist/index.js')).href)
+const license = await import(pathToFileURL(resolve(ROOT, 'plugins/zeyuan-protocol/dist/license.js')).href)
+const gate = await import(pathToFileURL(resolve(ROOT, 'plugins/zeyuan-tasks/dist/license-gate.js')).href)
+const mod = await import(pathToFileURL(resolve(ROOT, 'plugins/zeyuan-tasks/dist/index.js')).href)
 
 let pass = 0
 let fail = 0
@@ -53,13 +53,13 @@ const ctx = {
 
 // ---------- 假 req/res ----------
 function call(method, path, body, actor, query = '') {
-  const handler = routes.get(`/dsh-training/tasks/${path}`)
+  const handler = routes.get(`/zeyuan/tasks/${path}`)
   if (!handler) throw new Error(`路由不存在：${path}`)
   const chunks = []
   const listeners = {}
   const req = {
     method,
-    url: `/dsh-training/tasks/${path}${query}`,
+    url: `/zeyuan/tasks/${path}${query}`,
     headers: actor ? { 'x-dsh-user': actor } : {},
     on(ev, cb) {
       listeners[ev] = cb
@@ -105,8 +105,8 @@ try {
   console.log('=== 1 · 注册与身份 ===')
   mod.apply(ctx)
   check('注册路由数', routes.size, 10)
-  checkTrue('/list 已注册', routes.has('/dsh-training/tasks/list'))
-  checkTrue('/accept 已注册', routes.has('/dsh-training/tasks/accept'))
+  checkTrue('/list 已注册', routes.has('/zeyuan/tasks/list'))
+  checkTrue('/accept 已注册', routes.has('/zeyuan/tasks/accept'))
 
   let r = await call('GET', 'me', undefined, 'alice')
   check('未签署 → LV0', r.body.data.level, 'LV0')
@@ -176,16 +176,16 @@ try {
   console.log('\n=== 7 · 事件 ===')
   const evs = events()
   const types = evs.map((e) => e.event)
-  checkTrue('task-created 已发', types.includes('dsh-training:tasks:task-created'))
-  checkTrue('task-claimed 已发', types.includes('dsh-training:tasks:task-claimed'))
-  checkTrue('task-submitted 已发', types.includes('dsh-training:tasks:task-submitted'))
-  checkTrue('task-accepted 已发', types.includes('dsh-training:tasks:task-accepted'))
-  const reward = evs.find((e) => e.event === 'dsh-training:tasks:reward')
+  checkTrue('task-created 已发', types.includes('zeyuan:tasks:task-created'))
+  checkTrue('task-claimed 已发', types.includes('zeyuan:tasks:task-claimed'))
+  checkTrue('task-submitted 已发', types.includes('zeyuan:tasks:task-submitted'))
+  checkTrue('task-accepted 已发', types.includes('zeyuan:tasks:task-accepted'))
+  const reward = evs.find((e) => e.event === 'zeyuan:tasks:reward')
   checkTrue('reward 事件已发', Boolean(reward))
   check('reward.coins = 赏金', reward?.payload.coins, 50)
   check('reward.to = 领取人', reward?.payload.to, 'alice')
   check('reward.from = 发起人', reward?.payload.from, 'bob')
-  checkTrue('信封含 event（三段命名）', /^dsh-training:tasks:[a-z-]+$/.test(reward?.event ?? ''), reward?.event)
+  checkTrue('信封含 event（三段命名）', /^zeyuan:tasks:[a-z-]+$/.test(reward?.event ?? ''), reward?.event)
   checkTrue('信封含 actor 字段（可为 null）', reward?.actor === null || typeof reward?.actor === 'string')
   checkTrue('信封字段严格为五键', reward && JSON.stringify(Object.keys(reward).sort()) === JSON.stringify(['actor', 'event', 'id', 'payload', 'ts']), reward && JSON.stringify(Object.keys(reward)))
 
@@ -221,7 +221,7 @@ try {
     ? readFileSync(join(STATE, 'mount-events.jsonl'), 'utf8').trim().split('\n')
     : []
   checkTrue('挂载事件已写（mounted + unmounted）', mountEvents.length >= 2, `实际 ${mountEvents.length}`)
-  checkTrue('挂载事件 plugin 名正确', mountEvents[0]?.includes('dsh-training-tasks'))
+  checkTrue('挂载事件 plugin 名正确', mountEvents[0]?.includes('zeyuan-tasks'))
   rmSync(STATE, { recursive: true, force: true })
 }
 

@@ -13,18 +13,18 @@ const LIB = pathToFileURL(resolve(ROOT, 'packaging/scripts/lib/event-schema.mjs'
 const { EVENT_ENVELOPE_KEYS, validateEvent, makeEvent } = await import(LIB)
 
 test('schema: canonical envelope accepted, legacy/partial envelopes rejected', () => {
-  const good = makeEvent('dsh-training:exchange:file-uploaded', { id: 'x1' }, 'node-a')
+  const good = makeEvent('zeyuan:exchange:file-uploaded', { id: 'x1' }, 'node-a')
   assert.deepEqual(Object.keys(good).sort(), [...EVENT_ENVELOPE_KEYS].sort())
   assert.equal(validateEvent(good).ok, true, JSON.stringify(validateEvent(good).errors))
 
-  const legacy = { v: 1, id: 'ev-1', at: new Date().toISOString(), source: 'exchange', type: 'dsh-training:exchange:file-uploaded', subject: {}, payload: {} }
+  const legacy = { v: 1, id: 'ev-1', at: new Date().toISOString(), source: 'exchange', type: 'zeyuan:exchange:file-uploaded', subject: {}, payload: {} }
   assert.equal(validateEvent(legacy).ok, false, '旧信封（v/at/type）必须被拒')
 
-  const missingActor = { event: 'dsh-training:exchange:file-deleted', id: 'ev-2', ts: new Date().toISOString(), payload: {} }
+  const missingActor = { event: 'zeyuan:exchange:file-deleted', id: 'ev-2', ts: new Date().toISOString(), payload: {} }
   assert.equal(validateEvent(missingActor).ok, false, '缺 actor 必须被拒')
 
   const badName = makeEvent('exchange:file-uploaded')
-  assert.equal(validateEvent(badName).ok, false, 'event 命名必须带 dsh-training: 前缀与三段')
+  assert.equal(validateEvent(badName).ok, false, 'event 命名必须带 zeyuan: 前缀与三段')
 
   const badTs = { ...good, ts: 'not-a-date' }
   assert.equal(validateEvent(badTs).ok, false, 'ts 必须是 ISO')
@@ -32,7 +32,7 @@ test('schema: canonical envelope accepted, legacy/partial envelopes rejected', (
   const badPayload = { ...good, payload: null }
   assert.equal(validateEvent(badPayload).ok, false, 'payload 必须是对象')
 
-  const nullActor = makeEvent('dsh-training:exchange:file-expired', {}, null)
+  const nullActor = makeEvent('zeyuan:exchange:file-expired', {}, null)
   assert.equal(validateEvent(nullActor).ok, true, '系统事件 actor 可为 null')
 })
 

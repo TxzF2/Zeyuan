@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "dsh-training board contract v2",
+  "title": "zeyuan board contract v2",
   "description": "板块清单契约。校验器：packaging/scripts/check-boards.mjs（不引入 ajv，手写校验）",
   "type": "object",
   "required": [
@@ -39,7 +39,7 @@
       "properties": {
         "target": {
           "type": "string",
-          "description": "相对 %LOCALAPPDATA%\\dsh-training 的落点；core 用 profiles/desktop（经 wire 写入）"
+          "description": "相对 %LOCALAPPDATA%\\zeyuan 的落点；core 用 profiles/desktop（经 wire 写入）"
         },
         "mode": { "enum": ["plugin-link", "asset-copy", "copy"] }
       }
@@ -63,7 +63,7 @@
         "consumes": {
           "type": "array",
           "items": { "type": "string" },
-          "description": "订阅的事件，完整名 dsh-training:<board>:<action>，必须命中注册表"
+          "description": "订阅的事件，完整名 zeyuan:<board>:<action>，必须命中注册表"
         }
       }
     },

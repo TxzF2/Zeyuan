@@ -6,7 +6,7 @@
     "idPattern": "^[a-z][a-z0-9-]*$",
     "boardApiExactMatch": true,
     "smokeRequired": "每个板块必须自带 test-<id>.mjs；status=ready 必须 smoke 通过",
-    "eventNaming": "dsh-training:<board>:<action>"
+    "eventNaming": "zeyuan:<board>:<action>"
   },
   "boards": [
     {
@@ -17,7 +17,7 @@
       "boardDir": "boards/core",
       "dependsOn": [],
       "defaultSelected": true,
-      "summary": "DSH 运行时（内置 Node）+ dsh-training-protocol 插件（LV0→LV1 协议授权）。必装，不可取消勾选。"
+      "summary": "DSH 运行时（内置 Node）+ zeyuan-protocol 插件（LV0→LV1 协议授权）。必装，不可取消勾选。"
     },
     {
       "id": "character-txzf",
@@ -65,7 +65,7 @@
         "core"
       ],
       "defaultSelected": false,
-      "summary": "学员发布/领取/提交/验收任务，验收后向货币系统发起赏金结算（事件 dsh-training:tasks:reward）。"
+      "summary": "学员发布/领取/提交/验收任务，验收后向货币系统发起赏金结算（事件 zeyuan:tasks:reward）。"
     },
     {
       "id": "feature-workbench",

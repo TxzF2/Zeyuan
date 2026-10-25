@@ -27,7 +27,7 @@
                                  "action-request"
                              ],
                    "consumes":  [
-                                    "dsh-training:core:level-up"
+                                    "zeyuan:core:level-up"
                                 ]
                }
 }

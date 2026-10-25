@@ -35,13 +35,13 @@ const LIB = join(REPO, "packaging", "installer", "shell", "lib", "profile-wire.j
 const { inspect } = require(LIB);
 
 const wantJson = process.argv.includes("--json");
-const PKG = "dsh-training-protocol";
+const PKG = "zeyuan-protocol";
 
 const DSH_HOME = process.env.DSH_HOME || join(homedir(), ".dsh");
 const PROFILE_DIR = process.env.DSH_TRAINING_PROFILE_DIR || join(DSH_HOME, "profiles", "desktop");
 const STATE_DIR =
   process.env.DSH_TRAINING_STATE_DIR ||
-  (process.env.LOCALAPPDATA ? join(process.env.LOCALAPPDATA, "dsh-training") : join(homedir(), ".dsh-training"));
+  (process.env.LOCALAPPDATA ? join(process.env.LOCALAPPDATA, "zeyuan") : join(homedir(), ".zeyuan"));
 const MOUNT_STATE = join(STATE_DIR, "mount-state.json");
 const MOUNT_EVENTS = join(STATE_DIR, "mount-events.jsonl");
 

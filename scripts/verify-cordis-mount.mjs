@@ -22,7 +22,7 @@ import { tmpdir } from "node:os";
 import { existsSync } from "node:fs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
-const PLUGIN_DIR = resolve(HERE, "..", "plugins", "dsh-training-protocol");
+const PLUGIN_DIR = resolve(HERE, "..", "plugins", "zeyuan-protocol");
 
 // 关键：本测试也在 Node 里挂载插件，会把 mount-state.json 写出来。
 // 若写进生产目录，就会污染 verify-a5 的 L3 证据（把 Node 侧挂载误当成应用内挂载）。

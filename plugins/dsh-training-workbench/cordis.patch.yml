@@ -1,7 +1,0 @@
-# dsh-training-workbench bundle layer — applied when a profile lists this bundle
-#
-# PITFALL: `name` is a PACKAGE NAME (resolved through the profile's node_modules),
-# NOT a relative path. `dsh-training-workbench` is this package's main entry.
-- insert:
-    - id: dsh-training-workbench
-      name: dsh-training-workbench

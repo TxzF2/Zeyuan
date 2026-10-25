@@ -25,7 +25,7 @@ if (!process.env.DSH_TRAINING_STATE_DIR) {
  */
 
 const HERE = dirname(fileURLToPath(import.meta.url))
-const ENTRY = resolve(HERE, '..', 'plugins', 'dsh-training-protocol', 'dist', 'index.js')
+const ENTRY = resolve(HERE, '..', 'plugins', 'zeyuan-protocol', 'dist', 'index.js')
 
 if (!existsSync(ENTRY)) {
   console.error(`❌ 找不到构建产物：${ENTRY}\n   请先在插件目录执行 pnpm run build`)

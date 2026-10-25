@@ -16,13 +16,13 @@ process.env.DSH_TRAINING_STATE_DIR = STATE
 process.env.DSH_TRAINING_PROFILE_DIR = PROFILE
 mkdirSync(join(STATE, 'data'), { recursive: true })
 
-const license = await import(pathToFileURL(resolve(ROOT, 'plugins/dsh-training-protocol/dist/license.js')).href)
-const gate = await import(pathToFileURL(resolve(ROOT, 'plugins/dsh-training-collab/dist/license-gate.js')).href)
-const collab = await import(pathToFileURL(resolve(ROOT, 'plugins/dsh-training-collab/dist/index.js')).href)
-const consoleMod = await import(pathToFileURL(resolve(ROOT, 'plugins/dsh-training-console/dist/index.js')).href)
-const consoleGate = await import(pathToFileURL(resolve(ROOT, 'plugins/dsh-training-console/dist/license-gate.js')).href)
-const wallet = await import(pathToFileURL(resolve(ROOT, 'plugins/dsh-training-console/dist/wallet.js')).href)
-const admins = await import(pathToFileURL(resolve(ROOT, 'plugins/dsh-training-console/dist/admins.js')).href)
+const license = await import(pathToFileURL(resolve(ROOT, 'plugins/zeyuan-protocol/dist/license.js')).href)
+const gate = await import(pathToFileURL(resolve(ROOT, 'plugins/zeyuan-collab/dist/license-gate.js')).href)
+const collab = await import(pathToFileURL(resolve(ROOT, 'plugins/zeyuan-collab/dist/index.js')).href)
+const consoleMod = await import(pathToFileURL(resolve(ROOT, 'plugins/zeyuan-console/dist/index.js')).href)
+const consoleGate = await import(pathToFileURL(resolve(ROOT, 'plugins/zeyuan-console/dist/license-gate.js')).href)
+const wallet = await import(pathToFileURL(resolve(ROOT, 'plugins/zeyuan-console/dist/wallet.js')).href)
+const admins = await import(pathToFileURL(resolve(ROOT, 'plugins/zeyuan-console/dist/admins.js')).href)
 
 let pass = 0
 let fail = 0
@@ -84,7 +84,7 @@ try {
 
   const { ctx, routes } = makeCtx()
   collab.apply(ctx)
-  const call = caller(routes, '/dsh-training/collab')
+  const call = caller(routes, '/zeyuan/collab')
   check('collab 路由数 17', routes.size, 17)
 
   console.log('=== 1 · 建组与加入 ===')
@@ -143,7 +143,7 @@ try {
   console.log('\n=== 5 · 控制台审批（P7+；通过才入账）===')
   const { ctx: cctx, routes: croutes } = makeCtx()
   consoleMod.apply(cctx)
-  const ccall = caller(croutes, '/dsh-training/console')
+  const ccall = caller(croutes, '/zeyuan/console')
   check('console 路由数 22', croutes.size, 22)
   r = await ccall('GET', 'coin-requests', undefined, 'bob')
   check('P0 看申请 → 403', r.status, 403)

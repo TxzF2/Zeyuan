@@ -15,11 +15,11 @@ mkdirSync(PROFILE, { recursive: true })
 process.env.DSH_TRAINING_STATE_DIR = STATE
 process.env.DSH_TRAINING_PROFILE_DIR = PROFILE
 
-const license = await import(pathToFileURL(resolve(ROOT, 'plugins/dsh-training-protocol/dist/license.js')).href)
-const gate = await import(pathToFileURL(resolve(ROOT, 'plugins/dsh-training-console/dist/license-gate.js')).href)
-const dash = await import(pathToFileURL(resolve(ROOT, 'plugins/dsh-training-console/dist/dashboard.js')).href)
-const users = await import(pathToFileURL(resolve(ROOT, 'plugins/dsh-training-console/dist/users.js')).href)
-const wallet = await import(pathToFileURL(resolve(ROOT, 'plugins/dsh-training-console/dist/wallet.js')).href)
+const license = await import(pathToFileURL(resolve(ROOT, 'plugins/zeyuan-protocol/dist/license.js')).href)
+const gate = await import(pathToFileURL(resolve(ROOT, 'plugins/zeyuan-console/dist/license-gate.js')).href)
+const dash = await import(pathToFileURL(resolve(ROOT, 'plugins/zeyuan-console/dist/dashboard.js')).href)
+const users = await import(pathToFileURL(resolve(ROOT, 'plugins/zeyuan-console/dist/users.js')).href)
+const wallet = await import(pathToFileURL(resolve(ROOT, 'plugins/zeyuan-console/dist/wallet.js')).href)
 
 let pass = 0
 let fail = 0
@@ -81,7 +81,7 @@ try {
   console.log('\n=== 5 · 健康检查 ===')
   writeFileSync(
     join(STATE, 'mount-events.jsonl'),
-    ['dsh-training-protocol', 'dsh-training-tasks', 'dsh-training-workbench', 'dsh-training-community', 'dsh-training-console']
+    ['zeyuan-protocol', 'zeyuan-tasks', 'zeyuan-workbench', 'zeyuan-community', 'zeyuan-console']
       .map((p) => JSON.stringify({ plugin: p, event: 'mounted', at: NOW.toISOString(), host: 'electron' }))
       .join('\n') + '\n',
     'utf8',

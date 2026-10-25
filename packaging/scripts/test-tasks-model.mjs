@@ -7,7 +7,7 @@ import { resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
-const MOD = resolve(HERE, '..', '..', 'plugins', 'dsh-training-tasks', 'dist', 'task.js')
+const MOD = resolve(HERE, '..', '..', 'plugins', 'zeyuan-tasks', 'dist', 'task.js')
 const m = await import(pathToFileURL(MOD).href)
 
 let pass = 0

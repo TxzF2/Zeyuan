@@ -10,9 +10,9 @@ const ROOT = resolve(HERE, '..', '..')
 const STATE = mkdtempSync(join(tmpdir(), 'dsh-wb-routes-'))
 process.env.DSH_TRAINING_STATE_DIR = STATE
 
-const license = await import(pathToFileURL(resolve(ROOT, 'plugins/dsh-training-protocol/dist/license.js')).href)
-const gate = await import(pathToFileURL(resolve(ROOT, 'plugins/dsh-training-workbench/dist/license-gate.js')).href)
-const mod = await import(pathToFileURL(resolve(ROOT, 'plugins/dsh-training-workbench/dist/index.js')).href)
+const license = await import(pathToFileURL(resolve(ROOT, 'plugins/zeyuan-protocol/dist/license.js')).href)
+const gate = await import(pathToFileURL(resolve(ROOT, 'plugins/zeyuan-workbench/dist/license-gate.js')).href)
+const mod = await import(pathToFileURL(resolve(ROOT, 'plugins/zeyuan-workbench/dist/index.js')).href)
 
 let pass = 0
 let fail = 0
@@ -56,12 +56,12 @@ const ctx = {
 }
 
 function call(method, path, body, actor, query = '') {
-  const handler = routes.get(`/dsh-training/workbench/${path}`)
+  const handler = routes.get(`/zeyuan/workbench/${path}`)
   if (!handler) throw new Error(`路由不存在：${path}`)
   const listenersReq = {}
   const req = {
     method,
-    url: `/dsh-training/workbench/${path}${query}`,
+    url: `/zeyuan/workbench/${path}${query}`,
     headers: actor ? { 'x-dsh-user': actor } : {},
     on(ev, cb) {
       listenersReq[ev] = cb
@@ -98,13 +98,13 @@ const events = () =>
     : []
 
 const types_of_events = () => events().map((e) => e.event)
-const types_has_opened = () => types_of_events().includes('dsh-training:feature-workbench:draft-opened')
+const types_has_opened = () => types_of_events().includes('zeyuan:feature-workbench:draft-opened')
 
 try {
   console.log('=== 1 · 注册与等级 ===')
   mod.apply(ctx)
   check('注册路由数', routes.size, 7)
-  checkTrue('已订阅 task-accepted', listeners.has('dsh-training:tasks:task-accepted'))
+  checkTrue('已订阅 task-accepted', listeners.has('zeyuan:tasks:task-accepted'))
   checkTrue('已订阅补扫完成（launch）', existsSync(join(STATE, 'mount-events.jsonl')))
 
   let r = await call('GET', 'me', undefined, 'alice')
@@ -158,10 +158,10 @@ try {
 
   console.log('\n=== 4 · 总线联动（任务验收 → 自动建草稿）===')
   const before = (await call('GET', 'list', undefined, 'alice')).body.data.total
-  ctx.emit('dsh-training:tasks:task-accepted', {
+  ctx.emit('zeyuan:tasks:task-accepted', {
     v: 1,
     id: 'ev-live-1',
-    type: 'dsh-training:tasks:task-accepted',
+    type: 'zeyuan:tasks:task-accepted',
     payload: { taskId: 't-20261024-0099', to: 'carol', coins: 20 },
     subject: { taskId: 't-20261024-0099' },
   })
@@ -169,10 +169,10 @@ try {
   check('总线事件后多一份草稿', after, before + 1)
   const auto = (await call('GET', 'list', undefined, 'carol')).body.data.drafts.find((d) => d.sourceTaskId === 't-20261024-0099')
   checkTrue('草稿归属领取人 carol', auto?.owner === 'carol', auto?.owner)
-  ctx.emit('dsh-training:tasks:task-accepted', {
+  ctx.emit('zeyuan:tasks:task-accepted', {
     v: 1,
     id: 'ev-live-1',
-    type: 'dsh-training:tasks:task-accepted',
+    type: 'zeyuan:tasks:task-accepted',
     payload: { taskId: 't-20261024-0099', to: 'carol' },
   })
   const after2 = (await call('GET', 'list', undefined, 'alice')).body.data.total
@@ -188,12 +188,12 @@ try {
   checkTrue('自动建稿也发 draft-opened', types_has_opened(), types_of_events().join(','))
   console.log('\n=== 5 · 事件 ===')
   const types = events().map((e) => e.event)
-  checkTrue('draft-opened 已发', types.includes('dsh-training:feature-workbench:draft-opened'))
-  checkTrue('draft-saved 已发', types.includes('dsh-training:feature-workbench:draft-saved'))
-  checkTrue('draft-published 已发', types.includes('dsh-training:feature-workbench:draft-published'))
+  checkTrue('draft-opened 已发', types.includes('zeyuan:feature-workbench:draft-opened'))
+  checkTrue('draft-saved 已发', types.includes('zeyuan:feature-workbench:draft-saved'))
+  checkTrue('draft-published 已发', types.includes('zeyuan:feature-workbench:draft-published'))
   const wbAll = events()
   const wbLast = wbAll.length ? wbAll[wbAll.length - 1] : null
-  checkTrue('信封含 event（三段命名）', /^dsh-training:feature-workbench:[a-z-]+$/.test(wbLast?.event ?? ''), wbLast?.event)
+  checkTrue('信封含 event（三段命名）', /^zeyuan:feature-workbench:[a-z-]+$/.test(wbLast?.event ?? ''), wbLast?.event)
   checkTrue('信封字段严格为五键', JSON.stringify(Object.keys(wbLast ?? {}).sort()) === JSON.stringify(['actor', 'event', 'id', 'payload', 'ts']), JSON.stringify(Object.keys(wbLast ?? {})))
 } finally {
   for (const d of disposers) {

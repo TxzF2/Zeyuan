@@ -16,7 +16,7 @@
 
 ```powershell
 $blender = "D:\Program Files\Blender Foundation\Blender 5.2\New Folder\blender.exe"
-$root = "C:\Users\29496\.dsh\plugin-sources\dsh-training\characters"
+$root = "C:\Users\29496\.dsh\plugin-sources\zeyuan\characters"
 ```
 
 **方式 A · 直接打开工程（改完手动保存）**
@@ -41,12 +41,12 @@ $root = "C:\Users\29496\.dsh\plugin-sources\dsh-training\characters"
 > 若你希望有「图形化面板」：需要另做 DSH 板块 `dsh-blender-panel`
 > （主进程 HTTP 路由调 `blender -b` + 设置面板放三个按钮）。目前**未做**，这是独立工程量。
 
-## 3. 资产如何被 dsh-training-protocol 插件调用
+## 3. 资产如何被 zeyuan-protocol 插件调用
 
 插件侧当前是占位（`enabled: false`）：
 
 ```ts
-// plugins/dsh-training-protocol/src/agents.config.ts
+// plugins/zeyuan-protocol/src/agents.config.ts
 { name: '星辰（TxzF）', source: 'todo:txzf',  role: 'guide',    enabled: false }
 { name: '长征姬',       source: 'todo:changzhengji', role: 'reviewer', enabled: false }
 ```

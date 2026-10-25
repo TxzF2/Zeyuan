@@ -12,9 +12,9 @@ const STATE = join(BASE, 'state')
 mkdirSync(join(STATE, 'data'), { recursive: true })
 process.env.DSH_TRAINING_STATE_DIR = STATE
 
-const license = await import(pathToFileURL(resolve(ROOT, 'plugins/dsh-training-protocol/dist/license.js')).href)
-const gate = await import(pathToFileURL(resolve(ROOT, 'plugins/dsh-training-tasks/dist/license-gate.js')).href)
-const mod = await import(pathToFileURL(resolve(ROOT, 'plugins/dsh-training-tasks/dist/index.js')).href)
+const license = await import(pathToFileURL(resolve(ROOT, 'plugins/zeyuan-protocol/dist/license.js')).href)
+const gate = await import(pathToFileURL(resolve(ROOT, 'plugins/zeyuan-tasks/dist/license-gate.js')).href)
+const mod = await import(pathToFileURL(resolve(ROOT, 'plugins/zeyuan-tasks/dist/index.js')).href)
 
 let pass = 0
 let fail = 0
@@ -39,10 +39,10 @@ const ctx = {
 
 async function call(method, path, body, actor) {
   const [p, q] = path.split('?')
-  const handler = routes.get(`/dsh-training/tasks/${p}`)
+  const handler = routes.get(`/zeyuan/tasks/${p}`)
   if (!handler) throw new Error(`路由不存在：${path}`)
   const L = {}
-  const req = { method, url: `/dsh-training/tasks/${p}${q ? '?' + q : ''}`, headers: actor ? { 'x-dsh-user': actor } : {}, on(ev, cb) { L[ev] = cb } }
+  const req = { method, url: `/zeyuan/tasks/${p}${q ? '?' + q : ''}`, headers: actor ? { 'x-dsh-user': actor } : {}, on(ev, cb) { L[ev] = cb } }
   const res = { status: 0, body: null, writeHead(s) { res.status = s }, end(b) { res.body = b ? JSON.parse(b) : null } }
   const pr = Promise.resolve(handler(req, res))
   await new Promise((r) => setTimeout(r, 0))

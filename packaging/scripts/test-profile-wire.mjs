@@ -35,7 +35,7 @@ async function expectCode(label, fn, code) {
   }
 }
 
-const PKG = "dsh-training-protocol";
+const PKG = "zeyuan-protocol";
 const roots = [];
 function makeProfile(dirName, pkg = {}) {
   const dir = mkdtempSync(join(tmpdir(), `dsh-profile-${dirName}-`));
@@ -49,7 +49,7 @@ try {
   // 1 首次写入
   console.log("=== 1 · 首次写入 ===");
   const p1 = makeProfile("first", { name: "dsh-profile-test", private: true, dependencies: { dshmarket: "1.66.28" } });
-  const r1 = wire({ profileDir: p1, packageName: PKG, linkPath: "C:/x/plugins/dsh-training-protocol" });
+  const r1 = wire({ profileDir: p1, packageName: PKG, linkPath: "C:/x/plugins/zeyuan-protocol" });
   check("changed", r1.changed, true);
   const j1 = read(p1);
   check("dependencies 写入", /^link:C:\/x\/plugins/.test(j1.dependencies[PKG]), true);
@@ -61,7 +61,7 @@ try {
   // 2 幂等
   console.log("\n=== 2 · 重复写入（幂等）===");
   const before2 = readFileSync(join(p1, "package.json"), "utf8");
-  const r2 = wire({ profileDir: p1, packageName: PKG, linkPath: "C:/x/plugins/dsh-training-protocol" });
+  const r2 = wire({ profileDir: p1, packageName: PKG, linkPath: "C:/x/plugins/zeyuan-protocol" });
   check("changed=false", r2.changed, false);
   check("文件字节未变", readFileSync(join(p1, "package.json"), "utf8") === before2, true);
 
@@ -127,7 +127,7 @@ try {
   const t65 = makeProfile("nmlink");
   const realPlugin = mkdtempSync(join(tmpdir(), "dsh-real-plugin-"));
   roots.push(realPlugin);
-  writeFileSync(join(realPlugin, "package.json"), '{"name":"dsh-training-protocol","version":"0.3.0"}');
+  writeFileSync(join(realPlugin, "package.json"), '{"name":"zeyuan-protocol","version":"0.3.0"}');
   const l1 = ensureNodeModulesLink(t65, PKG, realPlugin);
   check("首次创建链接", l1.changed, true);
   const { realpathSync, lstatSync } = await import("node:fs");

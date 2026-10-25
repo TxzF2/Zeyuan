@@ -16,7 +16,7 @@ process.env.DSH_TRAINING_STATE_DIR = STATE
 process.env.DSH_TRAINING_PROFILE_DIR = PROFILE
 
 // 造一个"已安装"的插件目录
-const PKG = 'dsh-training-tasks'
+const PKG = 'zeyuan-tasks'
 mkdirSync(join(STATE, 'app', 'plugins', PKG, 'dist'), { recursive: true })
 writeFileSync(join(STATE, 'app', 'plugins', PKG, 'dist', 'index.js'), 'export function apply() {}\n', 'utf8')
 writeFileSync(join(STATE, 'app', 'plugins', PKG, 'package.json'), JSON.stringify({ name: PKG, version: '0.1.0' }), 'utf8')
@@ -30,7 +30,7 @@ function writeProfile(bundles, deps = {}) {
 }
 writeProfile(['@deepseek-ai/dsh-base'])
 
-const pg = await import(pathToFileURL(resolve(ROOT, 'plugins/dsh-training-console/dist/profile-gate.js')).href)
+const pg = await import(pathToFileURL(resolve(ROOT, 'plugins/zeyuan-console/dist/profile-gate.js')).href)
 
 let pass = 0
 let fail = 0
@@ -72,7 +72,7 @@ try {
   check('node_modules 链接移除', existsSync(join(PROFILE, 'node_modules', PKG)), false)
 
   console.log('\n=== 4 · 保护 ===')
-  check('停用 protocol → E-1106', codeOf(() => pg.setPluginEnabled('dsh-training-protocol', false)), 'E-1106')
+  check('停用 protocol → E-1106', codeOf(() => pg.setPluginEnabled('zeyuan-protocol', false)), 'E-1106')
 
   console.log('\n=== 5 · 备份上限 ===')
   for (let i = 0; i < 5; i++) {

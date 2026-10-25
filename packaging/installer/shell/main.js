@@ -1,5 +1,5 @@
 /**
- * dsh-training 安装器外壳 · 主进程（阶段二 · 第 1 步：接通 detect-node）
+ * zeyuan 安装器外壳 · 主进程（阶段二 · 第 1 步：接通 detect-node）
  * ---------------------------------------------------------------------------
  * 已接：runtime-info（只读）、detect-node（只读检测）、open-external（白名单外链）
  * 未接：install / rollback（阶段二第 2 步）
@@ -37,13 +37,13 @@ const TARGET_DIR = process.env.DSH_TRAINING_TARGET_DIR || defaultTargetDir()
  */
 const HAS_BUNDLED_PAYLOAD = fs.existsSync(path.join(__dirname, 'payload'))
 const ARTIFACTS_DIR = HAS_BUNDLED_PAYLOAD
-  ? path.join(process.env.LOCALAPPDATA || os.tmpdir(), 'dsh-training', 'qa')
+  ? path.join(process.env.LOCALAPPDATA || os.tmpdir(), 'zeyuan', 'qa')
   : path.join(__dirname, '..', '..', 'artifacts', 'qa')
 /** 载荷根：开发态=packaging/，便携态=resources/app/payload */
 const PACKAGING_ROOT = HAS_BUNDLED_PAYLOAD ? path.join(__dirname, 'payload') : path.join(__dirname, '..', '..')
 /** 插件源目录（开发态指向仓库，便携态指向 payload） */
 /** 随包安装的插件（顺序即装配顺序；首个为 core） */
-const PLUGIN_NAMES = ['dsh-training-protocol', 'dsh-training-tasks', 'dsh-training-workbench', 'dsh-training-community', 'dsh-training-console', 'dsh-training-collab', 'dsh-training-exchange']
+const PLUGIN_NAMES = ['zeyuan-protocol', 'zeyuan-tasks', 'zeyuan-workbench', 'zeyuan-community', 'zeyuan-console', 'zeyuan-collab', 'zeyuan-exchange']
 /** 插件在安装目标里的相对目录前缀（app/plugins/<name>） */
 const PLUGIN_INSTALL_BASE = 'plugins'
 /** 某个插件的源目录（开发态=仓库，便携态=payload/plugins） */
@@ -63,7 +63,7 @@ const PROFILE_DIR =
   process.env.DSH_TRAINING_PROFILE_DIR ||
   path.join(process.env.DSH_HOME || path.join(os.homedir(), '.dsh'), 'profiles', 'desktop')
 
-const CORE_PLUGIN_NAME = 'dsh-training-protocol'
+const CORE_PLUGIN_NAME = 'zeyuan-protocol'
 
 /** 递归收集目录里的文件，映射成 <base>/<相对路径> */
 function collectFiles(dir, base) {
@@ -463,7 +463,7 @@ async function runSelfTest() {
 
 // --- IPC：只读能力 ---------------------------------------------------------
 
-ipcMain.handle('dsh-training:runtime-info', () => ({
+ipcMain.handle('zeyuan:runtime-info', () => ({
   shellVersion: app.getVersion(),
   electron: process.versions.electron,
   chrome: process.versions.chrome,
@@ -476,7 +476,7 @@ ipcMain.handle('dsh-training:runtime-info', () => ({
  * Node 运行时检测。
  * 核心逻辑在 lib/detect-runtime.js（不依赖 Electron，可被 Node 单测复现 E-101/E-102）。
  */
-ipcMain.handle('dsh-training:detect-node', () => {
+ipcMain.handle('zeyuan:detect-node', () => {
   const started = Date.now()
   const result = detectRuntime()
   const elapsedMs = Date.now() - started
@@ -485,7 +485,7 @@ ipcMain.handle('dsh-training:detect-node', () => {
 })
 
 /** 打开外链（白名单） */
-ipcMain.handle('dsh-training:open-external', (_event, url) => {
+ipcMain.handle('zeyuan:open-external', (_event, url) => {
   if (typeof url !== 'string' || !ALLOWED_EXTERNAL.some((re) => re.test(url))) {
     console.warn(`[open-external] 拒绝非白名单 URL：${String(url).slice(0, 120)}`)
     return { ok: false, error: 'URL_NOT_ALLOWED' }
@@ -496,9 +496,9 @@ ipcMain.handle('dsh-training:open-external', (_event, url) => {
 
 // --- IPC：安装 / 回滚 / 状态（阶段二第 2 步）-------------------------------
 
-ipcMain.handle('dsh-training:status', () => getStatus({ targetDir: TARGET_DIR }))
+ipcMain.handle('zeyuan:status', () => getStatus({ targetDir: TARGET_DIR }))
 
-ipcMain.handle('dsh-training:install', async (event, opts = {}) => {
+ipcMain.handle('zeyuan:install', async (event, opts = {}) => {
   const boards = Array.isArray(opts.boards) ? opts.boards : []
   try {
     const result = await runInstall({
@@ -512,7 +512,7 @@ ipcMain.handle('dsh-training:install', async (event, opts = {}) => {
           .map((n) => ({ profileDir: PROFILE_DIR, packageName: n, linkPath: pluginInstallPath(n) })),
       onProgress: (p) => {
         // 进度事件走独立通道，渲染层订阅即可
-        if (!event.sender.isDestroyed()) event.sender.send('dsh-training:install-progress', p)
+        if (!event.sender.isDestroyed()) event.sender.send('zeyuan:install-progress', p)
       },
     })
     return { ok: true, version: result.version, fileCount: result.fileCount, backupDir: result.backupDir, targetDir: TARGET_DIR, externalWrites: result.manifest?.externalWrites ?? [] }
@@ -522,7 +522,7 @@ ipcMain.handle('dsh-training:install', async (event, opts = {}) => {
   }
 })
 
-ipcMain.handle('dsh-training:rollback', async () => {
+ipcMain.handle('zeyuan:rollback', async () => {
   try {
     const result = await runRollback({ targetDir: TARGET_DIR })
     return { ok: true, restoredFrom: result.restoredFrom }
@@ -532,7 +532,7 @@ ipcMain.handle('dsh-training:rollback', async () => {
   }
 })
 
-ipcMain.handle('dsh-training:uninstall', async () => {
+ipcMain.handle('zeyuan:uninstall', async () => {
   try {
     return { ok: true, ...(await runUninstall({ targetDir: TARGET_DIR })) }
   } catch (err) {

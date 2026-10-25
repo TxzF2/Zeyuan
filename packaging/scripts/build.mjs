@@ -43,8 +43,8 @@ const HERE = dirname(fileURLToPath(import.meta.url))
 const PKG_ROOT = resolve(HERE, '..')
 const REPO_ROOT = resolve(PKG_ROOT, '..')
 const SHELL_DIR = join(PKG_ROOT, 'installer', 'shell')
-const PLUGIN_NAMES = ['dsh-training-protocol', 'dsh-training-tasks', 'dsh-training-workbench', 'dsh-training-community', 'dsh-training-console', 'dsh-training-collab', 'dsh-training-exchange']
-const PLUGIN_DIR = join(REPO_ROOT, 'plugins', 'dsh-training-protocol')
+const PLUGIN_NAMES = ['zeyuan-protocol', 'zeyuan-tasks', 'zeyuan-workbench', 'zeyuan-community', 'zeyuan-console', 'zeyuan-collab', 'zeyuan-exchange']
+const PLUGIN_DIR = join(REPO_ROOT, 'plugins', 'zeyuan-protocol')
 const ELECTRON_DIST = join(SHELL_DIR, 'node_modules', 'electron', 'dist')
 const ARTIFACTS = join(PKG_ROOT, 'artifacts')
 
@@ -127,7 +127,7 @@ function validateBoards() {
 function validatePayloads() {
   const checks = [
     [join(PLUGIN_DIR, 'dist', 'index.js'), '核心插件 dist（先编译）'],
-    [join(REPO_ROOT, 'plugins', 'dsh-training-tasks', 'dist', 'index.js'), '任务插件 dist（先编译）'],
+    [join(REPO_ROOT, 'plugins', 'zeyuan-tasks', 'dist', 'index.js'), '任务插件 dist（先编译）'],
     [join(PLUGIN_DIR, 'lib', 'client.js'), '插件 client 半 lib/client.js'],
     [join(SHELL_DIR, 'main.js'), '安装器 shell main.js'],
     [join(PKG_ROOT, 'installer', 'wizard', 'index.html'), '向导页 installer/wizard/index.html'],
@@ -222,7 +222,7 @@ function buildPortable(dist, boards) {
     }
     for (const f of ['package.json', 'cordis.patch.yml']) cpSync(join(src, f), join(out, f))
   }
-  const pluginOut = join(pluginsOut, 'dsh-training-protocol')
+  const pluginOut = join(pluginsOut, 'zeyuan-protocol')
 
   cpSync(join(PKG_ROOT, 'boards.json'), join(payload, 'boards.json'))
   cpSync(join(PKG_ROOT, 'distribution.json'), join(payload, 'distribution.json'))
@@ -241,7 +241,7 @@ function buildPortable(dist, boards) {
     join(appRes, 'lib', 'installer.js'),
     join(appRes, 'lib', 'profile-wire.js'),
     join(pluginOut, 'dist', 'index.js'),
-    join(pluginsOut, 'dsh-training-tasks', 'dist', 'index.js'),
+    join(pluginsOut, 'zeyuan-tasks', 'dist', 'index.js'),
     join(payload, 'boards.json'),
   ]
   const missing = must.filter((p) => !existsSync(p))
@@ -252,7 +252,7 @@ function buildPortable(dist, boards) {
   const deliveryRoot = join(ARTIFACTS, '交付')
   if (existsSync(deliveryRoot)) rmSync(deliveryRoot, { recursive: true, force: true })
   for (const f of readdirSync(ARTIFACTS)) {
-    if (/^dsh-training-portable-.*\.zip$/.test(f)) rmSync(join(ARTIFACTS, f), { force: true })
+    if (/^zeyuan-portable-.*\.zip$/.test(f)) rmSync(join(ARTIFACTS, f), { force: true })
   }
   mkdirSync(outDir, { recursive: true })
   execFileSync(
@@ -300,7 +300,7 @@ function main(argv) {
   const stageArg = argv.indexOf('--stage')
   const stage = stageArg > -1 ? Number(argv[stageArg + 1]) : 1
 
-  console.log('dsh-training 构建\n')
+  console.log('zeyuan 构建\n')
   const dist = validateDistribution()
   const boards = validateBoards()
   validatePayloads()

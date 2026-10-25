@@ -12,8 +12,8 @@ const ROOT = resolve(HERE, '..', '..')
 const STATE = mkdtempSync(join(tmpdir(), 'dsh-wb-bus-'))
 process.env.DSH_TRAINING_STATE_DIR = STATE
 
-const consume = await import(pathToFileURL(resolve(ROOT, 'plugins/dsh-training-workbench/dist/consume.js')).href)
-const store = await import(pathToFileURL(resolve(ROOT, 'plugins/dsh-training-workbench/dist/store.js')).href)
+const consume = await import(pathToFileURL(resolve(ROOT, 'plugins/zeyuan-workbench/dist/consume.js')).href)
+const store = await import(pathToFileURL(resolve(ROOT, 'plugins/zeyuan-workbench/dist/store.js')).href)
 
 let pass = 0
 let fail = 0
@@ -35,7 +35,7 @@ const accepted = (taskId, evId) => ({
   payload: { taskId, to: 'alice', coins: 10 },
   subject: { taskId },
 })
-const consentType = () => 'dsh-training:tasks:task-accepted'
+const consentType = () => 'zeyuan:tasks:task-accepted'
 
 const dataDir = store.dataDir()
 
@@ -62,7 +62,7 @@ try {
   console.log('\n=== 3 · 补扫 event-log.jsonl ===')
   const log = join(STATE, 'event-log.jsonl')
   const lines = [
-    { v: 1, id: 'ev-10', type: 'dsh-training:tasks:task-submitted', payload: { taskId: 't-2' } },
+    { v: 1, id: 'ev-10', type: 'zeyuan:tasks:task-submitted', payload: { taskId: 't-2' } },
     { v: 1, id: 'ev-11', type: consentType(), payload: { taskId: 't-2', to: 'bob' } },
     { v: 1, id: 'ev-12', type: consentType(), payload: { taskId: 't-3', to: 'carol' } },
     { v: 1, id: 'ev-11', type: consentType(), payload: { taskId: 't-2', to: 'bob' } },

@@ -5,7 +5,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
 const ROOT = resolve(HERE, '..', '..')
-const m = await import(pathToFileURL(resolve(ROOT, 'plugins/dsh-training-workbench/dist/draft.js')).href)
+const m = await import(pathToFileURL(resolve(ROOT, 'plugins/zeyuan-workbench/dist/draft.js')).href)
 
 let pass = 0
 let fail = 0
@@ -57,7 +57,7 @@ check('已发布不可编辑（E-901）', m.canEdit(published, 'alice').code, 'E
 console.log('\n=== 4 · 从任务事件建草稿 ===')
 const env = {
   id: 'ev-1',
-  type: 'dsh-training:tasks:task-accepted',
+  type: 'zeyuan:tasks:task-accepted',
   payload: { taskId: 't-20261024-0001', to: 'alice', coins: 10 },
   subject: { taskId: 't-20261024-0001' },
 }

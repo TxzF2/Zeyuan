@@ -1,17 +1,17 @@
-﻿# dsh-training · DSH Agent 泽元
+﻿# zeyuan · DSH Agent 泽元
 
-> 项目代号：**dsh-training** ｜ 风格：年轻时尚 · 极简主义 · 星辰特色（寻梦山海）
+> 项目代号：**zeyuan** ｜ 风格：年轻时尚 · 极简主义 · 星辰特色（寻梦山海）
 
 本仓库是 DSH Agent 泽元的**底层环境与插件源码目录**，位于
-`C:\Users\29496\.dsh\plugin-sources\dsh-training`（DSH 的本地插件源目录，
+`C:\Users\29496\.dsh\plugin-sources\zeyuan`（DSH 的本地插件源目录，
 可被 profile 以 `file:` 依赖引用）。
 
 ## 目录结构
 
 ```
-dsh-training/
+zeyuan/
 ├─ plugins/                 # 全部功能板块（每个板块一个独立插件包）
-│  └─ dsh-training-protocol/   # LV0→LV1 协议授权占位插件（当前唯一板块）
+│  └─ zeyuan-protocol/   # LV0→LV1 协议授权占位插件（当前唯一板块）
 ├─ packaging/               # 安装包工程（阶段二 IPC 完工；仍不产出 exe/zip）
 │  ├─ distribution.json     # 版本唯一来源
 │  ├─ boards.json           # 板块唯一事实源（必装/可选/占位）
@@ -41,7 +41,7 @@ dsh-training/
 | Git | ✅ 已装（PortableGit 2.55.0.windows.5，经 PATH shim 接入） |
 | Git 仓库 | ✅ 已初始化（分支 `main`，首次提交 `824f879`） |
 | dsh-open-in-vscode 集成 | ⛔ **已关闭**（决策见 `docs/backlog.md` D-001，改用 VS Code 直接打开目录） |
-| dsh-training-protocol 骨架 | ✅ 已生成并构建通过；已进 desktop profile 配置，**真机挂载待重启应用确认** |
+| zeyuan-protocol 骨架 | ✅ 已生成并构建通过；已进 desktop profile 配置，**真机挂载待重启应用确认** |
 | 适配 agent 列表 | ⬜ 配置位已就绪（`src/agents.config.ts`），**等你补充条目** |
 
 详见 [docs/DSH 泽元环境部署手册.md](docs/DSH%20泽元环境部署手册.md)。

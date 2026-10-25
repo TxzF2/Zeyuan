@@ -13,7 +13,7 @@ const ROOT = resolve(HERE, '..', '..')
 const STATE = mkdtempSync(join(tmpdir(), 'dsh-tasks-store-'))
 process.env.DSH_TRAINING_STATE_DIR = STATE
 
-const store = await import(pathToFileURL(resolve(ROOT, 'plugins/dsh-training-tasks/dist/store.js')).href)
+const store = await import(pathToFileURL(resolve(ROOT, 'plugins/zeyuan-tasks/dist/store.js')).href)
 
 let pass = 0
 let fail = 0

@@ -15,11 +15,11 @@ mkdirSync(join(PROFILE, 'node_modules'), { recursive: true })
 process.env.DSH_TRAINING_STATE_DIR = STATE
 process.env.DSH_TRAINING_PROFILE_DIR = PROFILE
 writeFileSync(join(PROFILE, 'package.json'), JSON.stringify({ name: 'p', dependencies: {}, dsh: { profile: { bundles: [] } } }, null, 2), 'utf8')
-mkdirSync(join(STATE, 'app', 'plugins', 'dsh-training-tasks', 'dist'), { recursive: true })
-writeFileSync(join(STATE, 'app', 'plugins', 'dsh-training-tasks', 'dist', 'index.js'), 'export function apply(){}\n', 'utf8')
+mkdirSync(join(STATE, 'app', 'plugins', 'zeyuan-tasks', 'dist'), { recursive: true })
+writeFileSync(join(STATE, 'app', 'plugins', 'zeyuan-tasks', 'dist', 'index.js'), 'export function apply(){}\n', 'utf8')
 
-const mod = await import(pathToFileURL(resolve(ROOT, 'plugins/dsh-training-console/dist/index.js')).href)
-const audit = await import(pathToFileURL(resolve(ROOT, 'plugins/dsh-training-console/dist/audit.js')).href)
+const mod = await import(pathToFileURL(resolve(ROOT, 'plugins/zeyuan-console/dist/index.js')).href)
+const audit = await import(pathToFileURL(resolve(ROOT, 'plugins/zeyuan-console/dist/audit.js')).href)
 
 let pass = 0
 let fail = 0
@@ -56,12 +56,12 @@ const ctx = {
 }
 
 function call(method, path, body, actor) {
-  const handler = routes.get(`/dsh-training/console/${path}`)
+  const handler = routes.get(`/zeyuan/console/${path}`)
   if (!handler) throw new Error(`路由不存在：${path}`)
   const L = {}
   const req = {
     method,
-    url: `/dsh-training/console/${path}`,
+    url: `/zeyuan/console/${path}`,
     headers: actor ? { 'x-dsh-user': actor } : {},
     on(ev, cb) {
       L[ev] = cb
@@ -146,13 +146,13 @@ try {
   check('P6 启用 tasks 成功', r.status, 200)
   check('返回 restartRequired', r.body.data.restartRequired, true)
   const profileOn = JSON.parse(readFileSync(join(PROFILE, 'package.json'), 'utf8'))
-  check('profile 写入 tasks 依赖', 'dsh-training-tasks' in profileOn.dependencies, true)
-  check('profile bundles 含 tasks', profileOn.dsh.profile.bundles.includes('dsh-training-tasks'), true)
+  check('profile 写入 tasks 依赖', 'zeyuan-tasks' in profileOn.dependencies, true)
+  check('profile bundles 含 tasks', profileOn.dsh.profile.bundles.includes('zeyuan-tasks'), true)
 
   r = await call('POST', 'boards/toggle', { board: 'tasks', enabled: false, confirm: true, reason: '维护任务板块' }, 'carol')
   check('P6 停 tasks 成功', r.status, 200)
   const profileOff = JSON.parse(readFileSync(join(PROFILE, 'package.json'), 'utf8'))
-  check('profile 已移除 tasks 依赖', 'dsh-training-tasks' in profileOff.dependencies, false)
+  check('profile 已移除 tasks 依赖', 'zeyuan-tasks' in profileOff.dependencies, false)
 
   r = await call('POST', 'boards/toggle', { board: 'core', enabled: false, confirm: true, reason: '尝试停核心' }, 'carol')
   check('P6 停 core → 409', r.status, 409)
@@ -166,7 +166,7 @@ try {
   check('恢复 tasks', r.status, 200)
   check(
     'profile 重新写入依赖',
-    'dsh-training-tasks' in JSON.parse(readFileSync(join(PROFILE, 'package.json'), 'utf8')).dependencies,
+    'zeyuan-tasks' in JSON.parse(readFileSync(join(PROFILE, 'package.json'), 'utf8')).dependencies,
     true,
   )
 

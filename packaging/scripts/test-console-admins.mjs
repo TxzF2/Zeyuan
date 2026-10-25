@@ -10,7 +10,7 @@ const ROOT = resolve(HERE, '..', '..')
 const STATE = mkdtempSync(join(tmpdir(), 'dsh-console-admins-'))
 process.env.DSH_TRAINING_STATE_DIR = STATE
 
-const a = await import(pathToFileURL(resolve(ROOT, 'plugins/dsh-training-console/dist/admins.js')).href)
+const a = await import(pathToFileURL(resolve(ROOT, 'plugins/zeyuan-console/dist/admins.js')).href)
 
 let pass = 0
 let fail = 0

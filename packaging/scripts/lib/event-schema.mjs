@@ -1,13 +1,13 @@
 /** 统一事件信封 schema（总控裁决 2026-10-25）
  *  规范：{ event, id, ts, actor, payload }
- *  - event: 'dsh-training:<board>:<action>'
+ *  - event: 'zeyuan:<board>:<action>'
  *  - id: 非空字符串（建议 ev-<ms>-<rand>）
  *  - ts: ISO 8601 字符串
  *  - actor: 节点 id 或 null（匿名/系统事件）
  *  - payload: 对象（必填，可为 {}）
  */
 export const EVENT_ENVELOPE_KEYS = ['event', 'id', 'ts', 'actor', 'payload']
-export const EVENT_NAME_RE = /^dsh-training:[a-z0-9-]+:[a-z0-9-]+$/
+export const EVENT_NAME_RE = /^zeyuan:[a-z0-9-]+:[a-z0-9-]+$/
 
 export function validateEvent(env) {
   const errors = []

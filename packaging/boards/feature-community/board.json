@@ -16,7 +16,7 @@
     "HOST 半：10 条路由（me/list/detail + draft/save/publish/like/delete + hide/unhide）",
     "可见性：draft 仅作者；hidden 作者+管理员；published 所有人",
     "BROWSER 半：设置面板「泽元 · 社区」——列表/标签筛选/详情/点赞/发布（墨绿+星辰）",
-    "数据：%LOCALAPPDATA%dsh-trainingdataposts.json（原子写 + 文件锁 + consumed 幂等表）",
+    "数据：%LOCALAPPDATA%zeyuandataposts.json（原子写 + 文件锁 + consumed 幂等表）",
     "一级评论：LV1 发评、作者软删、P6+ 隐藏；data/comments.json（写事务 + 原子写）"
   ],
   "placeholderNote": "阶段一仅骨架：本板块不产真实文件，勾选与否都不影响核心功能。",
@@ -37,7 +37,7 @@
       "comment-hidden"
     ],
     "consumes": [
-      "dsh-training:feature-workbench:draft-published"
+      "zeyuan:feature-workbench:draft-published"
     ]
   }
 }

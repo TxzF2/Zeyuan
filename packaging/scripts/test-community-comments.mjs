@@ -11,9 +11,9 @@ const STATE = mkdtempSync(join(tmpdir(), 'dsh-comments-'))
 process.env.DSH_TRAINING_STATE_DIR = STATE
 mkdirSync(join(STATE, 'data'), { recursive: true })
 
-const license = await import(pathToFileURL(resolve(ROOT, 'plugins/dsh-training-protocol/dist/license.js')).href)
-const gate = await import(pathToFileURL(resolve(ROOT, 'plugins/dsh-training-community/dist/license-gate.js')).href)
-const mod = await import(pathToFileURL(resolve(ROOT, 'plugins/dsh-training-community/dist/index.js')).href)
+const license = await import(pathToFileURL(resolve(ROOT, 'plugins/zeyuan-protocol/dist/license.js')).href)
+const gate = await import(pathToFileURL(resolve(ROOT, 'plugins/zeyuan-community/dist/license-gate.js')).href)
+const mod = await import(pathToFileURL(resolve(ROOT, 'plugins/zeyuan-community/dist/index.js')).href)
 
 let pass = 0
 let fail = 0
@@ -32,10 +32,10 @@ const ctx = { effect(fn) { return fn() }, on() {}, inject(d, cb) { cb({ effect: 
 
 async function call(method, path, body, actor) {
   const [p, q] = String(path).split('?')
-  const handler = routes.get(`/dsh-training/community/${p}`)
+  const handler = routes.get(`/zeyuan/community/${p}`)
   if (!handler) throw new Error(`路由不存在：${path}`)
   const L = {}
-  const req = { method, url: `/dsh-training/community/${p}${q ? '?' + q : ''}`, headers: actor ? { 'x-dsh-user': actor } : {}, on(ev, cb) { L[ev] = cb } }
+  const req = { method, url: `/zeyuan/community/${p}${q ? '?' + q : ''}`, headers: actor ? { 'x-dsh-user': actor } : {}, on(ev, cb) { L[ev] = cb } }
   const res = { status: 0, body: null, writeHead(s) { res.status = s }, end(b) { res.body = b ? JSON.parse(b) : null } }
   const pr = Promise.resolve(handler(req, res))
   await new Promise((r) => setTimeout(r, 0))
@@ -115,9 +115,9 @@ try {
 
   console.log('\n=== 6 · 事件（不带正文）===')
   const types = events().map((e) => e.event)
-  checkTrue('comment-added 已发', types.includes('dsh-training:feature-community:comment-added'))
-  checkTrue('comment-removed 已发', types.includes('dsh-training:feature-community:comment-removed'))
-  checkTrue('comment-hidden 已发', types.includes('dsh-training:feature-community:comment-hidden'))
+  checkTrue('comment-added 已发', types.includes('zeyuan:feature-community:comment-added'))
+  checkTrue('comment-removed 已发', types.includes('zeyuan:feature-community:comment-removed'))
+  checkTrue('comment-hidden 已发', types.includes('zeyuan:feature-community:comment-hidden'))
   const added = events().find((e) => e.event.endsWith('comment-added'))
   checkTrue('事件不含正文', !JSON.stringify(added.payload).includes('第一条评论'), JSON.stringify(added.payload))
   check('事件带 commentId', Boolean(added.payload.commentId), true)

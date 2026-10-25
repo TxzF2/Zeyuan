@@ -46,6 +46,12 @@ export function defaultPaths(env = process.env) {
 }
 
 /** 统计一次迁移计划（不写盘） */
+/** 改写 link: 依赖值里的插件目录段（仓库名 dsh-training 不动） */
+export function renameLinkValue(value) {
+  if (typeof value !== 'string') return value
+  return value.replace(/([\\/]app[\\/]plugins[\\/])dsh-training-/g, '$1zeyuan-')
+}
+
 export function buildPlan(paths) {
   const actions = []
   const { oldStateDir, newStateDir, profileDir } = paths
@@ -161,11 +167,12 @@ export function planProfile(file) {
   const doc = JSON.parse(readFileSync(file, 'utf8'))
   const deps = Object.keys(doc.dependencies ?? {}).filter(isOldName).length
   const bundles = (doc.dsh?.profile?.bundles ?? []).filter(isOldName).length
-  return { deps, bundles }
+  const links = Object.values(doc.dependencies ?? {}).filter((v) => renameLinkValue(v) !== v).length
+  return { deps, bundles, links }
 }
 
 /** 实际执行 */
-export function applyMigration(paths, { force = false, now = new Date() } = {}) {
+export function applyMigration(paths, { force = false, skipProfile = false, now = new Date() } = {}) {
   const stamp = now.toISOString().replace(/[:.]/g, '-')
   const done = []
 
@@ -213,16 +220,21 @@ export function applyMigration(paths, { force = false, now = new Date() } = {}) 
   }
 
   const pkg = join(paths.profileDir, 'package.json')
-  if (existsSync(pkg)) {
+  if (!skipProfile && existsSync(pkg)) {
     const raw = readFileSync(pkg, 'utf8')
     const doc = JSON.parse(raw)
     let changed = 0
     if (doc.dependencies) {
       for (const key of Object.keys(doc.dependencies)) {
-        if (!isOldName(key)) continue
-        doc.dependencies[renameName(key)] = doc.dependencies[key]
-        delete doc.dependencies[key]
-        changed++
+        const value = renameLinkValue(doc.dependencies[key])
+        if (value !== doc.dependencies[key]) changed++
+        if (isOldName(key)) {
+          doc.dependencies[renameName(key)] = value
+          delete doc.dependencies[key]
+          changed++
+        } else {
+          doc.dependencies[key] = value
+        }
       }
     }
     const bundles = doc.dsh?.profile?.bundles
@@ -260,7 +272,8 @@ if (isMain) {
   if (!apply) {
     console.log(`\n共 ${plan.pending} 项待执行。**dry-run**，未写盘。加 --apply 执行。`)
   } else {
-    const { done, rollback } = applyMigration(paths, { force })
+    const skipProfile = process.argv.includes('--no-profile')
+    const { done, rollback } = applyMigration(paths, { force, skipProfile })
     console.log('\n已执行：')
     for (const d of done) console.log('  ✓ ' + d)
     if (done.length === 0) console.log('  （无变更，已是最新）')

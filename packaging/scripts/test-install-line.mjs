@@ -45,7 +45,7 @@ function checkTrue(label, cond, extra = "") {
 /** 造一个"安装包"：内存里的文件清单 */
 function payloadV(version) {
   return [
-    { path: "index.html", content: `<h1>dsh-training ${version}</h1>` },
+    { path: "index.html", content: `<h1>zeyuan ${version}</h1>` },
     { path: "resources/app.js", content: `console.log("${version}")` },
     { path: "resources/themes/xingchen.json", content: JSON.stringify({ theme: "xingchen", v: version }) },
   ];
@@ -53,7 +53,7 @@ function payloadV(version) {
 
 const roots = [];
 function freshRoot(label) {
-  const dir = mkdtempSync(join(tmpdir(), `dsh-training-${label}-`));
+  const dir = mkdtempSync(join(tmpdir(), `zeyuan-${label}-`));
   roots.push(dir);
   return dir;
 }
@@ -92,7 +92,7 @@ try {
   check("安装文件数", r1.fileCount, 3);
   check("app 目录存在", existsSync(pathsFor(t1).app), true);
   check("manifest 存在", existsSync(join(pathsFor(t1).app, "install-manifest.json")), true);
-  check("内容正确", readApp(t1, "index.html"), "<h1>dsh-training 0.1.0</h1>");
+  check("内容正确", readApp(t1, "index.html"), "<h1>zeyuan 0.1.0</h1>");
   checkTrue("进度覆盖 stage/verify/commit", ["stage", "verify", "commit"].every((ph) => progress.includes(ph)), progress.join(","));
   const m1 = JSON.parse(readFileSync(join(pathsFor(t1).app, "install-manifest.json"), "utf8"));
   check("清单版本", m1.version, "0.1.0");
@@ -104,7 +104,7 @@ try {
   console.log("\n=== 2 · 升级安装（旧版本进 .backup）===");
   const r2 = await runInstall({ targetDir: t1, payload: payloadV("0.2.0"), version: "0.2.0", boards: ["core"] });
   check("升级 ok", r2.ok, true);
-  check("内容已更新", readApp(t1, "index.html"), "<h1>dsh-training 0.2.0</h1>");
+  check("内容已更新", readApp(t1, "index.html"), "<h1>zeyuan 0.2.0</h1>");
   check("备份目录数", subdirs(pathsFor(t1).backupRoot).length, 1);
   check("staging 已清空", subdirs(pathsFor(t1).stagingRoot).length, 0);
 
@@ -145,7 +145,7 @@ try {
     () => runInstall({ targetDir: t6, payload: payloadV("0.2.0"), version: "0.2.0", faults: { cancelAt: "after-backup" } }),
     "E-206",
   );
-  check("旧版本已被恢复", readApp(t6, "index.html"), "<h1>dsh-training 0.1.0</h1>");
+  check("旧版本已被恢复", readApp(t6, "index.html"), "<h1>zeyuan 0.1.0</h1>");
   check("备份已被移回，无遗留", subdirs(pathsFor(t6).backupRoot).length, 0);
 
   // ---------------- 7. 回滚（A2 核心）----------------
@@ -153,10 +153,10 @@ try {
   const t7 = freshRoot("rollback");
   await runInstall({ targetDir: t7, payload: payloadV("0.1.0"), version: "0.1.0" });
   await runInstall({ targetDir: t7, payload: payloadV("0.2.0"), version: "0.2.0" });
-  check("回滚前是新版本", readApp(t7, "index.html"), "<h1>dsh-training 0.2.0</h1>");
+  check("回滚前是新版本", readApp(t7, "index.html"), "<h1>zeyuan 0.2.0</h1>");
   const rb = await runRollback({ targetDir: t7 });
   check("回滚 ok", rb.ok, true);
-  check("回滚后回到旧版本", readApp(t7, "index.html"), "<h1>dsh-training 0.1.0</h1>");
+  check("回滚后回到旧版本", readApp(t7, "index.html"), "<h1>zeyuan 0.1.0</h1>");
   check("坏版本进了 .failed", subdirs(pathsFor(t7).failedRoot).length >= 1, true);
 
   // ---------------- 8. 卸载 ----------------
@@ -197,20 +197,20 @@ try {
     payload: payloadV("0.1.0"),
     version: "0.1.0",
     boards: ["core"],
-    profileWire: { profileDir: prof11, packageName: "dsh-training-protocol", linkPath: "C:/x/plugins/dsh-training-protocol" },
+    profileWire: { profileDir: prof11, packageName: "zeyuan-protocol", linkPath: "C:/x/plugins/zeyuan-protocol" },
   });
   check("安装 ok（含 wire）", r11.ok, true);
   check("清单记录外部写入", r11.manifest.externalWrites.length, 1);
   const pj11 = JSON.parse(readFileSync(join(prof11, "package.json"), "utf8"));
-  check("profile dependencies 已写", typeof pj11.dependencies["dsh-training-protocol"], "string");
-  check("profile bundles 已写", pj11.dsh.profile.bundles.includes("dsh-training-protocol"), true);
+  check("profile dependencies 已写", typeof pj11.dependencies["zeyuan-protocol"], "string");
+  check("profile bundles 已写", pj11.dsh.profile.bundles.includes("zeyuan-protocol"), true);
   check("原有 bundle 保留", pj11.dsh.profile.bundles.includes("@deepseek-ai/dsh-base"), true);
 
   const un11 = await runUninstall({ targetDir: join(t11, "target") });
   check("卸载撤回 profile（1 条）", un11.unwired.length, 1);
   const pj11b = JSON.parse(readFileSync(join(prof11, "package.json"), "utf8"));
-  check("卸载后 dependencies 已清", Object.prototype.hasOwnProperty.call(pj11b.dependencies, "dsh-training-protocol"), false);
-  check("卸载后 bundles 已清", pj11b.dsh.profile.bundles.includes("dsh-training-protocol"), false);
+  check("卸载后 dependencies 已清", Object.prototype.hasOwnProperty.call(pj11b.dependencies, "zeyuan-protocol"), false);
+  check("卸载后 bundles 已清", pj11b.dsh.profile.bundles.includes("zeyuan-protocol"), false);
 
   // 11b：profile JSON 损坏时安装必须整体失败且目标回滚
   console.log("\n=== 11b · profile 损坏 → 安装整体回滚 ===");
@@ -226,7 +226,7 @@ try {
         targetDir: join(t11b, "target"),
         payload: payloadV("0.1.0"),
         version: "0.1.0",
-        profileWire: { profileDir: prof11b, packageName: "dsh-training-protocol", linkPath: "C:/x" },
+        profileWire: { profileDir: prof11b, packageName: "zeyuan-protocol", linkPath: "C:/x" },
       }),
     "E-502",
   );
