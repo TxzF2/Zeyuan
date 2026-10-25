@@ -10,7 +10,7 @@ const ROOT = resolve(HERE, '..', '..')
 const STATE = mkdtempSync(join(tmpdir(), 'dsh-console-wallet-'))
 process.env.DSH_TRAINING_STATE_DIR = STATE
 
-const w = await import(pathToFileURL(resolve(ROOT, 'plugins/dsh-training-console/dist/wallet.js')).href)
+const w = await import(pathToFileURL(resolve(ROOT, 'plugins/zeyuan-console/dist/wallet.js')).href)
 
 let pass = 0
 let fail = 0

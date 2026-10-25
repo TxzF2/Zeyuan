@@ -1,0 +1,7 @@
+# zeyuan-console bundle layer — applied when a profile lists this bundle
+#
+# PITFALL: `name` is a PACKAGE NAME (resolved through the profile's node_modules),
+# NOT a relative path. `zeyuan-console` is this package's main entry.
+- insert:
+    - id: zeyuan-console
+      name: zeyuan-console

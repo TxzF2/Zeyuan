@@ -2,7 +2,7 @@
 
 | 项 | 内容 |
 |---|---|
-| 对应版本 | `dsh-training-protocol` **v0.3.0** |
+| 对应版本 | `zeyuan-protocol` **v0.3.0** |
 | 读者 | 维护者 / 支持人员 / 安全评审 |
 | 关联 | 验收项 A6、《验收与回退手册》§4.6、`docs/backlog.md` D-003 |
 
@@ -40,16 +40,16 @@
 
 | 文件 | 路径 | 说明 |
 |---|---|---|
-| License | `%LOCALAPPDATA%\dsh-training\license.json` | 可为空（未签署） |
-| 密钥 | `%LOCALAPPDATA%\dsh-training\license.key` | 首次签发时生成，权限 600 |
-| 挂载标记 | `%LOCALAPPDATA%\dsh-training\mount-state.json` | A5 证据，含 `level` 与 `licenseCode` |
+| License | `%LOCALAPPDATA%\zeyuan\license.json` | 可为空（未签署） |
+| 密钥 | `%LOCALAPPDATA%\zeyuan\license.key` | 首次签发时生成，权限 600 |
+| 挂载标记 | `%LOCALAPPDATA%\zeyuan\mount-state.json` | A5 证据，含 `level` 与 `licenseCode` |
 
 > 可用环境变量 `DSH_TRAINING_STATE_DIR` 覆盖上述目录（测试隔离用）。
 
 ### 3.1 密钥轮换流程
 
 ```powershell
-$s = "$env:LOCALAPPDATA\dsh-training"
+$s = "$env:LOCALAPPDATA\zeyuan"
 
 # 1) 备份并退休旧密钥（旧 License 立即失效，这是预期行为）
 Move-Item "$s\license.key" "$s\license.key.$(Get-Date -Format yyyyMMddHHmmss).retired"
@@ -92,10 +92,10 @@ Remove-Item "$s\license.json" -Force -ErrorAction SilentlyContinue
 
 | 方法 | 路径 | 用途 |
 |---|---|---|
-| GET | `/dsh-training/protocol/state` | 等级 + 六项校验 + License 摘要 + 文件路径 |
-| POST | `/dsh-training/protocol/verify` | 重新判定并返回结果 |
-| POST | `/dsh-training/protocol/sign` | 签发（body: `{confirm:true, subject, scopes?, days?}`） |
-| POST | `/dsh-training/protocol/revoke` | 删除 License，退回 LV0 |
+| GET | `/zeyuan/protocol/state` | 等级 + 六项校验 + License 摘要 + 文件路径 |
+| POST | `/zeyuan/protocol/verify` | 重新判定并返回结果 |
+| POST | `/zeyuan/protocol/sign` | 签发（body: `{confirm:true, subject, scopes?, days?}`） |
+| POST | `/zeyuan/protocol/revoke` | 删除 License，退回 LV0 |
 
 > 路由只在宿主提供 `ctx.webServer` 时注册；裸 Context（单测/CLI 场景）自动跳过，
 > 因此插件本体在任何环境都可挂载，不会因缺 webServer 而拒绝加载。
@@ -125,7 +125,7 @@ node packaging/scripts/test-protocol-routes.mjs
 | 项 | 结果 |
 |---|---|
 | 插件挂载 | `mounted @ 2026-10-24T11:05:14Z`，`version 0.3.0`，`host electron` |
-| 协议路由 | `GET /dsh-training/protocol/state` → **200**（修复前是 404） |
+| 协议路由 | `GET /zeyuan/protocol/state` → **200**（修复前是 404） |
 | 签署 | `POST /sign {confirm:true,days:30}` → `level=LV1 code=OK` |
 | HMAC 校验 | `checks = {exists,shape,keyPresent,signature,notExpired,scope} = 全 true` |
 | 吊销 | `POST /revoke` → `level=LV0 code=E-601` |

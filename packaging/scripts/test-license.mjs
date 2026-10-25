@@ -17,7 +17,7 @@ import { fileURLToPath } from "node:url";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO = resolve(HERE, "..", "..");
-const DIST = join(REPO, "plugins", "dsh-training-protocol", "dist");
+const DIST = join(REPO, "plugins", "zeyuan-protocol", "dist");
 
 // 独立 state 目录（必须在 import 之前设置，模块在调用时读取 env）
 const STATE = mkdtempSync(join(tmpdir(), "dsh-license-test-"));

@@ -12,7 +12,7 @@ import { createHash } from 'node:crypto'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
 const ROOT = resolve(HERE, '..')
-const DIST = resolve(ROOT, 'plugins/dsh-training-exchange/dist')
+const DIST = resolve(ROOT, 'plugins/zeyuan-exchange/dist')
 
 const STATE = mkdtempSync(join(tmpdir(), 'dsh-exchange-p0-'))
 process.env.DSH_TRAINING_STATE_DIR = STATE

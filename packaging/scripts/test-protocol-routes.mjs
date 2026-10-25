@@ -20,7 +20,7 @@ import { fileURLToPath } from "node:url";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO = resolve(HERE, "..", "..");
-const DIST = join(REPO, "plugins", "dsh-training-protocol", "dist", "index.js");
+const DIST = join(REPO, "plugins", "zeyuan-protocol", "dist", "index.js");
 
 const STATE = mkdtempSync(join(tmpdir(), "dsh-routes-test-"));
 process.env.DSH_TRAINING_STATE_DIR = STATE;
@@ -102,17 +102,17 @@ try {
     "路由清单",
     [...routes.keys()].sort().join("|"),
     [
-      "/dsh-training/protocol/revoke",
-      "/dsh-training/protocol/sign",
-      "/dsh-training/protocol/state",
-      "/dsh-training/protocol/verify",
+      "/zeyuan/protocol/revoke",
+      "/zeyuan/protocol/sign",
+      "/zeyuan/protocol/state",
+      "/zeyuan/protocol/verify",
     ]
       .sort()
       .join("|"),
   );
 
   console.log("\n=== 场景 1 · 未签署 → LV0 / E-601 ===");
-  const s1 = await call("/dsh-training/protocol/state");
+  const s1 = await call("/zeyuan/protocol/state");
   check("HTTP 200", s1.status, 200);
   check("level", s1.body.level, "LV0");
   check("check.code", s1.body.check.code, "E-601");
@@ -120,32 +120,32 @@ try {
   console.log(`   文案：${s1.body.check.reason}`);
 
   console.log("\n=== 场景 2 · 签发缺 confirm → E-607 ===");
-  const s2 = await call("/dsh-training/protocol/sign", { days: 30 });
+  const s2 = await call("/zeyuan/protocol/sign", { days: 30 });
   check("HTTP 400", s2.status, 400);
   check("错误码", s2.body.code, "E-607");
 
   console.log("\n=== 场景 3 · 确认签发 → LV1 ===");
-  const s3 = await call("/dsh-training/protocol/sign", { confirm: true, subject: "接口测试学员", days: 30 });
+  const s3 = await call("/zeyuan/protocol/sign", { confirm: true, subject: "接口测试学员", days: 30 });
   check("HTTP 200", s3.status, 200);
   check("level 变 LV1", s3.body.level, "LV1");
   check("返回 license 摘要", typeof s3.body.license?.signatureShort, "string");
 
-  const s4 = await call("/dsh-training/protocol/state");
+  const s4 = await call("/zeyuan/protocol/state");
   check("state 复查 level", s4.body.level, "LV1");
   check("check.code", s4.body.check.code, "OK");
   check("四项校验全过", Object.values(s4.body.check.checks).every(Boolean), true);
   check("license subject", s4.body.license.subject, "接口测试学员");
 
   console.log("\n=== 场景 4 · verify 路由 ===");
-  const s5 = await call("/dsh-training/protocol/verify", {});
+  const s5 = await call("/zeyuan/protocol/verify", {});
   check("verify ok", s5.body.ok, true);
   check("verify level", s5.body.level, "LV1");
 
   console.log("\n=== 场景 5 · 吊销 → 回 LV0 ===");
-  const s6 = await call("/dsh-training/protocol/revoke", {});
+  const s6 = await call("/zeyuan/protocol/revoke", {});
   check("吊销 removed", s6.body.removed, true);
   check("吊销后 level", s6.body.level, "LV0");
-  const s7 = await call("/dsh-training/protocol/state");
+  const s7 = await call("/zeyuan/protocol/state");
   check("复查 level", s7.body.level, "LV0");
   check("复查 code", s7.body.check.code, "E-601");
 

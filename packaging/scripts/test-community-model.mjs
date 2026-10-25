@@ -5,7 +5,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
 const ROOT = resolve(HERE, '..', '..')
-const m = await import(pathToFileURL(resolve(ROOT, 'plugins/dsh-training-community/dist/post.js')).href)
+const m = await import(pathToFileURL(resolve(ROOT, 'plugins/zeyuan-community/dist/post.js')).href)
 
 let pass = 0
 let fail = 0

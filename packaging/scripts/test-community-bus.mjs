@@ -10,8 +10,8 @@ const ROOT = resolve(HERE, '..', '..')
 const STATE = mkdtempSync(join(tmpdir(), 'dsh-community-bus-'))
 process.env.DSH_TRAINING_STATE_DIR = STATE
 
-const consume = await import(pathToFileURL(resolve(ROOT, 'plugins/dsh-training-community/dist/consume.js')).href)
-const store = await import(pathToFileURL(resolve(ROOT, 'plugins/dsh-training-community/dist/store.js')).href)
+const consume = await import(pathToFileURL(resolve(ROOT, 'plugins/zeyuan-community/dist/consume.js')).href)
+const store = await import(pathToFileURL(resolve(ROOT, 'plugins/zeyuan-community/dist/store.js')).href)
 
 let pass = 0
 let fail = 0
@@ -26,7 +26,7 @@ const checkTrue = (label, cond, detail = '') => {
 }
 
 const NOW = new Date('2026-10-24T12:00:00.000Z')
-const TYPE = 'dsh-training:feature-workbench:draft-published'
+const TYPE = 'zeyuan:feature-workbench:draft-published'
 const ev = (draftId, eventId, owner = 'bob') => ({ v: 1, id: eventId, type: TYPE, payload: { draftId, owner } })
 
 const dataDir = store.dataDir()
@@ -73,7 +73,7 @@ try {
   writeFileSync(
     log,
     [
-      { v: 1, id: 'ev-1', type: 'dsh-training:tasks:task-accepted', payload: { taskId: 't-1' } },
+      { v: 1, id: 'ev-1', type: 'zeyuan:tasks:task-accepted', payload: { taskId: 't-1' } },
       { v: 1, id: 'ev-2', type: TYPE, payload: { draftId: 'd-2', owner: 'carol' } },
       { v: 1, id: 'ev-2', type: TYPE, payload: { draftId: 'd-2', owner: 'carol' } },
       { v: 1, id: 'ev-3', type: TYPE, payload: { draftId: 'd-3', owner: 'dave' } },

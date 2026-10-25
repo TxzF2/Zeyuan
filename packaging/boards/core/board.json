@@ -25,7 +25,7 @@
       "coins-changed"
     ],
     "consumes": [
-      "dsh-training:tasks:task-accepted"
+      "zeyuan:tasks:task-accepted"
     ]
   }
 }

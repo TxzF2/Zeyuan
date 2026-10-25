@@ -15,8 +15,8 @@ const ROOT = resolve(HERE, '..', '..')
 const STATE = mkdtempSync(join(tmpdir(), 'dsh-tasks-license-'))
 process.env.DSH_TRAINING_STATE_DIR = STATE
 
-const protocol = await import(pathToFileURL(resolve(ROOT, 'plugins/dsh-training-protocol/dist/license.js')).href)
-const gate = await import(pathToFileURL(resolve(ROOT, 'plugins/dsh-training-tasks/dist/license-gate.js')).href)
+const protocol = await import(pathToFileURL(resolve(ROOT, 'plugins/zeyuan-protocol/dist/license.js')).href)
+const gate = await import(pathToFileURL(resolve(ROOT, 'plugins/zeyuan-tasks/dist/license-gate.js')).href)
 
 let pass = 0
 let fail = 0

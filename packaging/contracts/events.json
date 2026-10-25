@@ -1,8 +1,8 @@
 {
   "version": 1,
   "naming": {
-    "prefix": "dsh-training:",
-    "template": "dsh-training:<board>:<action>",
+    "prefix": "zeyuan:",
+    "template": "zeyuan:<board>:<action>",
     "actionPattern": "^[a-z][a-z0-9]*(-[a-z0-9]+)*$",
     "note": "action 用动词过去式或名词短语（kebab-case）；禁止参数、冒号、大写"
   },
@@ -98,30 +98,30 @@
     {
       "name": "任务验收 → 赏金结算 → 等级提升 → 仪表盘刷新",
       "steps": [
-        "dsh-training:tasks:task-accepted",
-        "dsh-training:tasks:reward",
-        "dsh-training:core:settlement-requested",
-        "dsh-training:core:settlement-done",
-        "dsh-training:core:coins-changed",
-        "dsh-training:core:level-up",
-        "dsh-training:feature-console:dashboard-invalidate",
-        "dsh-training:character-txzf:action-request"
+        "zeyuan:tasks:task-accepted",
+        "zeyuan:tasks:reward",
+        "zeyuan:core:settlement-requested",
+        "zeyuan:core:settlement-done",
+        "zeyuan:core:coins-changed",
+        "zeyuan:core:level-up",
+        "zeyuan:feature-console:dashboard-invalidate",
+        "zeyuan:character-txzf:action-request"
       ]
     },
     {
       "name": "任务验收 → 工作台草稿 → 发布 → 社区帖子",
       "steps": [
-        "dsh-training:tasks:task-accepted",
-        "dsh-training:feature-workbench:draft-published",
-        "dsh-training:feature-community:post-drafted",
-        "dsh-training:feature-community:post-published"
+        "zeyuan:tasks:task-accepted",
+        "zeyuan:feature-workbench:draft-published",
+        "zeyuan:feature-community:post-drafted",
+        "zeyuan:feature-community:post-published"
       ]
     },
     {
       "name": "任务赏金入账 → 钱包流水",
       "steps": [
-        "dsh-training:tasks:reward",
-        "dsh-training:console:dashboard-invalidate"
+        "zeyuan:tasks:reward",
+        "zeyuan:console:dashboard-invalidate"
       ]
     }
   ]

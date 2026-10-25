@@ -11,10 +11,10 @@ const STATE = mkdtempSync(join(tmpdir(), 'dsh-exchange-'))
 process.env.DSH_TRAINING_STATE_DIR = STATE
 mkdirSync(join(STATE, 'data'), { recursive: true })
 
-const license = await import(pathToFileURL(resolve(ROOT, 'plugins/dsh-training-protocol/dist/license.js')).href)
-const gate = await import(pathToFileURL(resolve(ROOT, 'plugins/dsh-training-exchange/dist/license-gate.js')).href)
-const mod = await import(pathToFileURL(resolve(ROOT, 'plugins/dsh-training-exchange/dist/index.js')).href)
-const storage = await import(pathToFileURL(resolve(ROOT, 'plugins/dsh-training-exchange/dist/storage.js')).href)
+const license = await import(pathToFileURL(resolve(ROOT, 'plugins/zeyuan-protocol/dist/license.js')).href)
+const gate = await import(pathToFileURL(resolve(ROOT, 'plugins/zeyuan-exchange/dist/license-gate.js')).href)
+const mod = await import(pathToFileURL(resolve(ROOT, 'plugins/zeyuan-exchange/dist/index.js')).href)
+const storage = await import(pathToFileURL(resolve(ROOT, 'plugins/zeyuan-exchange/dist/storage.js')).href)
 
 let pass = 0
 let fail = 0
@@ -32,11 +32,11 @@ const routes = new Map()
 const ctx = { effect(fn) { return fn() }, on() {}, inject(d, cb) { cb({ effect: ctx.effect, webServer: { register(spec) { routes.set(spec.path, spec.handler); return () => {} } } }) } }
 
 async function upload(bytes, name, actor, extraHeaders = {}) {
-  const handler = routes.get('/dsh-training/exchange/upload')
+  const handler = routes.get('/zeyuan/exchange/upload')
   const L = {}
   const req = {
     method: 'POST',
-    url: `/dsh-training/exchange/upload?name=${encodeURIComponent(name)}`,
+    url: `/zeyuan/exchange/upload?name=${encodeURIComponent(name)}`,
     headers: { 'x-dsh-user': actor, 'content-type': 'application/octet-stream', 'content-length': String(bytes.length), ...extraHeaders },
     on(ev, cb) { L[ev] = cb },
   }
@@ -51,8 +51,8 @@ async function upload(bytes, name, actor, extraHeaders = {}) {
 }
 
 async function download(id, actor = 'dave') {
-  const handler = routes.get('/dsh-training/exchange/download')
-  const req = { method: 'GET', url: `/dsh-training/exchange/download?id=${id}`, headers: { 'x-dsh-user': actor }, on() {} }
+  const handler = routes.get('/zeyuan/exchange/download')
+  const req = { method: 'GET', url: `/zeyuan/exchange/download?id=${id}`, headers: { 'x-dsh-user': actor }, on() {} }
   const chunks = []
   const res = {
     status: 0,
@@ -67,9 +67,9 @@ async function download(id, actor = 'dave') {
 }
 
 async function call(method, path, body, actor) {
-  const handler = routes.get(`/dsh-training/exchange/${path}`)
+  const handler = routes.get(`/zeyuan/exchange/${path}`)
   const L = {}
-  const req = { method, url: `/dsh-training/exchange/${path}`, headers: actor ? { 'x-dsh-user': actor } : {}, on(ev, cb) { L[ev] = cb } }
+  const req = { method, url: `/zeyuan/exchange/${path}`, headers: actor ? { 'x-dsh-user': actor } : {}, on(ev, cb) { L[ev] = cb } }
   const res = { status: 0, body: null, writeHead(s) { res.status = s }, end(b) { res.body = b ? JSON.parse(b) : null } }
   const p = Promise.resolve(handler(req, res))
   await new Promise((r) => setTimeout(r, 0))
@@ -138,9 +138,9 @@ try {
   console.log('\n=== 7 · 事件 ===')
   const log = join(STATE, 'event-log.jsonl')
   const types = readFileSync(log, 'utf8').trim().split('\n').map((l) => JSON.parse(l).event)
-  checkTrue('file-uploaded 已发', types.includes('dsh-training:exchange:file-uploaded'))
-  checkTrue('file-downloaded 已发', types.includes('dsh-training:exchange:file-downloaded'))
-  checkTrue('file-deleted 已发', types.includes('dsh-training:exchange:file-deleted'))
+  checkTrue('file-uploaded 已发', types.includes('zeyuan:exchange:file-uploaded'))
+  checkTrue('file-downloaded 已发', types.includes('zeyuan:exchange:file-downloaded'))
+  checkTrue('file-deleted 已发', types.includes('zeyuan:exchange:file-deleted'))
 
   console.log(`\n通过 ${pass} 项，失败 ${fail} 项`)
   process.exitCode = fail === 0 ? 0 : 1

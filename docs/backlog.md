@@ -1,4 +1,4 @@
-# dsh-training · 待办与决策台账（backlog）
+# zeyuan · 待办与决策台账（backlog）
 
 > 本文件记录**已决策的事项与不再追查的事项**，避免同一问题反复探测。
 > 新增条目请标注日期与决策来源（谁定的）。
@@ -26,7 +26,7 @@
 
 1. **不自研**、**不寻找第三方镜像源**；
 2. 现阶段用最原始的方式：**用 VS Code 直接打开项目目录**
-   （`C:\Users\29496\.dsh\plugin-sources\dsh-training`）；
+   （`C:\Users\29496\.dsh\plugin-sources\zeyuan`）；
 3. 该探测任务关闭，`scripts/probe-vscode-integration.mjs` 保留但**不再执行**，
    作为历史证据存档。
 
@@ -50,7 +50,7 @@
 
 **决策**：
 
-1. 默认安装目录固定为 **`%LOCALAPPDATA%\dsh-training`**（免管理员、无中文路径、卸载干净）；
+1. 默认安装目录固定为 **`%LOCALAPPDATA%\zeyuan`**（免管理员、无中文路径、卸载干净）；
 2. **「用户自选安装目录」功能冻结**，本阶段向导不提供路径选择；
 3. staging 固定为 `<target>\.staging`，与目标目录**同盘同卷**，保证原子替换走 `rename` 而非跨盘复制；
 4. 待阶段三做安装器 exe 时，再一并实现目录选择与「跨盘安装」的降级策略（跨盘只能复制，需额外做失败清理）。
@@ -144,7 +144,7 @@ tasks / workbench / community 各有一份 `store.ts`（原子写 + 文件锁 + 
 
 | 优先级 | 事项 | 说明 | 状态 |
 |---|---|---|---|
-| P1 | 补充「适配 agent 列表」 | 配置文件已就位：`plugins/dsh-training-protocol/src/agents.config.ts`，只需往 `AGENTS_CONFIG` 加条目并 `pnpm build` | **等负责人提供列表** |
+| P1 | 补充「适配 agent 列表」 | 配置文件已就位：`plugins/zeyuan-protocol/src/agents.config.ts`，只需往 `AGENTS_CONFIG` 加条目并 `pnpm build` | **等负责人提供列表** |
 | P1 | 实现 LV0→LV1 放行判定 | `canEnterLv1()` 现恒返回 false；需协议签发板块给出 License 校验口径（签名/时效/scope） | 待排期 |
 | P2 | `characters/` 落角色设定 | 星辰（TxzF）/ 长征姬的设定卡、语气规范、对话样例尚未成文 | 待办 |
 | P2 | `assets/themes/` 落星辰主题 token | 寻梦山海风格的颜色/字体/间距/星屑动效参数 | 待办 |

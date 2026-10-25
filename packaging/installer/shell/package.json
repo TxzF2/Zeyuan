@@ -1,8 +1,8 @@
 {
-  "name": "dsh-training-installer-shell",
+  "name": "zeyuan-installer-shell",
   "version": "0.1.0",
   "private": true,
-  "description": "dsh-training 安装器外壳（Electron）。阶段一仅骨架，不打包 exe。",
+  "description": "zeyuan 安装器外壳（Electron）。阶段一仅骨架，不打包 exe。",
   "main": "main.js",
   "type": "commonjs",
   "scripts": {

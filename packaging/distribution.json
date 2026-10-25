@@ -1,10 +1,10 @@
 {
-  "product": "dsh-training",
+  "product": "zeyuan",
   "displayName": "DSH Agent 泽元",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "stage": 1,
   "channel": "dev",
-  "buildDate": "20261024",
+  "buildDate": "20261025",
   "os": "win32",
   "arch": "x64",
   "runtime": {

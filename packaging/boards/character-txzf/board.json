@@ -27,7 +27,7 @@
                                  "action-request"
                              ],
                    "consumes":  [
-                                    "dsh-training:core:settlement-done"
+                                    "zeyuan:core:settlement-done"
                                 ]
                }
 }

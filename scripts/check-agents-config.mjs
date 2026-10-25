@@ -15,7 +15,7 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
-const MOD = resolve(HERE, "..", "plugins", "dsh-training-protocol", "dist", "agents.config.js");
+const MOD = resolve(HERE, "..", "plugins", "zeyuan-protocol", "dist", "agents.config.js");
 const { AGENTS_CONFIG, validateAgents, loadEnabledAgents } = await import(pathToFileURL(MOD).href);
 
 let pass = 0;

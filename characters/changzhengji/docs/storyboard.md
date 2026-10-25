@@ -73,9 +73,9 @@ characters/changzhengji/
 └─ docs/storyboard.md         本文件
 ```
 
-## 六、被 dsh-training-protocol 插件调用的方式
+## 六、被 zeyuan-protocol 插件调用的方式
 
-插件（`plugins/dsh-training-protocol/src/agents.config.ts`）里长征姬目前是：
+插件（`plugins/zeyuan-protocol/src/agents.config.ts`）里长征姬目前是：
 
 ```ts
 { name: '长征姬', source: 'todo:changzhengji', role: 'reviewer', enabled: false }
@@ -85,7 +85,7 @@ characters/changzhengji/
 
 1. 把 `out/changzhengji.blend` / `out/txzf.fbx` 复制到安装包的 `characters/<id>/` 板块目录；
 2. 把 `agents.config.ts` 的 `source` 从 `todo:` 改为板块资源 id（如 `board:character-changzhengji`）；
-3. 协议授权过场由 `dsh-training-protocol` 在 **LV0→LV1 授权成功** 时触发（`tryGrant` 返回 true 后播放 13 s 过场）；
+3. 协议授权过场由 `zeyuan-protocol` 在 **LV0→LV1 授权成功** 时触发（`tryGrant` 返回 true 后播放 13 s 过场）；
 4. 过场期间协议页禁止跳过，播放完才写入 LV1 授权态。
 
 ## 七、已知短板

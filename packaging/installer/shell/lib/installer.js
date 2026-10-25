@@ -3,7 +3,7 @@
  * ---------------------------------------------------------------------------
  * 布局（全部在同一个卷内，保证 rename 原子性）：
  *
- *   %LOCALAPPDATA%\dsh-training\        ← 容器目录 targetDir
+ *   %LOCALAPPDATA%\zeyuan\        ← 容器目录 targetDir
  *   ├─ app\                             ← 当前生效版本（原子的替换目标）
  *   │  └─ install-manifest.json         ← 装机清单（跟着版本一起回滚）
  *   ├─ .staging\<ts>\                   ← 装配中（失败即删）
@@ -49,10 +49,10 @@ class InstallError extends Error {
   }
 }
 
-/** 默认安装目录：%LOCALAPPDATA%\dsh-training（免管理员、无中文路径） */
+/** 默认安装目录：%LOCALAPPDATA%\zeyuan（免管理员、无中文路径） */
 function defaultTargetDir() {
   const base = process.env.LOCALAPPDATA || path.join(os.homedir(), 'AppData', 'Local')
-  return path.join(base, 'dsh-training')
+  return path.join(base, 'zeyuan')
 }
 
 function pathsFor(targetDir = defaultTargetDir()) {
@@ -148,7 +148,7 @@ const PHASES = [
  * 安装主流程。
  *
  * @param {object} opts
- * @param {string} [opts.targetDir]      容器目录，默认 %LOCALAPPDATA%\dsh-training
+ * @param {string} [opts.targetDir]      容器目录，默认 %LOCALAPPDATA%\zeyuan
  * @param {Array<{path:string, content?:Buffer|string, sourcePath?:string}>} opts.payload 要安装的文件（相对 app/）
  * @param {string} [opts.version]        版本号
  * @param {string[]} [opts.boards]       本次勾选的板块 id
@@ -286,7 +286,7 @@ async function runInstall(opts) {
 
     // ---- 6. manifest（写在 app 内，跟随版本一起回滚）----
     const manifest = {
-      product: 'dsh-training',
+      product: 'zeyuan',
       version,
       boards,
       installedAt: new Date().toISOString(),

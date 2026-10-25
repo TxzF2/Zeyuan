@@ -70,9 +70,9 @@ try {
   /* ignore */
 }
 
-const targetDir = mkdtempSync(join(tmpdir(), "dsh-training-smoke-"));
+const targetDir = mkdtempSync(join(tmpdir(), "zeyuan-smoke-"));
 // 临时 profile：冒烟会触发 profile 接入，绝不能落到真实 desktop profile 上
-const profileDir = mkdtempSync(join(tmpdir(), "dsh-training-smoke-profile-"));
+const profileDir = mkdtempSync(join(tmpdir(), "zeyuan-smoke-profile-"));
 writeFileSync(
   join(profileDir, "package.json"),
   JSON.stringify({ name: "dsh-profile-smoke", private: true, dependencies: {}, dsh: { profile: { bundles: ["@deepseek-ai/dsh-base"] } } }, null, 2) + "\n",
@@ -85,7 +85,7 @@ delete env.DSH_TRAINING_SELFTEST;
 delete env.DSH_TRAINING_SELFTEST_INSTALL;
 delete env.DSH_TRAINING_SELFTEST_EXPECT;
 
-console.log("=== dsh-training 冒烟测试 ===");
+console.log("=== zeyuan 冒烟测试 ===");
 console.log(`Electron   ：${electron}`);
 console.log(`安装目标   ：${targetDir}（临时目录，跑完清理）`);
 console.log(`超时       ：${timeoutMs} ms\n`);

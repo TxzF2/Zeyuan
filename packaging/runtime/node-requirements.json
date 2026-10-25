@@ -1,7 +1,7 @@
 {
   "minimum": "22.19.0",
   "recommended": "24.x",
-  "rationale": "dsh-training 与 DSH 运行时均要求 Node >= 22.19.0；低于此版本在启动即失败，故必须在安装前拦截。",
+  "rationale": "zeyuan 与 DSH 运行时均要求 Node >= 22.19.0；低于此版本在启动即失败，故必须在安装前拦截。",
   "detect": {
     "command": "node -v",
     "parsePattern": "^v?(\\d+)\\.(\\d+)\\.(\\d+)$"

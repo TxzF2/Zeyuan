@@ -14,7 +14,7 @@
     "contents":  [
                      "HOST 半：8 条路由（me/list/detail + create/claim/submit/accept/reject）+ 状态机 + 文件锁存储",
                      "BROWSER 半：设置面板「泽元 · 任务接发」——列表/标签筛选/详情/领取提交验收按钮（墨绿+星辰）",
-                     "数据：%LOCALAPPDATA%\\dsh-training\\data\\tasks.json（原子写 + 文件锁 + 损坏备份）",
+                     "数据：%LOCALAPPDATA%\\zeyuan\\data\\tasks.json（原子写 + 文件锁 + 损坏备份）",
                      "测试：test-tasks-model / test-tasks-store / test-tasks-routes / test-tasks-license"
                  ],
     "placeholderNote":  "阶段一仅骨架：本板块不产真实文件，勾选与否都不影响核心功能。",
@@ -32,7 +32,7 @@
                                  "reward"
                              ],
                    "consumes":  [
-                                    "dsh-training:core:level-up"
+                                    "zeyuan:core:level-up"
                                 ]
                }
 }

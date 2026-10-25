@@ -23,9 +23,9 @@ function writeUsers(rows) {
 const trainee = (id) => ({ id, displayName: id, roles: ['trainee'], disabled: false, createdAt: new Date().toISOString(), lastSeenAt: new Date().toISOString() })
 const adminUser = (id) => ({ ...trainee(id), roles: ['admin'] })
 
-const license = await import(pathToFileURL(resolve(ROOT, 'plugins/dsh-training-protocol/dist/license.js')).href)
-const gate = await import(pathToFileURL(resolve(ROOT, 'plugins/dsh-training-community/dist/license-gate.js')).href)
-const mod = await import(pathToFileURL(resolve(ROOT, 'plugins/dsh-training-community/dist/index.js')).href)
+const license = await import(pathToFileURL(resolve(ROOT, 'plugins/zeyuan-protocol/dist/license.js')).href)
+const gate = await import(pathToFileURL(resolve(ROOT, 'plugins/zeyuan-community/dist/license-gate.js')).href)
+const mod = await import(pathToFileURL(resolve(ROOT, 'plugins/zeyuan-community/dist/index.js')).href)
 
 let pass = 0
 let fail = 0
@@ -68,12 +68,12 @@ const ctx = {
 }
 
 function call(method, path, body, actor, query = '') {
-  const handler = routes.get(`/dsh-training/community/${path}`)
+  const handler = routes.get(`/zeyuan/community/${path}`)
   if (!handler) throw new Error(`路由不存在：${path}`)
   const reqListeners = {}
   const req = {
     method,
-    url: `/dsh-training/community/${path}${query}`,
+    url: `/zeyuan/community/${path}${query}`,
     headers: actor ? { 'x-dsh-user': actor } : {},
     on(ev, cb) {
       reqListeners[ev] = cb
@@ -104,7 +104,7 @@ try {
   console.log('=== 1 · 注册与等级 ===')
   mod.apply(ctx)
   check('注册路由数', routes.size, 15)
-  checkTrue('已订阅 draft-published', listeners.has('dsh-training:feature-workbench:draft-published'))
+  checkTrue('已订阅 draft-published', listeners.has('zeyuan:feature-workbench:draft-published'))
   let r = await call('GET', 'me', undefined, 'alice')
   check('未签署 → LV0', r.body.data.level, 'LV0')
   check('未签署 → 非管理员', r.body.data.isAdmin, false)
@@ -207,10 +207,10 @@ try {
     'utf8',
   )
   const before = (await call('GET', 'list', undefined, 'dave')).body.data.total
-  ctx.emit('dsh-training:feature-workbench:draft-published', {
+  ctx.emit('zeyuan:feature-workbench:draft-published', {
     v: 1,
     id: 'ev-x',
-    type: 'dsh-training:feature-workbench:draft-published',
+    type: 'zeyuan:feature-workbench:draft-published',
     payload: { draftId: 'd-x', owner: 'dave' },
   })
   const after = (await call('GET', 'list', undefined, 'dave')).body.data.total
@@ -240,11 +240,11 @@ try {
       .split('\n')
       .filter(Boolean)
       .map((l) => JSON.parse(l).event)
-    checkTrue('post-drafted 已发', types.includes('dsh-training:feature-community:post-drafted'))
-    checkTrue('post-published 已发', types.includes('dsh-training:feature-community:post-published'))
-    checkTrue('post-liked 已发', types.includes('dsh-training:feature-community:post-liked'))
-    checkTrue('post-hidden 已发', types.includes('dsh-training:feature-community:post-hidden'))
-    checkTrue('post-deleted 已发', types.includes('dsh-training:feature-community:post-deleted'))
+    checkTrue('post-drafted 已发', types.includes('zeyuan:feature-community:post-drafted'))
+    checkTrue('post-published 已发', types.includes('zeyuan:feature-community:post-published'))
+    checkTrue('post-liked 已发', types.includes('zeyuan:feature-community:post-liked'))
+    checkTrue('post-hidden 已发', types.includes('zeyuan:feature-community:post-hidden'))
+    checkTrue('post-deleted 已发', types.includes('zeyuan:feature-community:post-deleted'))
   }
   rmSync(STATE, { recursive: true, force: true })
 }

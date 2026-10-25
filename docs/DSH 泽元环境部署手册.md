@@ -2,11 +2,11 @@
 
 | 项 | 内容 |
 |---|---|
-| 项目代号 | dsh-training（DSH Agent 泽元） |
+| 项目代号 | zeyuan（DSH Agent 泽元） |
 | 文档版本 | **v1.1（rev.2）** |
 | 生成时间 | 2026-10-22 20:20（本机部署会话） |
 | 执行身份 | DSH 环境配置代理 |
-| 部署根目录 | `C:\Users\29496\.dsh\plugin-sources\dsh-training` |
+| 部署根目录 | `C:\Users\29496\.dsh\plugin-sources\zeyuan` |
 | DSH_HOME | `C:\Users\29496\.dsh` |
 | 当前 profile | `C:\Users\29496\.dsh\profiles\desktop`（**Electron 应用独占管理**） |
 | 适用平台 | Windows（PowerShell / pwsh） |
@@ -34,7 +34,7 @@
 | 1 | 工具链检查（Node / Git / pnpm） | ✅ **通过** | Node v24.21.0、pnpm 12.9.1、Git 2.55.0.windows.5 |
 | 3 | Git 初始化 + 目录结构 | ✅ **完成** | 目录骨架 ✅；`git init` 完成，首次提交 `824f879` |
 | 4 | dsh-open-in-vscode 集成 | ⛔ **已关闭（决策）** | 不再探测，见 `docs/backlog.md` D-001 |
-| 5 | 插件骨架 dsh-training-protocol | ✅ **完成** | LV0→LV1 占位；已进 desktop profile 配置；构建通过 |
+| 5 | 插件骨架 zeyuan-protocol | ✅ **完成** | LV0→LV1 占位；已进 desktop profile 配置；构建通过 |
 | 6 | 部署手册 | ✅ **完成** | 本文档 v1.1 |
 | 新增 | 适配 agent 列表配置化 | ✅ **完成** | `src/agents.config.ts`，空数组合法，等你填条目 |
 
@@ -96,7 +96,7 @@ PortableGit-2.55.0.5-64-bit.7z.exe -o"C:\Users\29496\AppData\Local\Programs\Port
 
 ```powershell
 node -v ; pnpm -v ; where git ; git --version
-cd C:\Users\29496\.dsh\plugin-sources\dsh-training
+cd C:\Users\29496\.dsh\plugin-sources\zeyuan
 git log --oneline ; git status --short
 node scripts\smoke-mount.mjs          # 模块级挂载（含卸载）冒烟
 node scripts\verify-cordis-mount.mjs  # cordis loader 级挂载验证
@@ -107,9 +107,9 @@ node scripts\verify-cordis-mount.mjs  # cordis loader 级挂载验证
 ## 三、目录结构
 
 ```
-dsh-training/
+zeyuan/
 ├─ plugins/
-│  └─ dsh-training-protocol/        # LV0→LV1 协议授权占位插件
+│  └─ zeyuan-protocol/        # LV0→LV1 协议授权占位插件
 │     ├─ src/
 │     │  ├─ index.ts                # 入口：apply(ctx)、状态、tryGrant/revoke
 │     │  ├─ protocol-level.ts       # 等级定义 + 放行判定占位（恒 false）
@@ -133,7 +133,7 @@ dsh-training/
 
 ---
 
-## 四、dsh-training-protocol 插件
+## 四、zeyuan-protocol 插件
 
 ### 4.1 生成与改造
 
@@ -145,7 +145,7 @@ dsh-training/
 
 ### 4.2 适配 agent 列表（配置驱动）
 
-文件：`plugins/dsh-training-protocol/src/agents.config.ts`
+文件：`plugins/zeyuan-protocol/src/agents.config.ts`
 
 - `AGENTS_CONFIG: readonly AgentAdapterConfig[] = []` —— **当前为空，等你补充**；
 - 结构字段（按 1.1 指令口径）：
@@ -175,7 +175,7 @@ name 空/重名/source 非法/role 非法/note 带密钥 五类非法样例全�
 ### 4.3 构建验证
 
 ```powershell
-cd plugins/dsh-training-protocol
+cd plugins/zeyuan-protocol
 pnpm install     # +27 包（1m 18.7s）
 pnpm run build   # tsc 退出码 0；产物 dist/index.js、dist/protocol-level.js、dist/agents.config.js
 ```
@@ -186,12 +186,12 @@ pnpm run build   # tsc 退出码 0；产物 dist/index.js、dist/protocol-level.
 
 ```powershell
 # ① 依赖链接（成功）
-dsh plugin --profile desktop add ./dsh-training-protocol
-#   dependencies: + dsh-training-protocol link:C:/Users/29496/.dsh/plugin-sources/dsh-training/plugins/dsh-training-protocol
+dsh plugin --profile desktop add ./zeyuan-protocol
+#   dependencies: + zeyuan-protocol link:C:/Users/29496/.dsh/plugin-sources/zeyuan/plugins/zeyuan-protocol
 
 # ② bundle 注册（dsh plugin add 不会自动做，手工补入后生效）
-#   profiles/desktop/package.json → dsh.profile.bundles 追加 "dsh-training-protocol"
-#   备份：package.json.bak-before-dsh-training
+#   profiles/desktop/package.json → dsh.profile.bundles 追加 "zeyuan-protocol"
+#   备份：package.json.bak-before-zeyuan
 ```
 
 > **关键坑**：`dsh plugin add` 只写 `dependencies`，**不写 `dsh.profile.bundles`**。
@@ -203,9 +203,9 @@ dsh plugin --profile desktop add ./dsh-training-protocol
 
 | 检查点 | 命令/位置 | 实测结果 |
 |---|---|---|
-| 依赖声明 | `profiles/desktop/package.json` 第 16 行 | ✅ `"dsh-training-protocol": "link:C:/Users/29496/.dsh/plugin-sources/dsh-training/plugins/dsh-training-protocol"` |
-| bundle 注册 | 同文件第 40 行（`dsh.profile.bundles`） | ✅ 列表末项为 `"dsh-training-protocol"` |
-| 安装链接有效性 | `profiles/desktop/node_modules/dsh-training-protocol/dist/index.js` | ✅ 存在（`True`），`link:` 已指向构建产物 |
+| 依赖声明 | `profiles/desktop/package.json` 第 16 行 | ✅ `"zeyuan-protocol": "link:C:/Users/29496/.dsh/plugin-sources/zeyuan/plugins/zeyuan-protocol"` |
+| bundle 注册 | 同文件第 40 行（`dsh.profile.bundles`） | ✅ 列表末项为 `"zeyuan-protocol"` |
+| 安装链接有效性 | `profiles/desktop/node_modules/zeyuan-protocol/dist/index.js` | ✅ 存在（`True`），`link:` 已指向构建产物 |
 | 应用侧是否已重写配置 | 复查 package.json 后 | ✅ 两条记录仍在（未被应用回滚） |
 
 即：**插件已在 desktop profile 的依赖清单与组合层中注册完毕**，
@@ -236,21 +236,21 @@ error: profile "desktop" is managed exclusively by the Electron application
 **证据 1 · 模块级挂载 + 卸载**（`scripts/smoke-mount.mjs`，退出码 0）：
 
 ```
-[dsh-training-protocol] mounted — LV0 · 未授权
-[dsh-training-protocol] gate: LV0 · 未授权（免授权） — 可浏览课程目录与公开讲义；…
-[dsh-training-protocol] agents: enabled=0/0（列表暂缺，待 src/agents.config.ts 补充）
-[dsh-training-protocol] levels=LV0→LV1 order=LV0→LV1 canEnterLv1=false（占位）
+[zeyuan-protocol] mounted — LV0 · 未授权
+[zeyuan-protocol] gate: LV0 · 未授权（免授权） — 可浏览课程目录与公开讲义；…
+[zeyuan-protocol] agents: enabled=0/0（列表暂缺，待 src/agents.config.ts 补充）
+[zeyuan-protocol] levels=LV0→LV1 order=LV0→LV1 canEnterLv1=false（占位）
 --- 插件输出结束 ---
-[dsh-training-protocol] gate detached
-[dsh-training-protocol] DISPOSED — listeners removed, nothing left behind
+[zeyuan-protocol] gate detached
+[zeyuan-protocol] DISPOSED — listeners removed, nothing left behind
 ✅ 模块级冒烟通过（disposer 2 个已执行）
 ```
 
 **证据 2 · cordis loader 级挂载**（`scripts/verify-cordis-mount.mjs`，退出码 0）：
 
 ```
-插件导出：name=dsh-training-protocol apply=function
-[dsh-training-protocol] mounted — LV0 · 未授权
+插件导出：name=zeyuan-protocol apply=function
+[zeyuan-protocol] mounted — LV0 · 未授权
 挂载日志命中「mounted — LV0 · 未授权」：是
 ✅ cordis loader 级挂载通过
 ```
@@ -269,11 +269,11 @@ error: profile "desktop" is managed exclusively by the Electron application
 | DSH 应用进程内实际挂载日志 | ❌ **未验证** —— 需重启 DSH Desktop |
 
 **待你执行的一步（约 10 秒）**：重启 DSH Desktop，在启动日志里确认出现
-`[dsh-training-protocol] mounted — LV0 · 未授权`。若启动异常，回滚方式：
+`[zeyuan-protocol] mounted — LV0 · 未授权`。若启动异常，回滚方式：
 
 ```powershell
 # 最稳：直接还原备份（去掉 bundle 行与依赖行）
-Copy-Item "$env:USERPROFILE\.dsh\profiles\desktop\package.json.bak-before-dsh-training" `
+Copy-Item "$env:USERPROFILE\.dsh\profiles\desktop\package.json.bak-before-zeyuan" `
           "$env:USERPROFILE\.dsh\profiles\desktop\package.json" -Force
 ```
 
@@ -391,10 +391,10 @@ Copy-Item "$env:USERPROFILE\.dsh\profiles\desktop\package.json.bak-before-dsh-tr
 | 分支 | `main` |
 | 首次提交 | `824f8790d302f38ba5d886b22f8df7873b1a1886`（短号 `824f879`） |
 | 提交内容 | 21 文件 / 1545 行 |
-| 提交身份 | 仓库级 `user.name=dsh-training-agent`、`user.email=dsh-training@localhost`（**非全局**，可自行改） |
+| 提交身份 | 仓库级 `user.name=zeyuan-agent`、`user.email=zeyuan@localhost`（**非全局**，可自行改） |
 
 ```powershell
-cd C:\Users\29496\.dsh\plugin-sources\dsh-training
+cd C:\Users\29496\.dsh\plugin-sources\zeyuan
 git log --oneline
 git status --short
 git config user.name      # 如需改成你自己的身份
@@ -440,7 +440,7 @@ Remove-Item "$env:APPDATA\npm\git.cmd"
 | P2 | 根级 pnpm workspace | 板块变多后统一安装与构建 |
 | P3 | 工作台内嵌编辑器 | 见 backlog D-001 的立项条件 |
 | P3 | 清理 PortableGit 残留（≈59 MB） | 已无用：删 `%LOCALAPPDATA%\Programs\PortableGit` 与 `%APPDATA%\npm\git.cmd.bak-portablegit` |
-| P3 | 把仓库提交身份改成本人 | 当前是 `dsh-training-agent <dsh-training@localhost>`（仓库级，非全局） |
+| P3 | 把仓库提交身份改成本人 | 当前是 `zeyuan-agent <zeyuan@localhost>`（仓库级，非全局） |
 
 ---
 
