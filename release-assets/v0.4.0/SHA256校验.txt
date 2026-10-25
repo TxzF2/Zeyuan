@@ -1,0 +1,1 @@
+校验方法（PowerShell）：Get-FileHash .\<文件名> -Algorithm SHA256\r\n\r\n32590cb9d1f91a0219feedd3ffffe74bf3a47960e18ee04943a50eded54d2dce  zeyuan-portable-v0.4.0-20261025-x64.zip
