@@ -1,0 +1,3 @@
+# 合并脚本必须按原始字节下发（cmd 对 LF 容错但 copy /b 拼接场景保持 CRLF 更稳）
+releases/**/*.cmd -text
+releases/**/*.ps1 -text
