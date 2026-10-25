@@ -154,6 +154,7 @@ async function main() {
     console.log('  1. git push main + tag（用 token，免交互）')
     console.log(`  2. 创建/复用 Release ${tag}`)
     console.log(`  3. 上传 ${assets.length} 个资产`)
+    if (has('--pages')) console.log('  4. 开启 GitHub Pages（main /docs）')
     console.log('\n加 --apply 执行。')
     return
   }
@@ -199,10 +200,36 @@ async function main() {
     console.log(`  ${r.skipped ? '↺ 已存在跳过' : '✅ 已上传'}：${r.name}`)
   }
 
+  // 4) 开启 GitHub Pages（docs 目录）
+  let pagesUrl = null
+  if (has('--pages')) {
+    console.log('[4/4] 开启 GitHub Pages（main /docs）…')
+    try {
+      const pg = await withRetry('enable pages', () =>
+        api(`/repos/${repo}/pages`, {
+          method: 'POST',
+          token,
+          body: JSON.stringify({ source: { branch: 'main', path: '/docs' } }),
+          headers: { 'content-type': 'application/json' },
+        }),
+      )
+      pagesUrl = pg?.html_url ?? null
+      console.log(`  ✅ Pages 已启用：${pagesUrl ?? '(等待首次构建)'}`)
+    } catch (err) {
+      if (/409/.test(String(err.message))) {
+        const pg = await api(`/repos/${repo}/pages`, { token })
+        pagesUrl = pg?.html_url ?? null
+        console.log(`  ↺ Pages 已存在：${pagesUrl ?? ''}`)
+      } else {
+        console.log(`  ⚠️ Pages 启用失败：${String(err.message).slice(0, 120)}`)
+      }
+    }
+  }
+
   console.log('\n=== 完成 ===')
   console.log(`  Release : ${release.html_url}`)
   console.log(`  直链    : https://github.com/${repo}/releases/latest/download/${zipName(dist)}`)
-  console.log(`  下载页  : https://${repo.split('/')[0].toLowerCase()}.github.io/${repo.split('/')[1]}/download.html`)
+  console.log(`  Pages   : ${pagesUrl ?? `https://${repo.split('/')[0].toLowerCase()}.github.io/${repo.split('/')[1]}/download.html`}`)
 }
 
 const isMain = process.argv[1] && resolve(process.argv[1]).endsWith('publish-release.mjs')
