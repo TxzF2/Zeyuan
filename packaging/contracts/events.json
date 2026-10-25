@@ -90,7 +90,8 @@
       "file-uploaded",
       "file-downloaded",
       "file-deleted",
-      "file-expired"
+      "file-expired",
+      "file-orphan-swept"
     ]
   },
   "chains": [

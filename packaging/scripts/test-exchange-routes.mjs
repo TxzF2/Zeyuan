@@ -83,7 +83,7 @@ async function call(method, path, body, actor) {
 try {
   console.log('=== 1 · LV1 闸门 ===')
   mod.apply(ctx)
-  check('路由数 8', routes.size, 8)
+  check('路由数 9', routes.size, 9)
   let r = await upload(Buffer.from('hello'), 'a.txt', 'bob')
   check('未签上传 → 403', r.status, 403)
 
