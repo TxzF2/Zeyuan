@@ -77,6 +77,16 @@
     国内镜像：TODO（发布后同步一份到 Gitee / 网盘，填入备用链接）。当前请优先使用上方 GitHub 直链。
   </div>
 
+    <div class="card" id="parts">
+    <div style="font-weight:600;margin-bottom:6px">分卷下载（当前网络首选）</div>
+    <div class="hint">整包 6 卷（每卷 ≤25MB）。全部下完后按下面教程合并，合并结果必须与上方 SHA256 一致。</div>
+    <ul style="font-size:13px;line-height:1.9;margin:10px 0 4px;padding-left:20px"><li><a href="https://raw.githubusercontent.com/TxzF2/Zeyuan/main/release-assets/v0.4.0/zeyuan-v0.4.0-part1.zip">zeyuan-v0.4.0-part1.zip</a> <span style="color:var(--muted)">25.00 MB · sha256 831e7a8f36ea…</span></li><li><a href="https://raw.githubusercontent.com/TxzF2/Zeyuan/main/release-assets/v0.4.0/zeyuan-v0.4.0-part2.zip">zeyuan-v0.4.0-part2.zip</a> <span style="color:var(--muted)">25.00 MB · sha256 11a19bbc7439…</span></li><li><a href="https://raw.githubusercontent.com/TxzF2/Zeyuan/main/release-assets/v0.4.0/zeyuan-v0.4.0-part3.zip">zeyuan-v0.4.0-part3.zip</a> <span style="color:var(--muted)">25.00 MB · sha256 78a89b1b2416…</span></li><li><a href="https://raw.githubusercontent.com/TxzF2/Zeyuan/main/release-assets/v0.4.0/zeyuan-v0.4.0-part4.zip">zeyuan-v0.4.0-part4.zip</a> <span style="color:var(--muted)">25.00 MB · sha256 4f086ac7632b…</span></li><li><a href="https://raw.githubusercontent.com/TxzF2/Zeyuan/main/release-assets/v0.4.0/zeyuan-v0.4.0-part5.zip">zeyuan-v0.4.0-part5.zip</a> <span style="color:var(--muted)">25.00 MB · sha256 be37c954c919…</span></li><li><a href="https://raw.githubusercontent.com/TxzF2/Zeyuan/main/release-assets/v0.4.0/zeyuan-v0.4.0-part6.zip">zeyuan-v0.4.0-part6.zip</a> <span style="color:var(--muted)">24.35 MB · sha256 5077a0490933…</span></li></ul>
+    <div class="hint">配套文件：<a href="https://raw.githubusercontent.com/TxzF2/Zeyuan/main/release-assets/v0.4.0/merge.cmd">merge.cmd</a> · <a href="https://raw.githubusercontent.com/TxzF2/Zeyuan/main/release-assets/v0.4.0/merge.ps1">merge.ps1</a> · <a href="https://raw.githubusercontent.com/TxzF2/Zeyuan/main/release-assets/v0.4.0/PARTS.txt">PARTS.txt</a> · <a href="https://raw.githubusercontent.com/TxzF2/Zeyuan/main/release-assets/v0.4.0/README.md">合并教程</a></div>
+    <div style="margin-top:12px"><img src="assets/merge-tutorial.png" alt="合并教程" style="width:100%;border:1px solid var(--line);border-radius:10px" /></div>
+    <pre>copy /b zeyuan-v0.4.0-part1.zip + zeyuan-v0.4.0-part2.zip + ... + zeyuan-v0.4.0-part6.zip zeyuan-portable.zip</pre>
+    <div class="hint">合并后校验：<code>Get-FileHash zeyuan-portable.zip -Algorithm SHA256</code></div>
+  </div>
+
   <footer>泽元 · 下载页由 scripts/release.mjs 生成，随 docs 一起发布到 GitHub Pages。</footer>
 </div>
 </body>

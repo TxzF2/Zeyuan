@@ -185,9 +185,38 @@ export function writePage({ repo, pageOut = PAGE_OUT } = {}) {
   const zip = findZip(dist)
   if (!zip) throw new Error(`找不到产物：${zipName(dist)}（先跑 node packaging/scripts/build.mjs --stage 2）`)
   const hash = sha256(zip)
-  const html = renderDownloadPage({ dist, repo: repo ?? resolveRepo(flagValue('--repo')), hash, size: statSync(zip).size })
+  let html = renderDownloadPage({ dist, repo: repo ?? resolveRepo(flagValue('--repo')), hash, size: statSync(zip).size })
+  const partsBlock = buildPartsBlock({ dist, repo: repo ?? resolveRepo(flagValue('--repo')) })
+  if (partsBlock) html = html.replace('<footer>', partsBlock + '\n\n  <footer>')
   writeFileSync(pageOut, html, 'utf8')
   return { page: pageOut, version: dist.version, buildDate: dist.buildDate, hash, hash8: sha8(hash), zip }
+}
+
+/** 分卷下载区块：读 release-assets/v<ver>/PARTS.txt，生成 raw 链接与合并说明 */
+export function buildPartsBlock({ dist, repo }) {
+  const dir = join(REPO_ROOT, 'release-assets', `v${dist.version}`)
+  const manifest = join(dir, 'PARTS.txt')
+  if (!existsSync(manifest)) return ''
+  const rows = readFileSync(manifest, 'utf8')
+    .split('\n')
+    .filter((l) => l && !l.startsWith('#'))
+    .map((l) => l.split('\t'))
+    .filter((c) => c.length === 3)
+  if (rows.length === 0) return ''
+  const rawBase = `https://raw.githubusercontent.com/${repo}/main/release-assets/v${dist.version}`
+  const link = (name) => `${rawBase}/${encodeURIComponent(name)}`
+  const items = rows
+    .map(([name, size, sha]) => `<li><a href="${link(name)}">${name}</a> <span style="color:var(--muted)">${(Number(size) / 1024 / 1024).toFixed(2)} MB · sha256 ${sha.slice(0, 12)}…</span></li>`)
+    .join('')
+  return `  <div class="card" id="parts">
+    <div style="font-weight:600;margin-bottom:6px">分卷下载（当前网络首选）</div>
+    <div class="hint">整包 ${rows.length} 卷（每卷 ≤25MB）。全部下完后按下面教程合并，合并结果必须与上方 SHA256 一致。</div>
+    <ul style="font-size:13px;line-height:1.9;margin:10px 0 4px;padding-left:20px">${items}</ul>
+    <div class="hint">配套文件：<a href="${link('merge.cmd')}">merge.cmd</a> · <a href="${link('merge.ps1')}">merge.ps1</a> · <a href="${link('PARTS.txt')}">PARTS.txt</a> · <a href="${link('README.md')}">合并教程</a></div>
+    <div style="margin-top:12px"><img src="assets/merge-tutorial.png" alt="合并教程" style="width:100%;border:1px solid var(--line);border-radius:10px" /></div>
+    <pre>copy /b zeyuan-v${dist.version}-part1.zip + zeyuan-v${dist.version}-part2.zip + ... + zeyuan-v${dist.version}-part${rows.length}.zip zeyuan-portable.zip</pre>
+    <div class="hint">合并后校验：<code>Get-FileHash zeyuan-portable.zip -Algorithm SHA256</code></div>
+  </div>`
 }
 
 // ---------------------------------------------------------------- CLI
