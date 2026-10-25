@@ -49,6 +49,37 @@ export interface TempResult {
   sha256: string
 }
 
+
+type EventLike = { on(event: 'data' | 'end' | 'error', cb: (chunk?: unknown) => void): void }
+
+function isAsyncIterable(v: unknown): v is AsyncIterable<unknown> {
+  return Boolean(v && typeof (v as { [Symbol.asyncIterator]?: unknown })[Symbol.asyncIterator] === 'function')
+}
+
+async function* pump(src: AsyncIterable<unknown> | EventLike): AsyncIterable<unknown> {
+  if (isAsyncIterable(src)) {
+    yield* src
+    return
+  }
+  const queue: unknown[] = []
+  let ended = false
+  let failure: unknown = null
+  src.on('data', (c) => queue.push(c))
+  src.on('end', () => {
+    ended = true
+  })
+  src.on('error', (e) => {
+    failure = e ?? new Error('读取失败')
+    ended = true
+  })
+  while (!ended || queue.length > 0) {
+    if (queue.length === 0) await new Promise((r) => setTimeout(r, 5))
+    while (queue.length > 0) yield queue.shift()
+    if (ended) break
+  }
+  if (failure) throw failure
+}
+
 /** 流式写临时文件，边写边算 sha256，写完 fsync；超限立即抛错 */
 export async function putTemp(stream: Readable | AsyncIterable<unknown>): Promise<TempResult> {
   ensureDir()
@@ -59,7 +90,7 @@ export async function putTemp(stream: Readable | AsyncIterable<unknown>): Promis
   let fd: number | null = null
   try {
     fd = openSync(tmpPath, 'w')
-    for await (const chunk of stream as AsyncIterable<Buffer | string>) {
+    for await (const chunk of pump(stream as AsyncIterable<unknown> | EventLike)) {
       const buf = Buffer.isBuffer(chunk) ? chunk : Buffer.from(String(chunk))
       size += buf.length
       if (size > MAX_UPLOAD_BYTES) {
