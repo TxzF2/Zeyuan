@@ -97,7 +97,7 @@ const events = () =>
         .map((l) => JSON.parse(l))
     : []
 
-const types_of_events = () => events().map((e) => e.type)
+const types_of_events = () => events().map((e) => e.event)
 const types_has_opened = () => types_of_events().includes('dsh-training:feature-workbench:draft-opened')
 
 try {
@@ -187,11 +187,14 @@ try {
 
   checkTrue('自动建稿也发 draft-opened', types_has_opened(), types_of_events().join(','))
   console.log('\n=== 5 · 事件 ===')
-  const types = events().map((e) => e.type)
+  const types = events().map((e) => e.event)
   checkTrue('draft-opened 已发', types.includes('dsh-training:feature-workbench:draft-opened'))
   checkTrue('draft-saved 已发', types.includes('dsh-training:feature-workbench:draft-saved'))
   checkTrue('draft-published 已发', types.includes('dsh-training:feature-workbench:draft-published'))
-  check('事件 source', events().find((e) => e.type.endsWith('draft-published'))?.source, 'feature-workbench')
+  const wbAll = events()
+  const wbLast = wbAll.length ? wbAll[wbAll.length - 1] : null
+  checkTrue('信封含 event（三段命名）', /^dsh-training:feature-workbench:[a-z-]+$/.test(wbLast?.event ?? ''), wbLast?.event)
+  checkTrue('信封字段严格为五键', JSON.stringify(Object.keys(wbLast ?? {}).sort()) === JSON.stringify(['actor', 'event', 'id', 'payload', 'ts']), JSON.stringify(Object.keys(wbLast ?? {})))
 } finally {
   for (const d of disposers) {
     try {

@@ -13,6 +13,11 @@ import { join } from 'node:path'
 import { stateDir } from './license-gate.js'
 import type { FileMeta } from './meta.js'
 
+/**
+ * 事件名命名由来（总控裁决 2026-10-25，**保留现命名不改**）：
+ *   orphan-swept 表示“孤儿 bin 已被清扫”的**完成态**，与 expired/deleted 同为过去分词；
+ *   历史事件日志里已存在该名字，改名会割裂检索，故冻结。
+ */
 export type FileEventName = 'uploaded' | 'downloaded' | 'deleted' | 'expired' | 'orphan-swept'
 
 export type EventSink = (name: FileEventName, meta: FileMeta, by?: string) => void | Promise<void>
@@ -21,12 +26,10 @@ function jsonlSink(name: FileEventName, meta: FileMeta, by?: string): void {
   // TODO(总控裁决): 对齐平台事件总线命名与 payload 规范
   const at = new Date().toISOString()
   const envelope = {
-    v: 1,
+    event: `dsh-training:exchange:file-${name}`,
     id: `ev-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-    at,
-    source: 'exchange',
-    type: `dsh-training:exchange:file-${name}`,
-    subject: {},
+    ts: at,
+    actor: by ?? null,
     payload: { id: meta.id, size: meta.size, uploader: meta.uploader, by: by ?? null, at },
   }
   try {
@@ -35,7 +38,7 @@ function jsonlSink(name: FileEventName, meta: FileMeta, by?: string): void {
   } catch (err) {
     console.warn(`[exchange] 写事件日志失败：${(err as Error).message}`)
   }
-  console.log(`[exchange] event ${envelope.type} ${meta.id}`)
+  console.log(`[exchange] event ${envelope.event} ${meta.id}`)
 }
 
 let sink: EventSink = jsonlSink
