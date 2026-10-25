@@ -13,7 +13,7 @@ import { join } from 'node:path'
 import { stateDir } from './license-gate.js'
 import type { FileMeta } from './meta.js'
 
-export type FileEventName = 'uploaded' | 'downloaded' | 'deleted'
+export type FileEventName = 'uploaded' | 'downloaded' | 'deleted' | 'expired' | 'orphan-swept'
 
 export type EventSink = (name: FileEventName, meta: FileMeta, by?: string) => void | Promise<void>
 

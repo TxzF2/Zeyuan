@@ -27,6 +27,7 @@ import { MAX_UPLOAD_BYTES, maxUploadBytes, RETENTION_DAYS, binPath, commit, ensu
 import { NAME_MAX, readMeta, removeMeta, stateOf, validateName, writeMeta, type FileMeta } from './meta.js'
 import { assertCanDelete, assertCanDownload, defaultAuthz, type Authz, type NodeId } from './auth.js'
 import { emitFileEvent } from './events.js'
+import { retentionDays, startSweeper, sweepNow, tierOf } from './sweep.js'
 import { CHUNK_SIZE, PENDING_TTL_MS, assemble, isValidUploadId, newUploadState, readState, removeUpload, saveChunk, sweepStale, totalChunks, uploadsDir, writeState, type UploadState } from './chunks.js'
 
 export const name = 'dsh-training-exchange'
@@ -71,6 +72,11 @@ function writeMountEvent(event: 'mounted' | 'unmounted'): void {
   }
 }
 
+/** 供测试与维护接口调用的扫描入口 */
+export function runSweep(now: number = Date.now()): ReturnType<typeof sweepNow> {
+  return sweepNow(now)
+}
+
 export class ServiceError extends Error {
   readonly status: number
   readonly code: string
@@ -104,7 +110,7 @@ export async function uploadStream(stream: Readable | AsyncIterable<unknown>, in
     mime: (input.mime ?? 'application/octet-stream').slice(0, 128),
     uploader: input.uploader,
     createdAt: now.toISOString(),
-    expiresAt: new Date(now.getTime() + RETENTION_DAYS * 24 * 3600 * 1000).toISOString(), // TODO(总控裁决): 保留期策略
+    expiresAt: new Date(now.getTime() + retentionDays() * 24 * 3600 * 1000).toISOString(), // TODO(总控裁决): 保留期策略（可用 config.json 覆盖）
   }
   writeMeta(meta)
   await emitFileEvent('uploaded', meta, input.uploader)
@@ -257,7 +263,7 @@ export async function completeUpload(input: { uploadId: string; viewer: NodeId }
     mime: st.mime,
     uploader: st.uploader,
     createdAt: now.toISOString(),
-    expiresAt: new Date(now.getTime() + RETENTION_DAYS * 24 * 3600 * 1000).toISOString(), // TODO(总控裁决)
+    expiresAt: new Date(now.getTime() + retentionDays() * 24 * 3600 * 1000).toISOString(), // TODO(总控裁决)（config 可覆盖）
   }
   writeMeta(meta) // meta 提交点
   writeDoneMarker(st.uploadId, id)
@@ -463,7 +469,15 @@ function registerRoutes(ctx: Context): void {
     json(res, 200, { ok: true, data: meta })
   })
 
-  console.log(`[dsh-training-exchange] 已注册 8 条路由（${base}/*）`)
+  // 维护：立即扫描一次（P6+）
+  route(`${base}/sweep`, (req, res) => {
+    if (req.method !== 'POST') return json(res, 405, { ok: false, code: 'E-1505', message: '只接受 POST。' })
+    const actor = actorOf(req)
+    if (tierOf(actor) < 6) return json(res, 403, { ok: false, code: 'E-1502', message: '需要 P6 及以上档位。' })
+    json(res, 200, { ok: true, data: sweepNow() })
+  })
+
+  console.log(`[dsh-training-exchange] 已注册 9 条路由（${base}/*）`)
 }
 
 // ---------------------------------------------------------------- 入口
@@ -479,6 +493,8 @@ export function apply(ctx: Context): void {
   console.log(`[exchange] chunk=${Math.floor(CHUNK_SIZE / 1024 / 1024)}MB · 未完成上传保留 ${Math.floor(PENDING_TTL_MS / 3600000)}h`)
   const access = checkAccess()
   console.log(`[dsh-training-exchange] mounted — v${VERSION} · ${access.level} · files=${listFiles().length} · max=${Math.floor(maxUploadBytes() / 1024 / 1024)}MB`)
+
+  startSweeper(ctx) // 启动扫描 + 每小时定时器
 
   ctx.effect(() => {
     console.log('[dsh-training-exchange] ready')
