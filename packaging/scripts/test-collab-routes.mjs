@@ -118,6 +118,8 @@ try {
   r = await call('POST', 'group/leave', { id: gid }, 'bob')
   check('组长直接退出 → 409', r.status, 409)
 
+  // 组任务发布依赖 tasks 服务（真机），单测不覆盖（由真机验证覆盖）
+
   console.log('\n=== 3 · 评审批次 ===')
   r = await call('POST', 'review/request', { groupId: gid, draftId: 'd-1' }, 'alice')
   check('组员发起评审', r.status, 200)

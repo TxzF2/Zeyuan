@@ -406,14 +406,15 @@ function registerRoutes(ctx: Context): void {
       { title: body.title, description: body.description ?? '', tags: body.tags ?? [], bounty: body.bounty ?? 0, ...(body.deadline ? { deadline: body.deadline } : {}) },
       actor,
     )) as { id: string }
-    await callTasks('attach-group', { id: task.id, groupId: group.id }, actor)
+    // 用挂组后的返回体，避免把“挂组前”的旧快照回给前端
+    const attached = (await callTasks('attach-group', { id: task.id, groupId: group.id }, actor)) as { id: string; groupId: string | null }
     const next = updateGroups((doc) => {
       const target = doc.groups.find((g) => g.id === group.id) as Group
       const updated = attachTask(target, task.id)
       return { doc: { ...doc, groups: doc.groups.map((g) => (g.id === updated.id ? updated : g)) }, result: updated }
     })
     emitEvent('dsh-training:collab:task-assigned', { groupId: group.id, taskId: task.id, by: actor })
-    json(res, 200, { ok: true, data: { task, group: next } })
+    json(res, 200, { ok: true, data: { task: attached, group: next } })
   })
 
   // 组长改派组内任务
