@@ -129,7 +129,10 @@ export function listFiles(): FileMeta[] {
     if (!isValidId(id)) continue
     if (stateOf(id) !== 'ok') continue
     const meta = readMeta(id)
-    if (meta) rows.push(meta)
+    if (!meta) continue
+    // 过期即视为不可见（不等 sweep；防御性，避免到期到清理之间的窗口）
+    if (Date.parse(meta.expiresAt) <= Date.now()) continue
+    rows.push(meta)
   }
   return rows.sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt))
 }
@@ -141,6 +144,7 @@ export async function readFile(id: string, viewer: NodeId): Promise<{ meta: File
   const meta = readMeta(id)
   if (state === 'missing-meta' || !meta) throw new ServiceError(404, 'E-1504', '文件不存在')
   if (state === 'missing-bin') throw new ServiceError(500, 'E-1507', '文件数据缺失（meta 在、bin 不在），拒绝访问')
+  if (Date.parse(meta.expiresAt) <= Date.now()) throw new ServiceError(410, 'E-1513', '文件已过期（保留期结束）')
   await assertCanDownload(authz, viewer, meta)
   if (!(await verifySha(id, meta.sha256))) throw new ServiceError(500, 'E-1506', '文件校验失败（sha256 不符），拒绝下发')
   await emitFileEvent('downloaded', meta, viewer)

@@ -53,6 +53,14 @@ test('sweep: expired file removed + file-expired emitted; fresh file untouched',
   doc.expiresAt = new Date(Date.now() - 1000).toISOString()
   writeFileSync(metaFile, JSON.stringify(doc), 'utf8')
 
+  // 过期但未 sweep：列表不可见、下载 410（到期→清理窗口内的防御）
+  assert.ok(!svc.listFiles().some((f) => f.id === meta.id), '过期文件不应出现在列表')
+  await assert.rejects(() => svc.readFile(meta.id, 'node-a'), (err) => {
+    assert.equal(err.status, 410)
+    assert.equal(err.code, 'E-1513')
+    return true
+  })
+
   const res = svc.runSweep()
   assert.equal(res.filesExpired, 1, '应清理 1 个过期文件')
   assert.ok(!existsSync(storage.binPath(meta.id)), '过期 bin 应删除')
