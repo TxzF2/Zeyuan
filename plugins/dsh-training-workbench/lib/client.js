@@ -12,12 +12,12 @@ window.__ModuleLoader__.load({
 
     const NS = 'dsh-training-workbench'
     const zh = {
-      nav: '培训班 · 工作台',
+      nav: '泽元 · 工作台',
       loading: '正在读取草稿…',
       error: '无法连接工作台服务（插件可能未加载）',
       level: '当前等级',
       user: '身份',
-      needLv1: 'LV1 才能编辑/发布草稿，请先在「培训班 · 协议授权」签署协议。',
+      needLv1: 'LV1 才能编辑/发布草稿，请先在「泽元 · 协议授权」签署协议。',
       all: '全部',
       draft: '草稿',
       published: '已发布',
@@ -36,7 +36,7 @@ window.__ModuleLoader__.load({
       errs: { 'E-601': '尚未签署协议', 'E-902': '只能改自己的草稿', 'E-901': '已发布不可修改', 'E-903': '字段不合法' },
     }
     const en = {
-      nav: 'Training · Workbench',
+      nav: 'Zeyuan · Workbench',
       loading: 'Loading drafts…',
       error: 'Cannot reach workbench service (plugin not loaded?)',
       level: 'Level',

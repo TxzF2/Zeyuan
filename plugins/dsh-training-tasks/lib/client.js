@@ -14,12 +14,12 @@ window.__ModuleLoader__.load({
 
     const NS = 'dsh-training-tasks'
     const zh = {
-      nav: '培训班 · 任务接发',
+      nav: '泽元 · 任务接发',
       loading: '正在读取任务…',
       error: '无法连接任务服务（插件可能未加载）',
       level: '当前等级',
       user: '身份',
-      needLv1: 'LV1 才能发布/领取/提交任务，请先在「培训班 · 协议授权」签署协议。',
+      needLv1: 'LV1 才能发布/领取/提交任务，请先在「泽元 · 协议授权」签署协议。',
       filterAll: '全部',
       filterTag: '标签',
       empty: '暂无任务',
@@ -45,7 +45,7 @@ window.__ModuleLoader__.load({
       errs: { 'E-601': '尚未签署协议', 'E-603': '协议已过期', 'E-802': '无权限执行该操作', 'E-801': '状态已变化，请刷新' },
     }
     const en = {
-      nav: 'Training · Tasks',
+      nav: 'Zeyuan · Tasks',
       loading: 'Loading tasks…',
       error: 'Cannot reach task service (plugin not loaded?)',
       level: 'Level',

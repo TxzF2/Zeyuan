@@ -1,7 +1,7 @@
 {
   "name": "dsh-training-community",
   "version": "0.1.0",
-  "description": "dsh-training-community — 培训班社区（消费草稿发布事件生成帖子草稿，作者确认后公开；浏览/点赞/隐藏）",
+  "description": "dsh-training-community — 泽元社区（消费草稿发布事件生成帖子草稿，作者确认后公开；浏览/点赞/隐藏）",
   "license": "MIT",
   "type": "module",
   "main": "./dist/index.js",

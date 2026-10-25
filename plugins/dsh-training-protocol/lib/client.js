@@ -13,7 +13,7 @@ window.__ModuleLoader__.load({
 
     const NS = 'dsh-training-protocol'
     const zh = {
-      nav: '培训班 · 协议授权',
+      nav: '泽元 · 协议授权',
       loading: '正在读取授权状态…',
       error: '无法连接协议服务（插件可能未加载）',
       level: '当前等级',
@@ -43,7 +43,7 @@ window.__ModuleLoader__.load({
       hint: 'LV0 可浏览课程目录；签署并通过校验后进入 LV1，解锁实训场与陪练。',
     }
     const en = {
-      nav: 'Training · Protocol',
+      nav: 'Zeyuan · Protocol',
       loading: 'Loading license state…',
       error: 'Cannot reach protocol service (plugin not loaded?)',
       level: 'Level',

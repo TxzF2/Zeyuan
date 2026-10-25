@@ -57,7 +57,7 @@ if (!existsSync(ARTIFACTS)) {
   process.exit(2);
 }
 
-// 递归扫描：产物可能放在中文交付目录里（artifacts/交付/DSH培训班-便携版-.../xxx.zip）
+// 递归扫描：产物可能放在中文交付目录里（artifacts/交付/泽元-便携版-.../xxx.zip）
 const files = walkFiles(ARTIFACTS)
   .map((p) => relative(ARTIFACTS, p).replace(/\\/g, "/"))
   .filter((rel) => /\.(zip|exe|msi|7z)$/i.test(rel));

@@ -8,7 +8,7 @@ window.__ModuleLoader__.load({
     const NS = 'dsh-training-exchange'
 
     const zh = {
-      nav: '培训班 · 泽元中转站',
+      nav: '泽元 · 泽元中转站',
       loading: '正在读取文件列表…',
       error: '无法连接中转站服务（插件可能未加载）',
       upload: '选择文件上传',
@@ -24,7 +24,7 @@ window.__ModuleLoader__.load({
       errs: { 'E-1501': '超出大小上限', 'E-1502': '无权限', 'E-1503': '参数非法', 'E-1504': '文件不存在' },
     }
     const en = {
-      nav: 'Training · Transfer',
+      nav: 'Zeyuan · Transfer',
       loading: 'Loading files…',
       error: 'Cannot reach transfer service (plugin not loaded?)',
       upload: 'Choose file',

@@ -1,7 +1,7 @@
 {
   "name": "dsh-training-workbench",
   "version": "0.1.0",
-  "description": "dsh-training-workbench — 培训班工作台（消费任务验收事件自动建草稿，支持编辑与发布）",
+  "description": "dsh-training-workbench — 泽元工作台（消费任务验收事件自动建草稿，支持编辑与发布）",
   "license": "MIT",
   "type": "module",
   "main": "./dist/index.js",

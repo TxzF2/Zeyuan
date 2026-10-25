@@ -1,7 +1,7 @@
 {
   "name": "dsh-training-exchange",
   "version": "0.1.0",
-  "description": "dsh-training-exchange — 培训班泽元中转站（匿名文件中转：流式上传/下载/删除）",
+  "description": "dsh-training-exchange — 泽元泽元中转站（匿名文件中转：流式上传/下载/删除）",
   "license": "MIT",
   "type": "module",
   "main": "./dist/index.js",

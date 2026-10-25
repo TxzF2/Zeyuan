@@ -1,7 +1,7 @@
 {
   "name": "dsh-training-tasks",
   "version": "0.1.0",
-  "description": "dsh-training-tasks — 培训班任务接发区（发布/领取/提交/验收 + 赏金结算事件）",
+  "description": "dsh-training-tasks — 泽元任务接发区（发布/领取/提交/验收 + 赏金结算事件）",
   "license": "MIT",
   "type": "module",
   "main": "./dist/index.js",

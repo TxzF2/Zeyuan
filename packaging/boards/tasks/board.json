@@ -13,7 +13,7 @@
                 },
     "contents":  [
                      "HOST 半：8 条路由（me/list/detail + create/claim/submit/accept/reject）+ 状态机 + 文件锁存储",
-                     "BROWSER 半：设置面板「培训班 · 任务接发」——列表/标签筛选/详情/领取提交验收按钮（墨绿+星辰）",
+                     "BROWSER 半：设置面板「泽元 · 任务接发」——列表/标签筛选/详情/领取提交验收按钮（墨绿+星辰）",
                      "数据：%LOCALAPPDATA%\\dsh-training\\data\\tasks.json（原子写 + 文件锁 + 损坏备份）",
                      "测试：test-tasks-model / test-tasks-store / test-tasks-routes / test-tasks-license"
                  ],

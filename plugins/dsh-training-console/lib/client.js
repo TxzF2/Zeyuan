@@ -12,7 +12,7 @@ window.__ModuleLoader__.load({
 
     const NS = 'dsh-training-console'
     const zh = {
-      nav: '培训班 · 控制台',
+      nav: '泽元 · 控制台',
       loading: '正在读取控制台…',
       error: '无法连接控制台服务（插件可能未加载）',
       bootstrap: '初始化总师（P8）',
@@ -47,7 +47,7 @@ window.__ModuleLoader__.load({
       errs: { 'E-1105': '档位不足', 'E-1106': '受保护板块', 'E-1202': '档位不足', 'E-1203': '参数不合法', 'E-1215': '不能撤销最后一名 P8' },
     }
     const en = {
-      nav: 'Training · Console',
+      nav: 'Zeyuan · Console',
       loading: 'Loading console…',
       error: 'Cannot reach console service (plugin not loaded?)',
       bootstrap: 'Bootstrap P8',

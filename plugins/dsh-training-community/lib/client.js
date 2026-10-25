@@ -12,7 +12,7 @@ window.__ModuleLoader__.load({
 
     const NS = 'dsh-training-community'
     const zh = {
-      nav: '培训班 · 社区',
+      nav: '泽元 · 社区',
       loading: '正在读取帖子…',
       error: '无法连接社区服务（插件可能未加载）',
       user: '身份',
@@ -42,7 +42,7 @@ window.__ModuleLoader__.load({
       errs: { 'E-601': '尚未签署协议', 'E-1001': '状态不允许', 'E-1002': '无权限', 'E-1003': '字段不合法', 'E-1005': '需要管理员' },
     }
     const en = {
-      nav: 'Training · Community',
+      nav: 'Zeyuan · Community',
       loading: 'Loading posts…',
       error: 'Cannot reach community service (plugin not loaded?)',
       user: 'User',

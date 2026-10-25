@@ -1,7 +1,7 @@
 {
   "name": "dsh-training-protocol",
   "version": "0.3.0",
-  "description": "dsh-training-protocol — DSH 培训班协议授权插件（LV0→LV1，HMAC 验签 + 应用内协议页）",
+  "description": "dsh-training-protocol — DSH 泽元协议授权插件（LV0→LV1，HMAC 验签 + 应用内协议页）",
   "license": "MIT",
   "type": "module",
   "main": "./dist/index.js",

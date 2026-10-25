@@ -1,8 +1,8 @@
-﻿# 《DSH 培训班环境部署手册》
+﻿# 《DSH 泽元环境部署手册》
 
 | 项 | 内容 |
 |---|---|
-| 项目代号 | dsh-training（DSH Agent 培训班） |
+| 项目代号 | dsh-training（DSH Agent 泽元） |
 | 文档版本 | **v1.1（rev.2）** |
 | 生成时间 | 2026-10-22 20:20（本机部署会话） |
 | 执行身份 | DSH 环境配置代理 |
@@ -120,7 +120,7 @@ dsh-training/
 ├─ characters/                      # 角色设定（待填）
 ├─ assets/themes/                   # 星辰主题 token（待填）
 ├─ docs/
-│  ├─ DSH 培训班环境部署手册.md      # 本文档
+│  ├─ DSH 泽元环境部署手册.md      # 本文档
 │  └─ backlog.md                    # 【新增】决策台账（D-001）
 ├─ scripts/
 │  ├─ probe-vscode-integration.mjs  # 【已关闭】历史证据，不再执行

@@ -14,7 +14,7 @@
     "contents":  [
                      "HOST 半：消费 tasks:task-accepted（总线 + 启动补扫，事件 id 与 sourceTaskId 双去重）→ 自动建草稿",
                      "HOST 半：6 条路由（me/list/detail/create/save/publish），LV1 才能写，只能改自己的草稿",
-                     "BROWSER 半：设置面板「培训班 · 工作台」——草稿列表 + Markdown 编辑 + 保存/发布（墨绿+星辰）",
+                     "BROWSER 半：设置面板「泽元 · 工作台」——草稿列表 + Markdown 编辑 + 保存/发布（墨绿+星辰）",
                      "数据：%LOCALAPPDATA%\\dsh-training\\data\\drafts.json（原子写 + 文件锁 + consumed 幂等表）"
                  ],
     "placeholderNote":  "阶段一仅骨架：本板块不产真实文件，勾选与否都不影响核心功能。",

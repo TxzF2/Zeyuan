@@ -1,8 +1,8 @@
-﻿# dsh-training · DSH Agent 培训班
+﻿# dsh-training · DSH Agent 泽元
 
 > 项目代号：**dsh-training** ｜ 风格：年轻时尚 · 极简主义 · 星辰特色（寻梦山海）
 
-本仓库是 DSH Agent 培训班的**底层环境与插件源码目录**，位于
+本仓库是 DSH Agent 泽元的**底层环境与插件源码目录**，位于
 `C:\Users\29496\.dsh\plugin-sources\dsh-training`（DSH 的本地插件源目录，
 可被 profile 以 `file:` 依赖引用）。
 
@@ -23,7 +23,7 @@ dsh-training/
 ├─ assets/
 │  └─ themes/               # 星辰主题 token 与视觉资源
 ├─ docs/                    # 文档
-│  ├─ DSH 培训班环境部署手册.md
+│  ├─ DSH 泽元环境部署手册.md
 │  ├─ 安装包构建说明.md      # 维护者用
 │  ├─ 下载者安装手册.md      # 学员用（零命令行）
 │  ├─ 验收与回退手册.md      # A1-A6 验收 + 故障注入 + 回退操作
@@ -44,7 +44,7 @@ dsh-training/
 | dsh-training-protocol 骨架 | ✅ 已生成并构建通过；已进 desktop profile 配置，**真机挂载待重启应用确认** |
 | 适配 agent 列表 | ⬜ 配置位已就绪（`src/agents.config.ts`），**等你补充条目** |
 
-详见 [docs/DSH 培训班环境部署手册.md](docs/DSH%20培训班环境部署手册.md)。
+详见 [docs/DSH 泽元环境部署手册.md](docs/DSH%20泽元环境部署手册.md)。
 
 ## 架构原则
 

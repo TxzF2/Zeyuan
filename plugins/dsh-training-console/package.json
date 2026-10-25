@@ -1,7 +1,7 @@
 {
   "name": "dsh-training-console",
   "version": "0.1.0",
-  "description": "dsh-training-console — 培训班控制面板（用户角色/板块启停/仪表盘/健康检查/审计）",
+  "description": "dsh-training-console — 泽元控制面板（用户角色/板块启停/仪表盘/健康检查/审计）",
   "license": "MIT",
   "type": "module",
   "main": "./dist/index.js",

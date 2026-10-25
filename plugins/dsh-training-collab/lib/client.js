@@ -1,4 +1,4 @@
-// dsh-training-collab — BROWSER 半：设置面板「培训班 · 协作分组」
+// dsh-training-collab — BROWSER 半：设置面板「泽元 · 协作分组」
 window.__ModuleLoader__.load({
   id: 'dsh-training-collab',
   factory: (require) => {
@@ -8,7 +8,7 @@ window.__ModuleLoader__.load({
     const NS = 'dsh-training-collab'
 
     const zh = {
-      nav: '培训班 · 协作分组',
+      nav: '泽元 · 协作分组',
       loading: '正在读取分组…',
       error: '无法连接分组服务（插件可能未加载）',
       me: '身份',
@@ -41,7 +41,7 @@ window.__ModuleLoader__.load({
       errs: { 'E-1301': '状态不允许', 'E-1302': '权限不足', 'E-1303': '参数不合法', 'E-1304': '不存在' },
     }
     const en = {
-      nav: 'Training · Groups',
+      nav: 'Zeyuan · Groups',
       loading: 'Loading groups…',
       error: 'Cannot reach group service (plugin not loaded?)',
       me: 'User',

@@ -7,8 +7,8 @@
  * 阶段 3（--stage 3）：安装器 exe + 签名，**仍未实现**（退出码 3）
  *
  * 便携包布局（Electron 官方 portable 形态，不需要 electron-builder）：
- *   dsh-training-portable-v<ver>-<date>-x64/
- *   ├─ dsh-training-installer.exe     ← 由 electron.exe 改名
+ *   zeyuan-portable-v<ver>-<date>-x64/
+ *   ├─ zeyuan-installer.exe     ← 由 electron.exe 改名
  *   ├─ *.dll / *.pak / locales/ / resources/
  *   └─ resources/app/
  *      ├─ main.js / preload.js / package.json
@@ -160,11 +160,11 @@ function dirSize(dir) {
 
 /** 中文交付目录：产物落这里，解决"解压后找不到文件" */
 function deliveryDir(dist) {
-  return join(ARTIFACTS, '交付', `DSH培训班-便携版-v${dist.version}-${dist.buildDate}`)
+  return join(ARTIFACTS, '交付', `泽元-便携版-v${dist.version}-${dist.buildDate}`)
 }
 
 function buildPortable(dist, boards) {
-  const name = `dsh-training-portable-v${dist.version}-${dist.buildDate}-${dist.arch}`
+  const name = `zeyuan-portable-v${dist.version}-${dist.buildDate}-${dist.arch}`
   const stageRoot = join(ARTIFACTS, '.staging-portable')
   const appDir = join(stageRoot, name)
   const outDir = deliveryDir(dist)
@@ -180,7 +180,7 @@ function buildPortable(dist, boards) {
   console.log('· 改造主程序（改名 + 去掉 default_app）…')
   const exeSrc = join(appDir, 'electron.exe')
   if (!existsSync(exeSrc)) throw new Error('Electron dist 里没有 electron.exe')
-  cpSync(exeSrc, join(appDir, 'dsh-training-installer.exe'))
+  cpSync(exeSrc, join(appDir, 'zeyuan-installer.exe'))
   rmSync(exeSrc, { force: true })
   const defaultApp = join(appDir, 'resources', 'default_app.asar')
   if (existsSync(defaultApp)) rmSync(defaultApp, { force: true })
@@ -235,7 +235,7 @@ function buildPortable(dist, boards) {
   }
 
   const must = [
-    join(appDir, 'dsh-training-installer.exe'),
+    join(appDir, 'zeyuan-installer.exe'),
     join(appRes, 'main.js'),
     join(appRes, 'wizard', 'index.html'),
     join(appRes, 'lib', 'installer.js'),
@@ -272,14 +272,14 @@ function buildPortable(dist, boards) {
   writeFileSync(
     join(outDir, '怎么用.txt'),
     [
-      'DSH Agent 培训班 · 便携版',
+      'DSH Agent 泽元 · 便携版',
       `版本：v${dist.version}    构建日期：${dist.buildDate}`,
       '',
       '1. 右键本目录里的 zip → 「全部解压缩」（路径不要带中文）',
-      '2. 进入解出的文件夹，双击 dsh-training-installer.exe',
+      '2. 进入解出的文件夹，双击 zeyuan-installer.exe',
       '3. 若提示「Windows 已保护你的电脑」→ 更多信息 → 仍要运行',
       '4. 按向导走完 → 重启 DSH Desktop',
-      '5. 到 设置 → 培训班 · 协议授权 签署协议',
+      '5. 到 设置 → 泽元 · 协议授权 签署协议',
       '',
       `解压后占用约 ${(unpacked / 1024 / 1024).toFixed(0)} MB`,
       '',
@@ -290,7 +290,7 @@ function buildPortable(dist, boards) {
   if (existsSync(manualSrc)) cpSync(manualSrc, join(outDir, '安装步骤.md'))
   console.log(`\n✅ 便携包已生成：${zipPath}`)
   console.log(`   解压后 ${(unpacked / 1024 / 1024).toFixed(1)} MB → zip ${(zipSize / 1024 / 1024).toFixed(1)} MB`)
-  console.log(`   双击 ${name}\\dsh-training-installer.exe 运行向导`)
+  console.log(`   双击 ${name}\\zeyuan-installer.exe 运行向导`)
   console.log(`   交付目录：${outDir}`)
   return { zipPath, zipSize, unpacked, name, outDir }
 }

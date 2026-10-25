@@ -12,7 +12,7 @@
 
 | 入口 | 位置 | 说明 |
 |---|---|---|
-| **主入口（常驻）** | DSH 应用 → 设置 → **「培训班 · 协议授权」** | 插件注册的 `settings.section` 面板，每次启动可见、可回看签署状态 |
+| **主入口（常驻）** | DSH 应用 → 设置 → **「泽元 · 协议授权」** | 插件注册的 `settings.section` 面板，每次启动可见、可回看签署状态 |
 | 次入口（跳转） | 安装向导第 5 步完成页 →「进入协议页」 | 只做跳转提示，**不再单独实现协议页**（避免两套 UI 分叉） |
 
 面板显示：当前等级（LV0/LV1）、六项校验逐项结果、License 详情（学员/范围/签发/到期/签名短码）、文件位置，以及「签署 / 重新校验 / 吊销」三个动作。
@@ -79,7 +79,7 @@ Remove-Item "$s\license.json" -Force -ErrorAction SilentlyContinue
 
 | 码 | 含义 | 面板文案 |
 |---|---|---|
-| `E-601` | 没有 License | 「尚未签署《培训班协议》——没有任何 License」 |
+| `E-601` | 没有 License | 「尚未签署《泽元协议》——没有任何 License」 |
 | `E-602` | 签名不符（篡改/损坏） | 「签名不符：内容或签名被改动过」 |
 | `E-603` | 已过期 | 「于 <到期时间> 过期，需要重新签署」 |
 | `E-604` | scope 不含必需项 | 「scope 不含 training:playground」 |
@@ -114,7 +114,7 @@ node packaging/scripts/test-protocol-routes.mjs
 
 ## 7. 已知限制（下一轮）
 
-1. ~~面板 UI 真机确认~~ ✅ **2026-10-24 已确认**：设置 → 培训班 · 协议授权 面板存在且能取到数据；
+1. ~~面板 UI 真机确认~~ ✅ **2026-10-24 已确认**：设置 → 泽元 · 协议授权 面板存在且能取到数据；
 2. 协议页目前是**卡片式**，未做"逐条滚动阅读 + 勾选同意"的正式签署流；
 3. 密钥为本地对称密钥（见 3.2），升级路径见 backlog D-003；
 4. **编码注意**：经 PowerShell 发中文 JSON 时 `subject` 会变成 `????`（PowerShell 侧编码问题，非插件缺陷）；
@@ -129,6 +129,6 @@ node packaging/scripts/test-protocol-routes.mjs
 | 签署 | `POST /sign {confirm:true,days:30}` → `level=LV1 code=OK` |
 | HMAC 校验 | `checks = {exists,shape,keyPresent,signature,notExpired,scope} = 全 true` |
 | 吊销 | `POST /revoke` → `level=LV0 code=E-601` |
-| 面板 | 设置 → 培训班 · 协议授权 **存在**（用户确认） |
+| 面板 | 设置 → 泽元 · 协议授权 **存在**（用户确认） |
 
 _最后更新：2026-10-23 ｜ 插件 v0.3.0_

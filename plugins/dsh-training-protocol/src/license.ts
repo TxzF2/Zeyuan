@@ -152,7 +152,7 @@ export function evaluateLicense(
     license: checks.shape ? license : null,
   })
 
-  if (!license) return fail('E-601', '尚未签署《培训班协议》——没有任何 License。')
+  if (!license) return fail('E-601', '尚未签署《泽元协议》——没有任何 License。')
   checks.exists = true
 
   if (!shapeOk(license)) return fail('E-605', 'License 格式非法（缺字段或版本不匹配）。')

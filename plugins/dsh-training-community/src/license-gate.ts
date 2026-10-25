@@ -129,7 +129,7 @@ export function evaluateAccess(
     subject: license?.subject ?? null,
   })
 
-  if (!license) return deny('E-601', '尚未签署《培训班协议》——没有任何 License。')
+  if (!license) return deny('E-601', '尚未签署《泽元协议》——没有任何 License。')
   if (!shapeOk(license)) return deny('E-605', 'License 格式非法（缺字段或版本不匹配）。')
   if (!keyHex) return deny('E-606', '缺少验签密钥（license.key 不存在或格式非法），无法验证凭据。')
 
