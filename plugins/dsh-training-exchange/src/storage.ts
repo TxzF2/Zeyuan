@@ -1,94 +1,136 @@
 /**
- * storage.ts · 中转站文件存储（data/exchange/）
+ * storage.ts · 文件落盘适配器（P0）
  * ---------------------------------------------------------------------------
- * 布局：data/exchange/<id>.bin + <id>.meta.json
- * 写入：先写 <id>.bin.tmp-<pid>，完成后 rename 为 .bin，再原子写 meta
- * 匿名：上传者只记节点 ID（x-dsh-user），meta 不含任何真人信息
- * 过期：expiresAt = createdAt + 30 天（清理逻辑在第二小步）
+ * 原则：
+ *   - id 不可猜：crypto.randomUUID()，绝不来自自增/时间戳/原名/哈希
+ *   - 原名只进 meta，**路径永不使用原名**：data/exchange/<id>.bin
+ *   - 原子提交：先写 <id>.bin.tmp，fsync 后 rename 成 .bin
+ *   - meta 是提交点：bin 先落、meta 后落；meta 一出现即对外可见
+ *   - 删除：先删 meta（立刻不可见）再删 bin
+ *
+ * 保留期/权限策略不在此处写死（TODO(总控裁决)），只提供机制。
  * ---------------------------------------------------------------------------
  */
 
-import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, statSync } from 'node:fs'
+import { createHash, randomUUID } from 'node:crypto'
+import { closeSync, createReadStream, existsSync, fsyncSync, mkdirSync, openSync, renameSync, rmSync, statSync, writeSync } from 'node:fs'
 import { join } from 'node:path'
+import type { Readable } from 'node:stream'
 import { stateDir } from './license-gate.js'
-import { writeJsonAtomic } from './store.js'
 
-export const MAX_FILE_BYTES = 500 * 1024 * 1024
+/** 大小上限：可配置，默认 50MB（早拒，不读完再拒） */
+export const MAX_UPLOAD_BYTES = Number(process.env.DSH_EXCHANGE_MAX_UPLOAD ?? 50 * 1024 * 1024)
+
+/** 保留期：TODO(总控裁决)，先给 30 天占位 */
 export const RETENTION_DAYS = 30
-
-export interface FileMeta {
-  id: string
-  name: string
-  size: number
-  mime: string
-  uploader: string
-  createdAt: string
-  expiresAt: string
-}
 
 export const exchangeDir = (): string => join(stateDir(), 'data', 'exchange')
 export const binPath = (id: string): string => join(exchangeDir(), `${id}.bin`)
 export const metaPath = (id: string): string => join(exchangeDir(), `${id}.meta.json`)
+export const tmpBinPath = (id: string): string => join(exchangeDir(), `${id}.bin.tmp-${process.pid}`)
+export const tmpMetaPath = (id: string): string => join(exchangeDir(), `${id}.meta.json.tmp-${process.pid}`)
 
 export function ensureDir(): void {
   mkdirSync(exchangeDir(), { recursive: true })
 }
 
-export function makeId(now: Date = new Date()): string {
-  return `x-${now.getTime().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
+/** id 不可猜：UUID v4（36 字符，不可从原名/哈希推导） */
+export function newId(): string {
+  return randomUUID()
 }
 
 export function isValidId(id: string): boolean {
-  return /^x-[a-z0-9]+-[a-z0-9]+$/i.test(id)
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)
 }
 
-export function writeMeta(meta: FileMeta): void {
+export interface TempResult {
+  tmpPath: string
+  size: number
+  sha256: string
+}
+
+
+type EventLike = { on(event: 'data' | 'end' | 'error', cb: (chunk?: unknown) => void): void }
+
+function isAsyncIterable(v: unknown): v is AsyncIterable<unknown> {
+  return Boolean(v && typeof (v as { [Symbol.asyncIterator]?: unknown })[Symbol.asyncIterator] === 'function')
+}
+
+async function* pump(src: AsyncIterable<unknown> | EventLike): AsyncIterable<unknown> {
+  if (isAsyncIterable(src)) {
+    yield* src
+    return
+  }
+  const queue: unknown[] = []
+  let ended = false
+  let failure: unknown = null
+  src.on('data', (c) => queue.push(c))
+  src.on('end', () => {
+    ended = true
+  })
+  src.on('error', (e) => {
+    failure = e ?? new Error('读取失败')
+    ended = true
+  })
+  while (!ended || queue.length > 0) {
+    if (queue.length === 0) await new Promise((r) => setTimeout(r, 5))
+    while (queue.length > 0) yield queue.shift()
+    if (ended) break
+  }
+  if (failure) throw failure
+}
+
+/** 流式写临时文件，边写边算 sha256，写完 fsync；超限立即抛错 */
+export async function putTemp(stream: Readable | AsyncIterable<unknown>): Promise<TempResult> {
   ensureDir()
-  writeJsonAtomic(metaPath(meta.id), meta)
-}
-
-export function readMeta(id: string): FileMeta | null {
+  const id = newId()
+  const tmpPath = tmpBinPath(id)
+  const hash = createHash('sha256')
+  let size = 0
+  let fd: number | null = null
   try {
-    if (!isValidId(id) || !existsSync(metaPath(id))) return null
-    return JSON.parse(readFileSync(metaPath(id), 'utf8')) as FileMeta
-  } catch {
-    return null
-  }
-}
-
-export function listMetas(now: Date = new Date()): FileMeta[] {
-  const dir = exchangeDir()
-  if (!existsSync(dir)) return []
-  const rows: FileMeta[] = []
-  for (const f of readdirSync(dir)) {
-    if (!f.endsWith('.meta.json')) continue
-    const id = f.replace(/\.meta\.json$/, '')
-    const meta = readMeta(id)
-    if (!meta) continue
-    // 过期文件不列出（清理留到第二小步，先隐藏）
-    if (Date.parse(meta.expiresAt) <= now.getTime()) continue
-    rows.push(meta)
-  }
-  return rows.sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt))
-}
-
-export function isExpired(meta: FileMeta, now: Date = new Date()): boolean {
-  return Date.parse(meta.expiresAt) <= now.getTime()
-}
-
-export function removeFiles(id: string): boolean {
-  let removed = false
-  for (const p of [binPath(id), metaPath(id)]) {
-    try {
-      if (existsSync(p)) {
-        rmSync(p, { force: true })
-        removed = true
+    fd = openSync(tmpPath, 'w')
+    for await (const chunk of pump(stream as AsyncIterable<unknown> | EventLike)) {
+      const buf = Buffer.isBuffer(chunk) ? chunk : Buffer.from(String(chunk))
+      size += buf.length
+      if (size > MAX_UPLOAD_BYTES) {
+        throw Object.assign(new Error(`单文件上限 ${Math.floor(MAX_UPLOAD_BYTES / 1024 / 1024)}MB`), { status: 413, code: 'E-1501' })
       }
-    } catch {
-      /* ignore */
+      hash.update(buf)
+      writeSync(fd, buf)
     }
+    if (size === 0) {
+      throw Object.assign(new Error('空文件'), { status: 400, code: 'E-1503' })
+    }
+    fsyncSync(fd)
+    closeSync(fd)
+    fd = null
+    return { tmpPath, size, sha256: hash.digest('hex') }
+  } catch (err) {
+    if (fd !== null) closeSync(fd)
+    rmSync(tmpPath, { force: true })
+    throw err
   }
-  return removed
+}
+
+/** 临时文件 → 正式 bin（同目录 rename，原子） */
+export function commit(tmpPath: string, id: string): { binPath: string } {
+  ensureDir()
+  const target = binPath(id)
+  renameSync(tmpPath, target)
+  return { binPath: target }
+}
+
+export function readStream(id: string): Readable {
+  return createReadStream(binPath(id))
+}
+
+export function binExists(id: string): boolean {
+  return existsSync(binPath(id))
+}
+
+export function metaExists(id: string): boolean {
+  return existsSync(metaPath(id))
 }
 
 export function sizeOf(id: string): number {
@@ -99,20 +141,10 @@ export function sizeOf(id: string): number {
   }
 }
 
-/** 上传时先落临时文件，成功后 rename（避免半截文件被下载） */
-export function tmpPathFor(id: string): string {
-  ensureDir()
-  return join(exchangeDir(), `${id}.bin.tmp-${process.pid}`)
+export function removeBin(id: string): void {
+  rmSync(binPath(id), { force: true })
 }
 
-export function commitTmp(tmp: string, id: string): void {
-  renameSync(tmp, binPath(id))
-}
-
-export function cleanupTmp(tmp: string): void {
-  try {
-    rmSync(tmp, { force: true })
-  } catch {
-    /* ignore */
-  }
+export function cleanupTmp(tmpPath: string): void {
+  rmSync(tmpPath, { force: true })
 }

@@ -113,7 +113,8 @@ try {
   check('字节数一致', dl.bytes.length, content.length)
   checkTrue('内容一致', dl.bytes.equals(content))
   checkTrue('有 Content-Disposition', String(dl.headers['content-disposition'] ?? '').includes('attachment'))
-  check('不存在的 id → 404', (await download('x-nope-nope')).status, 404)
+  check('格式合法但不存在 → 404', (await download('00000000-0000-4000-8000-000000000000')).status, 404)
+  check('格式非法 → 400', (await download('x-nope-nope')).status, 400)
   check('非法 id → 400', (await download('bad id')).status, 400)
 
   console.log('\n=== 5 · 删除权限 ===')
@@ -126,12 +127,12 @@ try {
 
   const r2 = await upload(Buffer.from('x'.repeat(1024)), 'b.bin', 'bob')
   r = await call('POST', 'delete', { id: r2.body.data.id }, 'mod')
-  check('P6 可删他人文件', r.body.data.deleted, true)
+  check('P6 删他人 → 403（TODO(总控裁决) 未开）', r.status, 403)
 
   console.log('\n=== 6 · 边界 ===')
   r = await upload(Buffer.alloc(0), 'empty.bin', 'bob')
   check('空文件 → 400', r.status, 400)
-  r = await upload(Buffer.from('x'), 'big.bin', 'bob', { 'content-length': String(storage.MAX_FILE_BYTES + 1) })
+  r = await upload(Buffer.from('x'), 'big.bin', 'bob', { 'content-length': String(storage.MAX_UPLOAD_BYTES + 1) })
   check('超 500MB → 413', r.status, 413)
 
   console.log('\n=== 7 · 事件 ===')
