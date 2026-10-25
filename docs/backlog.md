@@ -148,3 +148,12 @@ tasks / workbench / community 各有一份 `store.ts`（原子写 + 文件锁 + 
 | P2 | `assets/themes/` 落星辰主题 token | 寻梦山海风格的颜色/字体/间距/星屑动效参数 | 待办 |
 | P2 | 引入根级 pnpm workspace | 板块变多后统一安装与构建 | 待办 |
 | P3 | 工作台内嵌编辑器 | 见 D-001 的未来立项条件 | 未立项 |
+
+### D-008 · 事件 payload 逐事件 schema 未文档化（TODO，不阻塞）
+
+| 项 | 内容 |
+|---|---|
+| 现象 | 《事件总线规范》只定义了 envelope，各事件 payload 字段（如 exchange 的 `{id,size,by}`）未逐事件登记 |
+| 影响 | 消费方需读源码确认字段；跨插件对接有歧义风险 |
+| 建议 | 在注册表 `events.json` 里为每个事件补 `payload` 字段表，由 check-boards 校验必填 |
+| 优先级 | 低（当前无外部消费方） |
