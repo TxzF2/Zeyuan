@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>泽元 · 下载</title>
+<style>
+  :root { --ink:#0b1a14; --ink2:#10241b; --line:#24483a; --text:#e8f3ec; --muted:#8fae9e; --gold:#d4c07a; --green:#57d68b; }
+  * { box-sizing: border-box; }
+  body { margin:0; background: radial-gradient(1200px 600px at 20% -10%, #14352a 0%, var(--ink) 60%); color:var(--text);
+         font-family: system-ui, -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif; min-height:100vh; }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 48px 20px 64px; }
+  .brand { display:flex; align-items:center; gap:10px; color:var(--gold); letter-spacing:2px; font-weight:600; }
+  .brand span { width:10px; height:10px; border-radius:50%; background:var(--gold); box-shadow:0 0 18px var(--gold); }
+  h1 { font-size: 28px; margin: 18px 0 6px; }
+  .sub { color:var(--muted); font-size:14px; }
+  .card { border:1px solid var(--line); background:var(--ink2); border-radius:14px; padding:20px; margin-top:22px; }
+  .row { display:flex; gap:18px; flex-wrap:wrap; font-size:13px; color:var(--muted); }
+  .row b { color:var(--text); font-weight:600; }
+  .btn { display:inline-block; margin-top:16px; padding:12px 22px; border-radius:10px; background:var(--green);
+         color:#062016; font-weight:700; text-decoration:none; }
+  .btn.secondary { background:transparent; color:var(--text); border:1px solid var(--line); margin-left:10px; }
+  .hash { margin-top:14px; font-family: ui-monospace, Consolas, monospace; font-size:13px; color:var(--gold);
+          word-break: break-all; }
+  .hint { margin-top:10px; font-size:12.5px; color:var(--muted); line-height:1.7; }
+  pre { background:#0a1712; border:1px solid var(--line); border-radius:10px; padding:12px; overflow:auto; font-size:12.5px; }
+  .todo { margin-top:18px; padding:10px 12px; border:1px dashed var(--line); border-radius:10px;
+          color:var(--muted); font-size:12.5px; }
+  a { color: var(--gold); }
+  footer { margin-top:28px; color:var(--muted); font-size:12px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="brand"><span></span>泽元 · ZEYUAN</div>
+  <h1>下载泽元</h1>
+  <div class="sub">便携版 · 解压即用 · 内置安装向导</div>
+
+  <div class="card">
+    <div class="row">
+      <div>最新版本 <b>v0.4.0</b></div>
+      <div>发布日期 <b>20261025</b></div>
+      <div>大小 <b>149.35 MB</b></div>
+      <div>平台 <b>Windows x64</b></div>
+    </div>
+
+    <a class="btn" href="https://github.com/YOUR_GITHUB/zeyuan/releases/latest/download/zeyuan-portable-v0.4.0-20261025-x64.zip">下载 zeyuan-portable-v0.4.0-20261025-x64.zip</a>
+    <a class="btn secondary" href="https://github.com/YOUR_GITHUB/zeyuan/releases/latest">查看 Release</a>
+
+    <div class="hash">SHA256（前 8 位）：<b>32590CB9</b></div>
+    <div class="hint">
+      完整哈希：<span style="font-family:ui-monospace,Consolas,monospace">32590cb9d1f91a0219feedd3ffffe74bf3a47960e18ee04943a50eded54d2dce</span><br />
+      下载后请核对，命令（PowerShell）：<br />
+      <code>Get-FileHash .\zeyuan-portable-v0.4.0-20261025-x64.zip -Algorithm SHA256</code>
+    </div>
+  </div>
+
+  <div class="card">
+    <div style="font-weight:600;margin-bottom:6px">安装步骤</div>
+    <div class="hint">
+      1. 解压 zip；<br />
+      2. 双击 <code>zeyuan-installer.exe</code>，按向导选择安装目录；<br />
+      3. 启动后进入 <b>设置 → 泽元 · 协议授权</b> 签署协议；<br />
+      4. 面板：任务接发 / 工作台 / 社区 / 协作分组 / 泽元中转站。
+    </div>
+    
+  </div>
+
+  <div class="card">
+    <div style="font-weight:600;margin-bottom:6px">历史版本</div>
+    <div class="hint">
+      所有版本与哈希集中在 <a href="https://github.com/YOUR_GITHUB/zeyuan/releases">Releases 归档</a>。旧版升级前请先读《升级说明》。
+    </div>
+  </div>
+
+  <div class="todo">
+    国内镜像：TODO（发布后同步一份到 Gitee / 网盘，填入备用链接）。当前请优先使用上方 GitHub 直链。
+  </div>
+
+  <footer>泽元 · 下载页由 scripts/release.mjs 生成，随 docs 一起发布到 GitHub Pages。</footer>
+</div>
+</body>
+</html>

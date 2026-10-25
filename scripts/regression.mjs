@@ -207,6 +207,12 @@ const SUITES = [
     cwd: REPO,
   },
   {
+    name: '发布·下载页与流水线（node:test）',
+    cmd: process.execPath,
+    args: ['--test', join(REPO, 'test/test-release-page.mjs')],
+    cwd: REPO,
+  },
+  {
     name: '插件·agents 配置',
     cmd: process.execPath,
     args: [join(REPO, 'scripts/check-agents-config.mjs')],
