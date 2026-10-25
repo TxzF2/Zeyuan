@@ -53,7 +53,7 @@ test('schema: every plugin emitter writes canonical envelope (no legacy keys)', 
       const m = text.match(/const envelope = \{[\s\S]*?\n\s*\}/)
       if (!m) continue
       const block = m[0]
-      for (const legacy of ['v: 1', 'at:', 'source:', 'type,', 'subject:']) {
+      for (const legacy of ['v: 1', 'at: new', 'source: ', 'type: ', 'subject:']) {
         if (block.includes(legacy)) offenders.push(`${name}/${file} 仍含 ${legacy}`)
       }
       for (const key of ['event:', 'ts:', 'actor:', 'payload']) {

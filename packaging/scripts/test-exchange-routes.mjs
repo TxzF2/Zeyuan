@@ -137,7 +137,7 @@ try {
 
   console.log('\n=== 7 · 事件 ===')
   const log = join(STATE, 'event-log.jsonl')
-  const types = readFileSync(log, 'utf8').trim().split('\n').map((l) => JSON.parse(l).type)
+  const types = readFileSync(log, 'utf8').trim().split('\n').map((l) => JSON.parse(l).event)
   checkTrue('file-uploaded 已发', types.includes('dsh-training:exchange:file-uploaded'))
   checkTrue('file-downloaded 已发', types.includes('dsh-training:exchange:file-downloaded'))
   checkTrue('file-deleted 已发', types.includes('dsh-training:exchange:file-deleted'))

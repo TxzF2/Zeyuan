@@ -114,11 +114,11 @@ try {
   check('草稿帖发评论 → 404', (await call('POST', 'comments/add', { postId: draftId, body: 'x' }, 'alice')).status, 404)
 
   console.log('\n=== 6 · 事件（不带正文）===')
-  const types = events().map((e) => e.type)
+  const types = events().map((e) => e.event)
   checkTrue('comment-added 已发', types.includes('dsh-training:feature-community:comment-added'))
   checkTrue('comment-removed 已发', types.includes('dsh-training:feature-community:comment-removed'))
   checkTrue('comment-hidden 已发', types.includes('dsh-training:feature-community:comment-hidden'))
-  const added = events().find((e) => e.type.endsWith('comment-added'))
+  const added = events().find((e) => e.event.endsWith('comment-added'))
   checkTrue('事件不含正文', !JSON.stringify(added.payload).includes('第一条评论'), JSON.stringify(added.payload))
   check('事件带 commentId', Boolean(added.payload.commentId), true)
 

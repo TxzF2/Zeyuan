@@ -239,7 +239,7 @@ try {
       .trim()
       .split('\n')
       .filter(Boolean)
-      .map((l) => JSON.parse(l).type)
+      .map((l) => JSON.parse(l).event)
     checkTrue('post-drafted 已发', types.includes('dsh-training:feature-community:post-drafted'))
     checkTrue('post-published 已发', types.includes('dsh-training:feature-community:post-published'))
     checkTrue('post-liked 已发', types.includes('dsh-training:feature-community:post-liked'))
