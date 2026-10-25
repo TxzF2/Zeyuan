@@ -103,7 +103,7 @@ function call(method, path, body, actor, query = '') {
 try {
   console.log('=== 1 · 注册与等级 ===')
   mod.apply(ctx)
-  check('注册路由数', routes.size, 11)
+  check('注册路由数', routes.size, 15)
   checkTrue('已订阅 draft-published', listeners.has('dsh-training:feature-workbench:draft-published'))
   let r = await call('GET', 'me', undefined, 'alice')
   check('未签署 → LV0', r.body.data.level, 'LV0')

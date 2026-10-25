@@ -199,3 +199,26 @@ export function markConsumed(doc: PostsDoc, eventId: string): PostsDoc {
   const consumed = [...doc.consumed, eventId].slice(-CONSUMED_LIMIT)
   return { ...doc, consumed }
 }
+
+/** ---- 通用写事务助手（comments 复用；与 tasks/console 同构，D-006 待收敛） ---- */
+export function fileOf(name: string): string {
+  return join(dataDir(), name)
+}
+
+export function readJson<T>(file: string, fallback: T): T {
+  try {
+    if (!existsSync(file)) return fallback
+    return JSON.parse(readFileSync(file, 'utf8')) as T
+  } catch {
+    return fallback
+  }
+}
+
+export function writeJsonAtomic(file: string, value: unknown): void {
+  mkdirSync(dataDir(), { recursive: true })
+  const tmp = `${file}.tmp-${process.pid}-${Date.now()}`
+  writeFileSync(tmp, JSON.stringify(value, null, 2) + '\n', 'utf8')
+  renameSync(tmp, file)
+}
+
+

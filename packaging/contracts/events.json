@@ -53,7 +53,10 @@
       "post-liked",
       "post-hidden",
       "post-unhidden",
-      "post-deleted"
+      "post-deleted",
+      "comment-added",
+      "comment-removed",
+      "comment-hidden"
     ],
     "character-txzf": [
       "action-request"

@@ -140,6 +140,8 @@ window.__ModuleLoader__.load({
       const [state, setState] = useState({ status: 'loading', me: null, posts: [], tags: [], notice: '' })
       const [filter, setFilter] = useState('all')
       const [selected, setSelected] = useState(null)
+      const [comments, setComments] = useState([])
+      const [commentText, setCommentText] = useState("")
       const [showDraft, setShowDraft] = useState(false)
       const [form, setForm] = useState({ title: '', body: '', tags: '' })
 
@@ -158,6 +160,14 @@ window.__ModuleLoader__.load({
       }, [filter, state.me?.user])
 
       useEffect(() => { load() }, [load])
+
+      useEffect(() => {
+        if (!selected) return setComments([])
+        fetch(`${API}/comments?postId=${encodeURIComponent(selected)}`)
+          .then((r) => r.json())
+          .then((res) => setComments(res.ok ? res.data.comments : []))
+          .catch(() => setComments([]))
+      }, [selected, state.posts.length])
 
       const lv1 = state.me?.level === 'LV1'
       const isAdmin = Boolean(state.me?.isAdmin)
@@ -277,6 +287,38 @@ window.__ModuleLoader__.load({
                 `${t('author')}：${detail.author} ｜ ❤️ ${detail.likes} ｜ ${t('fromDraft')}：${detail.sourceDraftId ?? '—'}`,
               ),
               h('pre', { style: S.pre }, detail.body || '（空）'),
+
+              h('div', { style: { ...S.kv, marginTop: '8px', color: GOLD } }, `评论（${comments.length}）`),
+              comments.length === 0
+                ? h('div', { style: S.kv }, '还没有评论')
+                : comments.map((c) =>
+                    h(
+                      'div',
+                      { key: c.id, style: { borderTop: `1px solid ${LINE}`, padding: '6px 0' } },
+                      h('div', { style: { fontSize: '12.5px', color: TEXT } }, c.body, c.status === 'hidden' ? h('span', { style: { ...S.pill('hidden'), marginLeft: '6px' } }, '已隐藏') : null),
+                      h(
+                        'div',
+                        { style: S.meta },
+                        h('span', null, c.author),
+                        h('span', null, String(c.createdAt).slice(11, 16)),
+                        c.canDelete ? h('button', { style: S.btn(false), onClick: () => post('comments/delete', { id: c.id }) }, '删除') : null,
+                        c.canHide
+                          ? h('button', { style: S.btn(false), onClick: () => post('comments/hide', { id: c.id, hidden: c.status !== 'hidden' }) }, c.status === 'hidden' ? '恢复' : '隐藏')
+                          : null,
+                      ),
+                    ),
+                  ),
+              h(
+                'div',
+                { style: { display: 'flex', gap: '8px', marginTop: '8px' } },
+                h('input', {
+                  style: S.input,
+                  placeholder: '写评论…（需 LV1）',
+                  value: commentText,
+                  onChange: (e) => setCommentText(e.target.value),
+                }),
+                h('button', { style: S.gold, onClick: () => post('comments/add', { postId: detail.id, body: commentText }).then(() => setCommentText('')) }, '发表'),
+              ),
               h(
                 'div',
                 { style: S.row },

@@ -34,6 +34,7 @@ import {
 } from './post.js'
 import { DRAFT_PUBLISHED, consumeDraftPublished, replayLog, type Envelope } from './consume.js'
 import { StoreError, readDoc, updateDoc } from './store.js'
+import { CommentError, addComment, canSeeComment, deleteComment, hideComment, isModerator, listComments } from './comments.js'
 
 export const name = 'dsh-training-community'
 export const VERSION = '0.1.0'
@@ -45,6 +46,9 @@ export const EMITTED_EVENTS = [
   'dsh-training:feature-community:post-hidden',
   'dsh-training:feature-community:post-unhidden',
   'dsh-training:feature-community:post-deleted',
+  'dsh-training:feature-community:comment-added',
+  'dsh-training:feature-community:comment-removed',
+  'dsh-training:feature-community:comment-hidden',
 ] as const
 export type EmittedEvent = (typeof EMITTED_EVENTS)[number]
 
@@ -117,6 +121,9 @@ const STATUS_BY_CODE: Record<string, number> = {
   'E-1010': 500,
   'E-1011': 503,
   'E-1012': 500,
+  'E-1401': 400,
+  'E-1402': 403,
+  'E-1403': 404,
 }
 
 interface ServerResponseLike {
@@ -202,6 +209,7 @@ function registerRoutes(ctx: Context): void {
       path,
       handler: (req: ServerRequestLike, res: ServerResponseLike) => {
         const fail = (err: unknown) => {
+          if (err instanceof CommentError) return json(res, STATUS_BY_CODE[err.code] ?? 400, { ok: false, code: err.code, message: err.message })
           if (err instanceof HttpError) {
             json(res, err.status, { ok: false, code: err.code, message: err.message })
             return
@@ -375,6 +383,70 @@ function registerRoutes(ctx: Context): void {
     })
   }
 
+  // ---------------- 评论（一级） ----------------
+  const requirePostVisible = (postId: string, actor: string): Post => {
+    const doc = readDoc()
+    const post = doc.posts.find((p) => p.id === postId)
+    if (!post || !canSee(post, actor, isAdminByRole(actor))) throw new HttpError(404, 'E-1403', '帖子不存在。')
+    return post
+  }
+
+  route(`${base}/comments`, (req, res) => {
+    const url = new URL(req.url ?? '/', 'http://localhost')
+    const actor = actorOf(req)
+    const postId = url.searchParams.get('postId') ?? ''
+    requirePostVisible(postId, actor)
+    const { comments, moderator } = listComments(postId, actor)
+    json(res, 200, {
+      ok: true,
+      data: {
+        comments: comments.map((c) => ({
+          ...c,
+          canDelete: c.author === actor && c.status !== 'deleted',
+          canHide: moderator,
+        })),
+        total: comments.length,
+        isModerator: moderator,
+      },
+    })
+  })
+
+  route(`${base}/comments/add`, async (req, res) => {
+    if (req.method !== 'POST') return json(res, 405, { ok: false, code: 'E-1006', message: '只接受 POST。' })
+    if (requireLv1(res) === null) return
+    const body = await readBody(req)
+    const actor = actorOf(req)
+    const postId = typeof body.postId === 'string' ? body.postId : ''
+    requirePostVisible(postId, actor)
+    const comment = addComment(postId, actor, body.body)
+    emitEvent('dsh-training:feature-community:comment-added', { commentId: comment.id, postId, author: actor }, { commentId: comment.id })
+    json(res, 200, { ok: true, data: comment })
+  })
+
+  route(`${base}/comments/delete`, async (req, res) => {
+    if (req.method !== 'POST') return json(res, 405, { ok: false, code: 'E-1006', message: '只接受 POST。' })
+    if (requireLv1(res) === null) return
+    const body = await readBody(req)
+    const actor = actorOf(req)
+    const comment = deleteComment(String(body.id ?? ''), actor)
+    emitEvent('dsh-training:feature-community:comment-removed', { commentId: comment.id, postId: comment.postId, author: comment.author, by: actor }, { commentId: comment.id })
+    json(res, 200, { ok: true, data: comment })
+  })
+
+  route(`${base}/comments/hide`, async (req, res) => {
+    if (req.method !== 'POST') return json(res, 405, { ok: false, code: 'E-1006', message: '只接受 POST。' })
+    const actor = actorOf(req)
+    const body = await readBody(req)
+    const hidden = body.hidden !== false
+    const comment = hideComment(String(body.id ?? ''), actor, hidden)
+    emitEvent(
+      'dsh-training:feature-community:comment-hidden',
+      { commentId: comment.id, postId: comment.postId, author: comment.author, hidden, by: actor },
+      { commentId: comment.id },
+    )
+    json(res, 200, { ok: true, data: comment })
+  })
+
   // 手动补扫
   route(`${base}/replay`, async (req, res) => {
     if (req.method !== 'POST') return json(res, 405, { ok: false, code: 'E-1006', message: '只接受 POST。' })
@@ -386,7 +458,7 @@ function registerRoutes(ctx: Context): void {
     json(res, 200, { ok: true, data: r })
   })
 
-  console.log(`[dsh-training-community] 已注册 11 条路由（${base}/*）`)
+  console.log(`[dsh-training-community] 已注册 15 条路由（${base}/*）`)
 }
 
 // ---------------------------------------------------------------- 入口

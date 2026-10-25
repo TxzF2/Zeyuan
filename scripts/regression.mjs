@@ -171,6 +171,12 @@ const SUITES = [
     cwd: REPO,
   },
   {
+    name: '社区·评论',
+    cmd: process.execPath,
+    args: [join(REPO, 'packaging/scripts/test-community-comments.mjs')],
+    cwd: REPO,
+  },
+  {
     name: '插件·agents 配置',
     cmd: process.execPath,
     args: [join(REPO, 'scripts/check-agents-config.mjs')],
