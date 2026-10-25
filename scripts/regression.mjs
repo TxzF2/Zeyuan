@@ -201,6 +201,12 @@ const SUITES = [
     cwd: REPO,
   },
   {
+    name: '泽元·迁移脚本（node:test）',
+    cmd: process.execPath,
+    args: ['--test', join(REPO, 'test/test-migrate-zeyuan.mjs')],
+    cwd: REPO,
+  },
+  {
     name: '插件·agents 配置',
     cmd: process.execPath,
     args: [join(REPO, 'scripts/check-agents-config.mjs')],
