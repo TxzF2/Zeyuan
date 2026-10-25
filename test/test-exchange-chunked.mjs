@@ -77,7 +77,8 @@ test('chunked: out-of-order upload -> resume -> idempotent resend -> complete ha
 })
 
 test('chunked: chunk hash mismatch rejected; unknown uploadId refused; oversized init rejected', async () => {
-  const init = svc.initUpload({ name: 'x.bin', size: 100, mime: 'application/octet-stream', uploader: 'node-a' })
+  // size=3：单块，先让长度校验通过，才能命中“哈希不符”分支
+  const init = svc.initUpload({ name: 'x.bin', size: 3, mime: 'application/octet-stream', uploader: 'node-a' })
   assert.throws(
     () => svc.putChunk({ uploadId: init.uploadId, index: 0, data: Buffer.from('abc'), sha256: 'deadbeef'.repeat(8), viewer: 'node-a' }),
     (err) => {
