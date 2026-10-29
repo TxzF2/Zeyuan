@@ -123,6 +123,15 @@
       "status": "ready",
       "summary": "匿名文件中转：流式上传/下载、列表、删除（上传者或 P6+）；30 天过期清理待第二步。",
       "defaultSelected": true
+    },
+    {
+      "id": "im",
+      "boardDir": "boards/im",
+      "displayName": "泽元 IM 机器人",
+      "kind": "optional",
+      "status": "ready",
+      "summary": "钉钉群推送：任务领取/验收/驳回；webhook 存本地、脱敏回显、P6+ 可配。",
+      "defaultSelected": true
     }
   ],
   "contractVersion": 1

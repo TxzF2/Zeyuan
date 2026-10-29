@@ -1,0 +1,35 @@
+{
+  "id": "im",
+  "displayName": "泽元 IM 机器人",
+  "kind": "optional",
+  "status": "ready",
+  "dependsOn": [
+    "core"
+  ],
+  "defaultSelected": true,
+  "install": {
+    "target": "features/im",
+    "mode": "copy"
+  },
+  "contents": [
+    "HOST 半：钉钉群机器人推送（webhook + 可选加签），任务领取/验收/驳回自动通知",
+    "配置存 data/im.json（本地），对外只回脱敏 webhook；配置与测试需 P6+",
+    "路由：GET/POST /zeyuan/im/config、POST /zeyuan/im/test",
+    "未配置时静默跳过，不阻塞任务流程"
+  ],
+  "schemaVersion": 2,
+  "boardApi": 1,
+  "version": "0.1.0",
+  "smoke": "test-im.mjs",
+  "events": {
+    "emits": [
+      "notified",
+      "push-failed"
+    ],
+    "consumes": [
+      "zeyuan:tasks:task-claimed",
+      "zeyuan:tasks:task-accepted",
+      "zeyuan:tasks:task-rejected"
+    ]
+  }
+}

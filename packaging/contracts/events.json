@@ -92,6 +92,10 @@
       "file-deleted",
       "file-expired",
       "file-orphan-swept"
+    ],
+    "im": [
+      "notified",
+      "push-failed"
     ]
   },
   "chains": [
