@@ -30,6 +30,7 @@ const val = (f, d) => {
 }
 const machines = (val('--machines', 'dsh-2,dsh-3') ?? '').split(',').map((s) => s.trim()).filter(Boolean)
 const out = resolve(val('--out', join(process.env.TEMP ?? '.', 'zeyuan-access-pack')))
+const HUB = val('--hub', process.env.ZEYUAN_HUB ?? '')  // 收集器地址（可选）
 
 // 读本机 im.json
 const cfgFile = join(stateDir, 'data', 'im.json')
@@ -62,7 +63,7 @@ if (-not (Test-Path $cfgPath)) { Write-Host '❌ 缺 im.json（接入包里应�
 
 Write-Host "[2/3] 建计划任务（09:00 / 21:00）…"
 $script = Join-Path $here 'machine-report.mjs'
-$tr = '"' + $node + '" "' + $script + '" --machine ${m}'
+$tr = '"' + $node + '" "' + $script + '" --machine ${m}' + (HUB_PLACEHOLDER ? ' --hub ' + HUB_PLACEHOLDER : '')'
 schtasks /Create /SC DAILY /ST 09:00 /TN "Zeyuan-Report-${m}-AM" /TR $tr /F | Out-Null
 schtasks /Create /SC DAILY /ST 21:00 /TN "Zeyuan-Report-${m}-PM" /TR $tr /F | Out-Null
 Write-Host '  ✅ 任务已建'
@@ -81,7 +82,7 @@ for (const m of machines) {
   mkdirSync(dir, { recursive: true })
   cpSync(srcScript, join(dir, 'machine-report.mjs'))
   writeFileSync(join(dir, 'im.json'), JSON.stringify({ webhook: cfg.webhook, secret: cfg.secret ?? '' }, null, 2) + '\n', 'utf8')
-  writeFileSync(join(dir, 'install.ps1'), installPs1(m), 'utf8')
+  writeFileSync(join(dir, 'install.ps1'), installPs1(m).replaceAll('HUB_PLACEHOLDER', HUB || ''), 'utf8')
   writeFileSync(
     join(dir, 'README.txt'),
     [
@@ -91,6 +92,7 @@ for (const m of machines) {
       '2) 右键 install.ps1 → 使用 PowerShell 运行（需本机已装 Node.js 18+）',
       '3) 群里出现一条 "[%s] 接入自检" 即成功' % m,
       '',
+      HUB ? 'HUB：已内置上报地址 ' + HUB : 'HUB：未配置（只发群，不自报收集器）',
       '安全：im.json 内含 webhook+加签密钥，勿上传到任何仓库/群；装完可删。',
       '卸载：schtasks /Delete /TN "Zeyuan-Report-%s-AM" /F 与 -PM' % m,
     ].join('\n'),
