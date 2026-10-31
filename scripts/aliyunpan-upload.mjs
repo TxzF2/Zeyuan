@@ -42,6 +42,12 @@ const chunkMb = Number(val('--chunk-mb', '10'))
 const doShare = !has('--no-share')
 const dry = has('--dry')
 const sharePwd = val('--share-pwd') ?? String(Math.floor(1000 + Math.random() * 9000))
+const clientSecretFile = val('--client-secret-file')
+let clientSecret = process.env.ALIYUNPAN_CLIENT_SECRET ?? ''
+if (!clientSecret && clientSecretFile) {
+  const p = resolve(clientSecretFile.replace(/^%LOCALAPPDATA%/, process.env.LOCALAPPDATA ?? ''))
+  if (existsSync(p)) clientSecret = fs_readSecret(p)
+}
 
 let refreshToken = process.env.ALIYUNPAN_REFRESH_TOKEN ?? ''
 if (!refreshToken && tokenFile) {
@@ -52,10 +58,22 @@ if (!refreshToken && tokenFile) {
   }
   refreshToken = readFileSync(p, 'utf8').trim()
 }
+const fs_readSecret = (p) => readFileSync(p, 'utf8').trim()
+
 if (!refreshToken) {
   console.error('❌ 缺 refresh_token：用 --token-file 或环境变量 ALIYUNPAN_REFRESH_TOKEN')
   process.exit(1)
 }
+// 从 JWT 的 aud 推断签发方 client_id（若非机密客户端可直接用）
+let inferredClientId = clientId
+try {
+  const p = JSON.parse(Buffer.from(refreshToken.split('.')[1].replace(/-/g, '+').replace(/_/g, '/'), 'base64').toString('utf8'))
+  if (p.aud && typeof p.aud === 'string') {
+    inferredClientId = p.aud
+    console.log('从 token aud 推断 client_id =', inferredClientId)
+  }
+} catch { /* ignore */ }
+
 if (!refreshToken.startsWith('eyJ')) {
   console.warn('⚠️ token 不是 eyJ 开头，阿里云盘 refresh_token 通常是 eyJ 长串；先试，失败看返回')
 }
@@ -96,7 +114,7 @@ async function api(path, { method = 'POST', body, token, query } = {}) {
 // 1) 换 access_token
 console.log('\n[1/5] 换 access_token…')
 const tokenRes = await api('/oauth/access_token', {
-  body: { grant_type: 'refresh_token', refresh_token: refreshToken, client_id: clientId },
+  body: { grant_type: 'refresh_token', refresh_token: refreshToken, client_id: inferredClientId, ...(clientSecret ? { client_secret: clientSecret } : {}) },
 })
 const accessToken = tokenRes.access_token
 const refreshTokenNew = tokenRes.refresh_token ?? refreshToken
