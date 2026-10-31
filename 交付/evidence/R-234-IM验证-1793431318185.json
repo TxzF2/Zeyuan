@@ -1,0 +1,70 @@
+{
+  "at": "2026-10-31T07:21:58.184Z",
+  "taskId": "t-20261031-0013",
+  "title": "R-234 验证-mvw2p8aj",
+  "mount": null,
+  "config": {
+    "webhook": true,
+    "secret": true
+  },
+  "taskEvents": [
+    "zeyuan:tasks:task-created",
+    "zeyuan:tasks:task-claimed",
+    "zeyuan:tasks:task-submitted",
+    "zeyuan:tasks:task-accepted",
+    "zeyuan:tasks:reward",
+    "zeyuan:im:notified"
+  ],
+  "imEvents": [
+    "zeyuan:im:notified",
+    "zeyuan:im:notified"
+  ],
+  "rows": [
+    {
+      "name": "加载层：zeyuan-im 已挂载",
+      "ok": false,
+      "detail": "mount-events 无记录（未重启/未加载）"
+    },
+    {
+      "name": "配置层：webhook 已配置",
+      "ok": true,
+      "detail": "114 字符（已脱敏不显示）"
+    },
+    {
+      "name": "配置层：加签密钥已配置",
+      "ok": true,
+      "detail": "已配置（不显示）"
+    },
+    {
+      "name": "任务流：发布成功",
+      "ok": true,
+      "detail": "t-20261031-0013 status=open"
+    },
+    {
+      "name": "任务流：领取成功",
+      "ok": true,
+      "detail": "status=claimed"
+    },
+    {
+      "name": "任务流：提交成功",
+      "ok": true,
+      "detail": "status=submitted"
+    },
+    {
+      "name": "任务流：验收成功",
+      "ok": true,
+      "detail": "status=accepted"
+    },
+    {
+      "name": "订阅层：任务事件已产生",
+      "ok": true,
+      "detail": "7 条"
+    },
+    {
+      "name": "推送层：未加载，无法验证",
+      "ok": false,
+      "detail": "需先重启 DSH"
+    }
+  ],
+  "verdict": "FAIL"
+}

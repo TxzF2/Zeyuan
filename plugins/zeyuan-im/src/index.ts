@@ -212,6 +212,15 @@ function registerRoutes(ctx: Context): void {
 export function apply(ctx: Context): void {
   bus = ctx
   mkdirSync(stateDir(), { recursive: true })
+  try {
+    appendFileSync(
+      join(stateDir(), 'mount-events.jsonl'),
+      JSON.stringify({ plugin: name, version: VERSION, at: new Date().toISOString(), pid: process.pid, event: 'mounted', host: process.versions.electron ? 'electron' : 'node' }) + '\n',
+      'utf8',
+    )
+  } catch (err) {
+    console.warn('[zeyuan-im] 写挂载标记失败：' + (err as Error).message)
+  }
   const cfg = readConfig().dingtalk
   console.log(`[zeyuan-im] mounted — v${VERSION} · dingtalk=${cfg.webhook ? 'configured' : 'not-configured'}`)
 

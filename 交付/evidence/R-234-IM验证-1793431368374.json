@@ -1,0 +1,74 @@
+{
+  "at": "2026-10-31T07:22:48.372Z",
+  "taskId": "t-20261031-0015",
+  "title": "R-234 验证-mvw2qb1j",
+  "mount": null,
+  "config": {
+    "webhook": true,
+    "secret": true
+  },
+  "taskEvents": [
+    "zeyuan:tasks:task-created",
+    "zeyuan:tasks:task-claimed",
+    "zeyuan:tasks:task-submitted",
+    "zeyuan:tasks:task-accepted",
+    "zeyuan:tasks:reward",
+    "zeyuan:im:notified"
+  ],
+  "imEvents": [
+    "zeyuan:im:notified",
+    "zeyuan:im:notified",
+    "zeyuan:im:notified",
+    "zeyuan:im:notified",
+    "zeyuan:im:notified",
+    "zeyuan:im:notified"
+  ],
+  "rows": [
+    {
+      "name": "加载层：zeyuan-im 已加载",
+      "ok": true,
+      "detail": "无挂载标记，但已有 im 事件（zeyuan:im:notified @ 2026-10-31T07:22:35.040Z）→ 插件确在运行"
+    },
+    {
+      "name": "配置层：webhook 已配置",
+      "ok": true,
+      "detail": "114 字符（已脱敏不显示）"
+    },
+    {
+      "name": "配置层：加签密钥已配置",
+      "ok": true,
+      "detail": "已配置（不显示）"
+    },
+    {
+      "name": "任务流：发布成功",
+      "ok": true,
+      "detail": "t-20261031-0015 status=open"
+    },
+    {
+      "name": "任务流：领取成功",
+      "ok": true,
+      "detail": "status=claimed"
+    },
+    {
+      "name": "任务流：提交成功",
+      "ok": true,
+      "detail": "status=submitted"
+    },
+    {
+      "name": "任务流：验收成功",
+      "ok": true,
+      "detail": "status=accepted"
+    },
+    {
+      "name": "订阅层：任务事件已产生",
+      "ok": true,
+      "detail": "7 条"
+    },
+    {
+      "name": "推送层：产生 notified 事件",
+      "ok": true,
+      "detail": "notified=6 push-failed=0"
+    }
+  ],
+  "verdict": "PASS"
+}
