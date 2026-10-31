@@ -33,6 +33,10 @@ const machine = val('--machine', hostname())
 const note = val('--note', '')
 const selfcheck = has('--selfcheck')
 const cfgPath = val('--config', join(HERE, 'im.json'))
+const hub = val('--hub', process.env.ZEYUAN_HUB ?? '')  // 可选：收集器地址 http://<ip>:19501/report
+const done = val('--done', '')
+const blocked = val('--blocked', '')
+const next = val('--next', '')
 
 let webhook = process.env.DINGTALK_WEBHOOK ?? ''
 let secret = process.env.DINGTALK_SECRET ?? ''
@@ -81,7 +85,9 @@ const rows = [
   `- 主机：${hostname()} · ${platform()} ${release()} · Node ${process.version}`,
   head ? `- 仓库：HEAD \`${head}\`（未推送 ${pending || '?'}）` : '- 仓库：未检出/非 git 目录',
   lastMsg ? `- 最近提交：${lastMsg}` : '',
-  note ? `- 备注：${note}` : '',
+  done ? `- 做了什么：${done}` : (note ? `- 做了什么：${note}` : ''),
+  blocked ? `- 卡在哪：${blocked}` : '',
+  next ? `- 明天做什么：${next}` : '',
   '',
   `> 自动上报（machine-report.mjs）`,
 ].filter(Boolean)
@@ -121,4 +127,19 @@ for (let i = 1; i <= 3; i++) {
 if (!ok) {
   log(`❌ 发送失败：${lastErr}`)
   process.exit(1)
+}
+
+// 上报收集器（可选，失败不影响已发群的结果）
+if (hub) {
+  try {
+    const res = await fetch(hub, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ machine, at: new Date().toISOString(), done: done || note, blocked, next, host: hostname(), node: process.version, head, lastMsg, pending }),
+      signal: AbortSignal.timeout(8000),
+    })
+    log(res.ok ? `✅ 已上报收集器（HTTP ${res.status}）` : `⚠️ 收集器返回 HTTP ${res.status}`)
+  } catch (e) {
+    log(`⚠️ 收集器不可达（不影响群消息）：${e.name === 'TimeoutError' ? '超时' : e.message}`)
+  }
 }

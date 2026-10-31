@@ -44,6 +44,32 @@ const delivery = existsSync(join(ROOT, '交付')) ? readdirSync(join(ROOT, '交�
 const evidence = existsSync(join(ROOT, '交付', 'evidence')) ? readdirSync(join(ROOT, '交付', 'evidence')).length : 0
 const pageBanner = existsSync(join(ROOT, 'docs', 'download.html')) && readFileSync(join(ROOT, 'docs', 'download.html'), 'utf8').includes('通道维护中')
 
+// ---- 合并 dsh-2/dsh-3 上报（24h 内）----
+const reportsDir = join(ROOT, '交付', 'evidence', 'machine-reports')
+const machineRows = {}
+if (existsSync(reportsDir)) {
+  const nowMs = Date.now()
+  for (const f of readdirSync(reportsDir)) {
+    if (!f.endsWith('.json')) continue
+    try {
+      const r = JSON.parse(readFileSync(join(reportsDir, f), 'utf8'))
+      const ageH = (nowMs - new Date(r.at).getTime()) / 3600000
+      if (ageH > 24) continue
+      // 取最新一条
+      if (!machineRows[r.machine] || new Date(r.at) > new Date(machineRows[r.machine].at)) machineRows[r.machine] = r
+    } catch {
+      /* 跳过坏文件 */
+    }
+  }
+}
+const fmt = (s) => (s == null || s === '' ? '—' : String(s).replace(/\|/g, '／').slice(0, 60))
+const rowOf = (name) => {
+  const r = machineRows[name]
+  if (!r) return `| **${name}** | ⏳ 未报到（无上报） | — | — |`
+  const t = new Date(r.at).toLocaleString('zh-CN', { hour12: false })
+  return `| **${name}** | ${fmt(r.done)} | ${fmt(r.blocked)} | ${fmt(r.next)} |\n> ${name} 上报于 ${t}（${r.host ?? '-'} / Node ${(r.node ?? '-').replace('v', '')}）`
+}
+
 // ---- 任务统计（在线才取）----
 let taskLine = '任务接口离线'
 try {
@@ -78,10 +104,10 @@ const lines = [
   '| 机器 | 做了什么 | 卡在哪 | 明天做什么 |',
   '|---|---|---|---|',
   `| **dsh** | 分支 \`${branch}\` · HEAD \`${head}\`（未推送 ${behind}）· 最近提交：${lastCommit}｜交付 ${delivery} 份 / 证据 ${evidence} 件｜${taskLine}｜${imLine} | ${pageBanner ? '**下载页仍在维护横幅**（等网盘/镜像）' : '下载页无维护横幅'} | 复核支线交付、跟进字段裁定、通道修复 |`,
-  '| **dsh-2** | ⏳ 未报到（无跨机通道） | — | — |',
-  '| **dsh-3** | ⏳ 未报到（无跨机通道） | — | — |',
+  rowOf('dsh-2'),
+  rowOf('dsh-3'),
   '',
-  `> 自动生成于 ${stamp}（scripts/coordination-brief.mjs）｜dsh-2/dsh-3 数据不可读，如实标注未报到，未编造`,
+  `> 自动生成于 ${stamp}（scripts/coordination-brief.mjs）｜dsh-2/dsh-3 数据来自其自报（24h 内），无上报则标未报到，不编造`,
 ]
 
 const md = lines.join('\n')
