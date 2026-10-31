@@ -63,7 +63,9 @@ if (-not (Test-Path $cfgPath)) { Write-Host '❌ 缺 im.json（接入包里应�
 
 Write-Host "[2/3] 建计划任务（09:00 / 21:00）…"
 $script = Join-Path $here 'machine-report.mjs'
-$tr = '"' + $node + '" "' + $script + '" --machine ${m}' + (HUB_PLACEHOLDER ? ' --hub ' + HUB_PLACEHOLDER : '')'
+$hub = 'HUBURL_JSON'
+$tr = '"' + $node + '" "' + $script + '" --machine ${m}'
+if ($hub -ne '') { $tr = $tr + ' --hub ' + $hub }
 schtasks /Create /SC DAILY /ST 09:00 /TN "Zeyuan-Report-${m}-AM" /TR $tr /F | Out-Null
 schtasks /Create /SC DAILY /ST 21:00 /TN "Zeyuan-Report-${m}-PM" /TR $tr /F | Out-Null
 Write-Host '  ✅ 任务已建'
@@ -82,7 +84,7 @@ for (const m of machines) {
   mkdirSync(dir, { recursive: true })
   cpSync(srcScript, join(dir, 'machine-report.mjs'))
   writeFileSync(join(dir, 'im.json'), JSON.stringify({ webhook: cfg.webhook, secret: cfg.secret ?? '' }, null, 2) + '\n', 'utf8')
-  writeFileSync(join(dir, 'install.ps1'), installPs1(m).replaceAll('HUB_PLACEHOLDER', HUB || ''), 'utf8')
+  writeFileSync(join(dir, 'install.ps1'), installPs1(m).replaceAll('HUBURL_JSON', (HUB || '').replace(/'/g, "''")), 'utf8')
   writeFileSync(
     join(dir, 'README.txt'),
     [
