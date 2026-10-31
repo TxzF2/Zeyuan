@@ -21,6 +21,7 @@ import { createHash } from 'node:crypto'
 import { existsSync, readFileSync, writeFileSync, readdirSync, statSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { buildPanBlock } from './pan-block.mjs'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
 export const REPO_ROOT = resolve(HERE, '..')
@@ -189,6 +190,8 @@ export function writePage({ repo, pageOut = PAGE_OUT } = {}) {
   let html = renderDownloadPage({ dist, repo: repo ?? resolveRepo(flagValue('--repo')), hash, size: statSync(zip).size })
   const partsBlock = buildPartsBlock({ dist, repo: repo ?? resolveRepo(flagValue('--repo')) })
   if (partsBlock) html = html.replace('<footer>', partsBlock + '\n\n  <footer>')
+  const panBlock = buildPanBlock({ rootDir: REPO_ROOT, repo: repo ?? resolveRepo(flagValue('--repo')), dist, sha8: sha8(hash) })
+  if (panBlock) html = html.replace('<footer>', panBlock + '\n\n  <footer>')
   writeFileSync(pageOut, html, 'utf8')
   return { page: pageOut, version: dist.version, buildDate: dist.buildDate, hash, hash8: sha8(hash), zip }
 }

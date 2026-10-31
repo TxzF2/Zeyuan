@@ -34,11 +34,6 @@
 <div class="wrap">
   <div class="brand"><span></span>泽元 · ZEYUAN</div>
   <h1>下载泽元</h1>
-  <div style="margin-top:18px;padding:14px 16px;border:1px solid #7a4b2a;border-radius:12px;background:#2a1a10;color:#f0c48a;font-size:13.5px;line-height:1.7">
-    <b>⚠️ 通道维护中，暂勿下发</b><br />
-    自测发现：分卷可下载但<b>传输被截断</b>（应 25.0 MB，实收 1–3.5 MB），合并必然失败。<br />
-    正在切换镜像通道（Gitee / 网盘中转），恢复后本页会移除此提示。合并教程仍可先阅读。
-  </div>
   <div class="sub">便携版 · 解压即用 · 内置安装向导</div>
 
   <div class="card">
@@ -91,6 +86,19 @@
     <div style="margin-top:12px"><img src="assets/merge-tutorial.png" alt="合并教程" style="width:100%;border:1px solid var(--line);border-radius:10px" /></div>
     <pre>copy /b zeyuan-v0.4.0-part1.zip + zeyuan-v0.4.0-part2.zip + ... + zeyuan-v0.4.0-part6.zip zeyuan-portable.zip</pre>
     <div class="hint">合并后校验：<code>Get-FileHash zeyuan-portable.zip -Algorithm SHA256</code></div>
+  </div>
+
+    <div class="card" id="pan">
+    <div style="font-weight:600;margin-bottom:6px">网盘备用下载（国内网络推荐）</div>
+    <div class="hint" style="margin-bottom:8px">GitHub 直连在国内常被限速或截断，优先用网盘整包下载；下完直接解压安装，<b>不需要合并分卷</b>。</div>
+    <div style="font-size:13.5px;line-height:2">
+      <div>① <span style="color:var(--muted)">链接待总控上传后补入（位置已预留）</span></div>
+      
+      <div class="hint" style="margin-top:2px">整包 149.35 MB，含《升级说明》与合并脚本</div>
+      <div>② 下载后校验：整包 SHA256 前 8 位应为 <b style="color:var(--gold)">32590CB9</b>（完整值见上方卡片）</div>
+      <div>③ 镜像通道：<span style="color:var(--muted)">Gitee 镜像：立项中（本周内出迁移步骤清单，需总控提供仓库与令牌）</span></div>
+      <div>④ 若仍用分卷：合并教程见 <a href="https://github.com/TxzF2/Zeyuan/blob/main/releases/v0.4.0/README.md" target="_blank" rel="noopener">releases/v0.4.0/README.md</a></div>
+    </div>
   </div>
 
   <footer>泽元 · 下载页由 scripts/release.mjs 生成，随 docs 一起发布到 GitHub Pages。</footer>
