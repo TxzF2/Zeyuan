@@ -35,6 +35,16 @@ const stateDir = process.env.DSH_TRAINING_STATE_DIR || join(process.env.LOCALAPP
 const cfgPath = join(stateDir, 'data', 'im.json')
 const yes = process.argv.includes('--yes')
 
+/** 把发送回执落成证据文件（供主控直接读取，无需人工转述） */
+function writeEvidence(items) {
+  const dir = join(ROOT, '交付', 'evidence')
+  mkdirSync(dir, { recursive: true })
+  const file = join(dir, 'R-219-发送回执.jsonl')
+  const row = { at: new Date().toISOString(), robot: '泽元参谋长', items }
+  writeFileSync(file, JSON.stringify(row) + '\n', { encoding: 'utf8', flag: 'a' })
+  console.log('\n📄 证据已落盘：' + file)
+}
+
 const rl = createInterface({ input: process.stdin, output: process.stdout })
 const ask = (q) => new Promise((res) => rl.question(q, (a) => res(a.trim())))
 
@@ -82,6 +92,11 @@ console.log(r1.ok ? `  ✅ HTTP ${r1.status} / errcode ${r1.errcode ?? 0} / atte
 console.log('\n[2/2] 发送 R-219 联通测试…')
 const r2 = await push.sendDingTalk(cfg, push.textMessage(`R-219 联通测试 ${now}`))
 console.log(r2.ok ? `  ✅ HTTP ${r2.status} / errcode ${r2.errcode ?? 0} / attempts ${r2.attempts}` : `  ❌ ${r2.error}（attempts ${r2.attempts}）`)
+
+writeEvidence([
+  { msg: '调度机器人已建好，钥匙已私聊总控', ok: r1.ok, status: r1.status ?? null, errcode: r1.errcode ?? null, attempts: r1.attempts },
+  { msg: 'R-219 联通测试 ' + now, ok: r2.ok, status: r2.status ?? null, errcode: r2.errcode ?? null, attempts: r2.attempts },
+])
 
 if (!r1.ok || !r2.ok) {
   console.log('\n排查提示：errcode 310000 = 关键词不匹配 / 加签校验失败（检查是否勾了"加签"且密钥正确）')
