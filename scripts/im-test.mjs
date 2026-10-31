@@ -7,6 +7,7 @@
  *   node scripts/im-test.mjs --webhook "..." --secret "SECxxx"     # 机器人开了「加签」
  *   node scripts/im-test.mjs --show                                # 只看当前配置（脱敏）
  *   node scripts/im-test.mjs --send-only                           # 用现有配置发一条测试
+ *   node scripts/im-test.mjs --text "R-219 联通测试 2026-10-31 14:30" # 自定义消息正文
  *
  * 存储：%LOCALAPPDATA%\zeyuan\data\im.json（H-KEY 档：仅本地，不进 git）
  * ---------------------------------------------------------------------------
@@ -78,7 +79,9 @@ if (!cur.webhook) {
 }
 
 console.log('\n发送测试消息…')
-const r = await push.sendDingTalk(cur, push.textMessage('【泽元】钉钉连通性测试 ✅ 协作层已就绪'))
+const textArg = val('--text')
+const content = textArg ? textArg : '【泽元】钉钉连通性测试 ✅ 协作层已就绪'
+const r = await push.sendDingTalk(cur, push.textMessage(content))
 if (r.ok) {
   console.log(`✅ 发送成功（attempts=${r.attempts}，HTTP ${r.status}）——请到钉钉群确认收到`)
 } else {
